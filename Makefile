@@ -25,7 +25,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad
 
 help:
 	@echo "Targets:"
@@ -37,6 +37,7 @@ help:
 	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
 	@echo "  interval-smoke          Normalize radigest TSV intervals and compare interval set to itself"
+	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
 	@echo "  summarize                Generate configured summary tables"
 	@echo "  figures                  Generate figures when figure rules are added"
 	@echo "  all                      Run lightweight default workflow"
@@ -88,7 +89,7 @@ check:
 	bash -n scripts/download_reference_data.sh
 	python3 -m py_compile scripts/*.py
 	@if compgen -G "scripts/*.R" > /dev/null; then \
-	  Rscript -e 'for (f in list.files("scripts", pattern="\\.R$$", full.names=TRUE)) parse(f)' ; \
+	  Rscript -e 'files <- list.files("scripts", pattern="[.]R$$", full.names=TRUE); invisible(lapply(files, parse))' ; \
 	fi
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(RADIGEST)" \
@@ -107,3 +108,6 @@ clean:
 
 interval-smoke:
 	$(call smk,interval_smoke_all)
+
+compare-simrad:
+	$(call smk,compare_simrad_all)

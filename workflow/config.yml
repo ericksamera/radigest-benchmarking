@@ -47,3 +47,10 @@ comparators:
   radinitio: false
   ddgrader: false
   simgbs: false
+
+simrad:
+  # Keep default lightweight. Override for manuscript-scale runs.
+  datasets:
+    - synthetic_validation
+  conditions:
+    - B1

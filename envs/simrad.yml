@@ -1,0 +1,12 @@
+name: radigest-simrad
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-seqinr
+  - bioconductor-biostrings
+  - bioconductor-shortread
+  - bioconductor-zlibbioc
+  - zlib
+  - libzlib

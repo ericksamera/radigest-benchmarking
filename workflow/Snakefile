@@ -488,3 +488,120 @@ rule interval_smoke:
             --fail-on-difference
         ) > {log:q} 2>&1
         """
+
+# --- SimRAD count-level comparator rules ---
+
+SIMRAD_DATASETS = list(config.get("simrad", {}).get("datasets", BENCHMARK_DATASETS))
+SIMRAD_CONDITIONS = list(config.get("simrad", {}).get("conditions", BENCHMARK_CONDITIONS))
+
+
+def simrad_comparison_outputs():
+    return [
+        f"results/processed/comparisons/simrad/{dataset}__{condition}.comparison.tsv"
+        for dataset, condition in product(SIMRAD_DATASETS, SIMRAD_CONDITIONS)
+    ]
+
+
+def enzyme_parts_for_condition(condition_id):
+    enzymes = condition_row(condition_id)["enzymes"]
+    parts = [x.strip() for x in enzymes.split(",") if x.strip()]
+    if len(parts) not in {1, 2}:
+        raise ValueError(f"condition {condition_id} must define one or two enzymes, got: {enzymes}")
+    return parts
+
+
+def simrad_enzyme1(wc):
+    return enzyme_parts_for_condition(wc.condition)[0]
+
+
+def simrad_enzyme2(wc):
+    parts = enzyme_parts_for_condition(wc.condition)
+    return parts[1] if len(parts) == 2 else "NA"
+
+
+rule compare_simrad_all:
+    input:
+        simrad_comparison_outputs()
+
+
+rule radigest_compare_json:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/comparisons/radigest/{dataset}__{condition}.json"
+    log:
+        stdout="benchmark/logs/comparison_radigest__{dataset}__{condition}.stdout.log",
+        stderr="benchmark/logs/comparison_radigest__{dataset}__{condition}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/comparisons/radigest benchmark/logs
+        {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule simrad_run:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset),
+        enzymes="config/enzymes.tsv"
+    output:
+        tsv="results/raw/comparators/simrad/{dataset}__{condition}.simrad.tsv",
+        version="results/raw/comparators/simrad/{dataset}__{condition}.simrad.version.txt"
+    log:
+        "benchmark/logs/simrad__{dataset}__{condition}.log"
+    params:
+        enzyme1=simrad_enzyme1,
+        enzyme2=simrad_enzyme2,
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition))
+    shell:
+        r"""
+        mkdir -p results/raw/comparators/simrad benchmark/logs
+        Rscript scripts/run_simrad_ddrad.R \
+          --reference {input.ref:q} \
+          --enzyme1 {params.enzyme1:q} \
+          --enzyme2 {params.enzyme2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --enzymes-tsv {input.enzymes:q} \
+          --out {output.tsv:q} \
+          --version-log {output.version:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule compare_radigest_simrad_counts:
+    input:
+        radigest="results/raw/comparisons/radigest/{dataset}__{condition}.json",
+        simrad="results/raw/comparators/simrad/{dataset}__{condition}.simrad.tsv"
+    output:
+        "results/processed/comparisons/simrad/{dataset}__{condition}.comparison.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed/comparisons/simrad
+        python3 scripts/compare_radigest_simrad_counts.py \
+          --radigest-json {input.radigest:q} \
+          --simrad-tsv {input.simrad:q} \
+          --dataset {wildcards.dataset:q} \
+          --condition {wildcards.condition:q} \
+          --out {output:q}
+        """

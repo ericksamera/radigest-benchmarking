@@ -67,3 +67,13 @@ snakemake_cache/
 .idea/
 
 *codebase*
+
+# Generated comparator outputs.
+results/raw/comparators/*
+results/raw/comparisons/*
+results/processed/comparisons/*
+
+# Generated comparator outputs.
+results/raw/comparators/*
+results/raw/comparisons/*
+results/processed/comparisons/*
