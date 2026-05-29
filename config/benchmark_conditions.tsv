@@ -1,5 +1,7 @@
-condition	enzymes	min	max	mode	notes
-B1	EcoRI,MseI	100	300	double	Common rare/frequent ddRAD condition
-B2	PstI,MspI	250	500	double	Common GC-rich ddRAD/GBS condition
-B3	SbfI,MspI	300	600	double	Rare-cutter condition
-B4	EcoRI	100	500	single	Single-digest condition
+condition_id	enzymes	min_size	max_size	digest_mode	include_ends	allow_same	intended_comparison	notes
+B1	EcoRI,MseI	100	300	double	false	false	matched_digest_count_coordinate	Common rare/frequent ddRAD condition
+B2	PstI,MspI	250	500	double	false	false	matched_digest_count_coordinate	Common GC-rich ddRAD/GBS condition
+B3	SbfI,MspI	300	600	double	false	false	matched_digest_count	Rare-cutter condition; may produce few fragments in small genomes
+B4	EcoRI	100	500	single	false	false	single_digest_count	Single-digest condition for tools that support single-enzyme digestion
+B5	MluCI	100	500	single	false	false	single_digest_count	Frequent-cutter single digest
+B6	PstI,MspI	250	500	double	false	false	recovery_weighted	Optional soft-window or empirical recovery-weighted scoring condition

@@ -1,7 +1,11 @@
-# large data
+# Large reference and empirical data are excluded from Git.
 data/reference/*
 data/empirical/*
-*.fa
+
+!data/reference/.gitkeep
+!data/empirical/.gitkeep
+
+# Raw genome/read/alignment data.
 *.fasta
 *.fna
 *.fa.gz
@@ -9,35 +13,50 @@ data/empirical/*
 *.fna.gz
 *.fastq
 *.fastq.gz
+*.fq
+*.fq.gz
 *.bam
 *.sam
 *.cram
+*.bai
+*.crai
 
-# benchmark outputs
+# Allow small designed synthetic validation FASTA.
+!data/synthetic/
+!data/synthetic/*.fa
+!data/synthetic/*.fasta
+!data/synthetic/*.fna
+
+# Benchmark and raw workflow outputs.
 results/raw/*
 results/processed/*
 benchmark/time/*
 benchmark/memory/*
 benchmark/logs/*
 
-# keep directory structure
-!data/reference/.gitkeep
-!data/empirical/.gitkeep
 !results/raw/.gitkeep
 !results/processed/.gitkeep
 !benchmark/time/.gitkeep
 !benchmark/memory/.gitkeep
 !benchmark/logs/.gitkeep
 
-# environments/cache
+# Curated manuscript-ready tables/figures may be tracked selectively.
+# Generated scratch files should remain ignored unless intentionally staged.
+
+# Environments/cache.
 .venv/
 __pycache__/
 .Rhistory
 .RData
 .julia/
-snakemake_cache/
 .snakemake/
+snakemake_cache/
+.conda/
+.mamba/
 
-# OS/editor
+# OS/editor.
 .DS_Store
 .vscode/
+.idea/
+
+*codebase*

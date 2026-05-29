@@ -1,11 +1,15 @@
-enzyme	motif	cut_offset	notes
-EcoRI	GAATTC	1	G^AATTC
-MseI	TTAA	1	T^TAA
-PstI	CTGCAG	5	CTGCA^G
-MspI	CCGG	1	C^CGG
-SbfI	CCTGCAGG	6	CCTGCA^GG
-MluCI	AATT	0	^AATT
-ApeKI	GCWGC	1	G^CWGC
-NlaIII	CATG	4	CATG^
-BfaI	CTAG	1	C^TAG
-SphI	GCATGC	5	GCATG^C
+enzyme	recognition_motif	cut_offset	caret_motif	notes
+EcoRI	GAATTC	1	G^AATTC	Common rare cutter
+MseI	TTAA	1	T^TAA	Common frequent cutter
+PstI	CTGCAG	5	CTGCA^G	Common GC-rich cutter
+MspI	CCGG	1	C^CGG	Common frequent cutter; sequence-level equivalent to HpaII in radigest
+SbfI	CCTGCAGG	6	CCTGCA^GG	Rare cutter
+MluCI	AATT	0	^AATT	Frequent cutter
+ApeKI	GCWGC	1	G^CWGC	Degenerate IUPAC motif
+NlaIII	CATG	4	CATG^	Frequent cutter
+BfaI	CTAG	1	C^TAG	Frequent cutter with MseI-compatible overhang in some ddRAD designs
+SphI	GCATGC	5	GCATG^C	Used in empirical Trichoderma condition
+DpnII	GATC	0	^GATC	Coincident-cut synthetic validation with MboI
+MboI	GATC	0	^GATC	Coincident-cut synthetic validation with DpnII
+HinfI	GANTC	1	G^ANTC	Tests enzyme N motif versus reference N behavior
+NcoI	CCATGG	1	C^CATGG	Used as absent second enzyme in same-enzyme-adjacency validation
