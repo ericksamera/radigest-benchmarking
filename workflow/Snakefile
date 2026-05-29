@@ -775,3 +775,52 @@ rule compare_radigest_digital_rads_intervals:
           --out-prefix {params.prefix:q} \
           --fail-on-difference
         """
+
+# --- benchmark table and figure rules ---
+
+rule benchmark_tables_all:
+    input:
+        "results/tables/radigest_benchmark_runs.tsv",
+        "results/tables/radigest_benchmark_summary.tsv"
+
+
+rule build_benchmark_tables:
+    input:
+        json_summary="results/tables/radigest_json_summary.tsv",
+        time_summary="results/tables/radigest_memory_summary.tsv"
+    output:
+        runs="results/tables/radigest_benchmark_runs.tsv",
+        summary="results/tables/radigest_benchmark_summary.tsv"
+    shell:
+        r"""
+        mkdir -p results/tables
+        python3 scripts/build_benchmark_table.py \
+          --json-summary {input.json_summary:q} \
+          --time-summary {input.time_summary:q} \
+          --out-runs {output.runs:q} \
+          --out-summary {output.summary:q}
+        """
+
+
+rule figures_all:
+    input:
+        "results/figures/runtime_by_output_mode.png",
+        "results/figures/peak_rss_by_output_mode.png",
+        "results/figures/output_size_by_mode.png"
+
+
+rule benchmark_figures:
+    input:
+        "results/tables/radigest_benchmark_summary.tsv"
+    output:
+        runtime="results/figures/runtime_by_output_mode.png",
+        rss="results/figures/peak_rss_by_output_mode.png",
+        size="results/figures/output_size_by_mode.png"
+    shell:
+        r"""
+        mkdir -p results/figures manuscript_figures
+        python3 scripts/make_figures.py \
+          --benchmark-summary {input:q} \
+          --out-dir results/figures \
+          --manuscript-dir manuscript_figures
+        """

@@ -25,7 +25,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad compare-digital-rads
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad compare-digital-rads benchmark-tables
 
 help:
 	@echo "Targets:"
@@ -40,7 +40,8 @@ help:
 	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
 	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
 	@echo "  summarize                Generate configured summary tables"
-	@echo "  figures                  Generate figures when figure rules are added"
+	@echo "  benchmark-tables         Build run-level and aggregate benchmark tables"
+	@echo "  figures                  Generate benchmark figures"
 	@echo "  all                      Run lightweight default workflow"
 	@echo "  dry-run                  Show planned lightweight workflow"
 	@echo "  dag                      Write workflow DAG for configured benchmark"
@@ -72,8 +73,11 @@ fasta-summary:
 summarize:
 	$(call smk,summaries_all)
 
+benchmark-tables:
+	$(call smk,benchmark_tables_all)
+
 figures:
-	@echo "TO_BE_FILLED: add figure rules after scripts/make_figures.py is committed."
+	$(call smk,figures_all)
 
 all:
 	$(call smk,all)
@@ -97,7 +101,7 @@ check:
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
 	           threads=1
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all compare_simrad_all compare_digital_rads_all \
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all benchmark_tables_all figures_all fasta_summary_all interval_smoke_all compare_simrad_all compare_digital_rads_all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \

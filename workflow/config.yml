@@ -8,11 +8,14 @@ synthetic_expected_tsv: config/synthetic_expected.tsv
 synthetic_fasta: data/synthetic/synthetic_validation.fa
 benchmark:
   datasets:
-    - synthetic_validation
+  - synthetic_validation
   conditions:
-    - B1
+  - BSMOKE
   output_modes:
-    - json
+  - json
+  - gff
+  - fragments_tsv
+  - fragments_fasta
   replicates: 1
 condition_extra_args:
   B6: -score-min 1 -score-max 1000 -size-model soft-window -size-edge-sd 25
@@ -36,12 +39,12 @@ comparators:
   simgbs: false
 simrad:
   datasets:
-    - simrad_smoke_single
+  - simrad_smoke_single
   conditions:
-    - S1
+  - S1
 digital_rads:
   script: external/Digital_RADs/Digital_RADs.py
   datasets:
-    - digital_rads_smoke_single
+  - digital_rads_smoke_single
   conditions:
-    - D1
+  - D1
