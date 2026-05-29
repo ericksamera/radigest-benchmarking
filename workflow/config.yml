@@ -1,20 +1,12 @@
-# Workflow-level configuration for radigest-comparison-bmc.
-# This file selects which already-defined datasets and benchmark conditions
-# are executed by Snakemake. Scientific definitions live in config/*.tsv.
-
-radigest: "radigest"
-radigest_screen_pairs: "radigest-screen-pairs"
-radigest_rank_pairs: "radigest-rank-pairs"
-
+radigest: radigest
+radigest_screen_pairs: radigest-screen-pairs
+radigest_rank_pairs: radigest-rank-pairs
 threads: 4
-
-datasets_tsv: "config/datasets.tsv"
-conditions_tsv: "config/benchmark_conditions.tsv"
-synthetic_expected_tsv: "config/synthetic_expected.tsv"
-synthetic_fasta: "data/synthetic/synthetic_validation.fa"
-
+datasets_tsv: config/datasets.tsv
+conditions_tsv: config/benchmark_conditions.tsv
+synthetic_expected_tsv: config/synthetic_expected.tsv
+synthetic_fasta: data/synthetic/synthetic_validation.fa
 benchmark:
-  # Keep defaults lightweight. Override for manuscript runs.
   datasets:
     - synthetic_validation
   conditions:
@@ -22,24 +14,19 @@ benchmark:
   output_modes:
     - json
   replicates: 1
-
-# Extra radigest arguments by condition ID.
-# Use this for recovery-weighted conditions once parameters are finalized.
 condition_extra_args:
-  B6: "-score-min 1 -score-max 1000 -size-model soft-window -size-edge-sd 25"
-
+  B6: -score-min 1 -score-max 1000 -size-model soft-window -size-edge-sd 25
 pair_screen:
   dataset: synthetic_validation
-  enzymes: "config/candidate_enzymes.txt"
+  enzymes: config/candidate_enzymes.txt
   min_size: 300
   max_size: 600
   score_min: 1
   score_max: 2000
-  size_model: "hard"
+  size_model: hard
   jobs: 2
   radigest_threads: 2
-  objective: "weighted-bases"
-
+  objective: weighted-bases
 comparators:
   simrad: false
   digital_rads: false
@@ -47,10 +34,8 @@ comparators:
   radinitio: false
   ddgrader: false
   simgbs: false
-
 simrad:
-  # Keep default lightweight. Override for manuscript-scale runs.
   datasets:
-    - synthetic_validation
+    - simrad_smoke_single
   conditions:
-    - B1
+    - S1

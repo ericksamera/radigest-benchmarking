@@ -96,7 +96,7 @@ check:
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
 	           threads=1
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all \
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all compare_simrad_all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \

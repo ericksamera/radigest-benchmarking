@@ -16,7 +16,7 @@ import csv
 import json
 import sys
 from pathlib import Path
-
+from typing import Any, cast
 
 FIELDNAMES = [
     "dataset",
@@ -32,22 +32,60 @@ FIELDNAMES = [
     "notes",
 ]
 
+NumericValue = str | int | float | None
+
+
+def load_json_dict(path: Path) -> dict[str, Any]:
+    """Load a JSON document and require a top-level object."""
+    with path.open(encoding="utf-8") as handle:
+        data: Any = json.load(handle)
+
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: expected top-level JSON object")
+
+    return cast(dict[str, Any], data)
+
 
 def read_simrad_row(path: Path) -> dict[str, str]:
+    """Read a one-row SimRAD TSV summary."""
+    rows: list[dict[str, str]] = []
+
     with path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle, delimiter="\t"))
+        reader = csv.DictReader(handle, delimiter="\t")
+        for raw_row in reader:
+            row = {
+                key: "" if value is None else value
+                for key, value in raw_row.items()
+                if key is not None
+            }
+            rows.append(row)
+
     if len(rows) != 1:
         raise ValueError(f"{path}: expected exactly one SimRAD row, found {len(rows)}")
+
     return rows[0]
 
 
-def to_float(value: object) -> float:
-    if value is None or value == "":
+def to_float(value: NumericValue) -> float:
+    """Convert numeric or numeric-string values to float.
+
+    Missing values are treated as 0.0 because absent count fields represent
+    unavailable zero-valued metrics in the current comparison summaries.
+    """
+    if value is None:
         return 0.0
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped == "":
+            return 0.0
+        return float(stripped)
+
     return float(value)
 
 
 def format_number(value: float) -> str:
+    """Format integer-like floats without a decimal point."""
     if abs(value - round(value)) < 1e-9:
         return str(int(round(value)))
     return f"{value:.10g}"
@@ -64,6 +102,7 @@ def comparison_row(
     notes: str,
 ) -> dict[str, str]:
     diff = simrad_value - radigest_value
+
     if radigest_value == 0:
         rel = "" if simrad_value == 0 else "inf"
     else:
@@ -87,6 +126,7 @@ def comparison_row(
 
 
 def infer_dataset_condition(path: Path) -> tuple[str, str]:
+    """Infer dataset and condition from <dataset>__<condition> filenames."""
     stem = path.stem
     parts = stem.split("__")
     if len(parts) >= 2:
@@ -95,7 +135,9 @@ def infer_dataset_condition(path: Path) -> tuple[str, str]:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Compare radigest JSON counts to SimRAD count-level TSV output."
+    )
     parser.add_argument("--radigest-json", required=True, type=Path)
     parser.add_argument("--simrad-tsv", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
@@ -106,19 +148,24 @@ def main(argv: list[str]) -> int:
     if not args.radigest_json.exists():
         print(f"error: missing radigest JSON: {args.radigest_json}", file=sys.stderr)
         return 2
+
     if not args.simrad_tsv.exists():
         print(f"error: missing SimRAD TSV: {args.simrad_tsv}", file=sys.stderr)
         return 2
 
-    with args.radigest_json.open(encoding="utf-8") as handle:
-        radigest = json.load(handle)
-
-    simrad = read_simrad_row(args.simrad_tsv)
+    try:
+        radigest = load_json_dict(args.radigest_json)
+        simrad = read_simrad_row(args.simrad_tsv)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     dataset = args.dataset
     condition = args.condition
     if not dataset or not condition:
-        inferred_dataset, inferred_condition = infer_dataset_condition(args.radigest_json)
+        inferred_dataset, inferred_condition = infer_dataset_condition(
+            args.radigest_json
+        )
         dataset = dataset or inferred_dataset
         condition = condition or inferred_condition
 

@@ -77,3 +77,10 @@ results/processed/comparisons/*
 results/raw/comparators/*
 results/raw/comparisons/*
 results/processed/comparisons/*
+
+# Generated comparator outputs.
+results/raw/comparators/*
+results/raw/comparisons/*
+results/processed/comparisons/*
+results/raw/manual_test/*
+results/processed/manual_test/*
