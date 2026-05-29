@@ -5,4 +5,4 @@ B3	SbfI,MspI	300	600	double	false	false	matched_digest_count	Rare-cutter conditi
 B4	EcoRI	100	500	single	false	false	single_digest_count	Single-digest condition for tools that support single-enzyme digestion
 B5	MluCI	100	500	single	false	false	single_digest_count	Frequent-cutter single digest
 B6	PstI,MspI	250	500	double	false	false	recovery_weighted	Optional soft-window or empirical recovery-weighted scoring condition
-S1	EcoRI,MseI	1	100	double	false	false	simrad_smoke_not_manuscript	Non-manuscript SimRAD smoke case; expected to reveal possible fragment-definition differences
+S1	EcoRI,MseI	1	100	double	false	false	simrad_smoke_not_manuscript	Non-manuscript SimRAD diagnostic case; demonstrates that SimRAD AB+BA selection can include a terminal sequence fragment based on partial recognition-site remnants, so it is not an exact sticky-end or coordinate-level comparator
