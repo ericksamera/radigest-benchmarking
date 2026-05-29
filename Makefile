@@ -1,96 +1,76 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
+SNAKEMAKE ?= snakemake
+SNAKEFILE ?= workflow/Snakefile
+
 RADIGEST ?= radigest
 RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
 RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
-RUNS ?= 5
 
-REF ?= data/synthetic/synthetic_validation.fa
-REF_SMALL ?= data/reference/yeast.fa.gz
-REF_MODERATE ?= data/reference/moderate.fa.gz
+SMK_BASE = $(SNAKEMAKE) -s $(SNAKEFILE) \
+           --cores $(THREADS) \
+           --rerun-incomplete \
+           --printshellcmds
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs compare-simrad compare-digital-rads compare-ddradseqtools summarize figures all clean
+SMK_CONFIG = --config \
+             radigest="$(RADIGEST)" \
+             radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
+             radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+             threads=$(THREADS)
+
+# Usage:
+#   $(call smk,<target-or-options-and-target>)
+smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
+
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs summarize figures all dry-run dag clean
 
 help:
 	@echo "Targets:"
 	@echo "  env                    Capture hardware/software metadata"
-	@echo "  synthetic              Summarize committed synthetic FASTA"
-	@echo "  validate-radigest      Run synthetic interval validation"
-	@echo "  benchmark-radigest     Lightweight radigest benchmark; override REF for real genomes"
-	@echo "  screen-pairs           Run enzyme-pair screen; override REF for real genomes"
-	@echo "  compare-simrad         Placeholder for SimRAD matched-task comparison"
-	@echo "  compare-digital-rads   Placeholder for Digital_RADs.py comparison"
-	@echo "  compare-ddradseqtools  Placeholder for DDRADSEQTOOLS rsitesearch comparison"
-	@echo "  summarize              Build processed TSV summaries"
-	@echo "  figures                Generate manuscript figures when inputs exist"
+	@echo "  synthetic              Show synthetic FASTA status"
+	@echo "  validate-radigest      Run synthetic interval validation via Snakemake"
+	@echo "  benchmark-radigest     Run configured radigest output-mode benchmarks"
+	@echo "  screen-pairs           Run configured enzyme-pair screen"
+	@echo "  summarize              Generate configured summary tables"
+	@echo "  all                    Run lightweight default workflow"
+	@echo "  dry-run                Show planned lightweight workflow"
+	@echo "  dag                    Write workflow DAG for configured benchmark"
 	@echo "  clean                  Remove generated benchmark outputs"
 
 env:
-	./scripts/capture_environment.sh
+	$(call smk,results/processed/environment.txt --force)
 
 synthetic:
 	@echo "Synthetic FASTA: data/synthetic/synthetic_validation.fa"
 	@seqkit stats data/synthetic/synthetic_validation.fa || true
 
 validate-radigest:
-	mkdir -p results/raw/synthetic results/processed
-	python3 scripts/validate_synthetic.py \
-	  --radigest "$(RADIGEST)" \
-	  --fasta data/synthetic/synthetic_validation.fa \
-	  --expected config/synthetic_expected.tsv \
-	  --out-dir results/raw/synthetic \
-	  --summary results/processed/synthetic_validation_results.tsv
+	$(call smk,results/processed/synthetic_validation_results.tsv)
 
 benchmark-radigest:
-	mkdir -p benchmark/time benchmark/memory benchmark/logs results/raw/radigest results/tables
-	hyperfine --warmup 1 --runs $(RUNS) \
-	  --export-json benchmark/time/radigest_json.json \
-	  '$(RADIGEST) -fasta $(REF) -enzymes EcoRI,MseI -min 1 -max 1000 -threads $(THREADS) -json results/raw/radigest/benchmark__EcoRI_MseI__json.json'
-	for i in $$(seq 1 $(RUNS)); do \
-	  /usr/bin/time -v -o benchmark/memory/radigest_json_run$${i}.time \
-	    $(RADIGEST) -fasta $(REF) -enzymes EcoRI,MseI -min 1 -max 1000 -threads $(THREADS) \
-	    -json results/raw/radigest/benchmark__EcoRI_MseI__json_run$${i}.json ; \
-	done
+	$(call smk,benchmark_radigest_all)
 
 screen-pairs:
-	mkdir -p results/raw/pair_screen results/tables benchmark/logs
-	$(RADIGEST_SCREEN_PAIRS) \
-	  --fasta $(REF) \
-	  --enzymes config/candidate_enzymes.txt \
-	  --min 300 \
-	  --max 600 \
-	  --score-min 1 \
-	  --score-max 2000 \
-	  --size-model hard \
-	  --jobs 2 \
-	  --radigest-threads 2 \
-	  --out-dir results/raw/pair_screen
-	$(RADIGEST_RANK_PAIRS) 'results/raw/pair_screen/json/*.json' \
-	  --fasta $(REF) \
-	  --objective weighted-bases \
-	  --out results/tables/ranked_pairs.tsv
-
-compare-simrad:
-	@echo "TO_BE_FILLED: run scripts/run_simrad_ddrad.R after SimRAD is installed and reference FASTA is selected."
-
-compare-digital-rads:
-	@echo "TO_BE_FILLED: run scripts/run_digital_rads.sh after Digital_RADs.py path and coordinate convention are verified."
-
-compare-ddradseqtools:
-	@echo "TO_BE_FILLED: run scripts/run_ddradseqtools_rsitesearch.sh after DDRADSEQTOOLS config syntax is verified."
+	$(call smk,pair_screen_all)
 
 summarize:
-	mkdir -p results/tables
-	python3 scripts/summarize_radigest_json.py results/raw/radigest/*.json > results/tables/radigest_json_summary.tsv || true
-	python3 scripts/summarize_time_v.py benchmark/memory/*.time > results/tables/radigest_memory_summary.tsv || true
+	$(call smk,summaries_all)
 
 figures:
-	@echo "TO_BE_FILLED: add scripts/make_figures.py after processed summary schemas stabilize."
+	@echo "TO_BE_FILLED: add figure rules after scripts/make_figures.py is committed."
 
-all: env validate-radigest benchmark-radigest summarize
+all:
+	$(call smk,all)
+
+dry-run:
+	$(call smk,-n all)
+
+dag:
+	mkdir -p workflow
+	$(call smk,--dag benchmark_radigest_all) > workflow/benchmark_dag.dot
 
 clean:
 	rm -rf results/raw/* results/processed/* benchmark/time/* benchmark/memory/* benchmark/logs/*

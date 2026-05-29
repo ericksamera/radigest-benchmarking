@@ -43,6 +43,13 @@ benchmark/logs/*
 # Curated manuscript-ready tables/figures may be tracked selectively.
 # Generated scratch files should remain ignored unless intentionally staged.
 
+# Generated summary outputs.
+results/tables/*
+results/figures/*
+
+!results/tables/.gitkeep
+!results/figures/.gitkeep
+
 # Environments/cache.
 .venv/
 __pycache__/

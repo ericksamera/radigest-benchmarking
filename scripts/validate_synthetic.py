@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 FLAG_MAP = {
     "include_ends": "-include-ends",
     "allow_same": "-allow-same",
@@ -48,7 +47,9 @@ def read_observed_tsv(path: Path, record_id: str) -> list[tuple[int, int]]:
     return observed
 
 
-def build_command(radigest: str, fasta: Path, row: dict[str, str], out_tsv: Path, out_json: Path) -> list[str]:
+def build_command(
+    radigest: str, fasta: Path, row: dict[str, str], out_tsv: Path, out_json: Path
+) -> list[str]:
     cmd = [
         radigest,
         "-fasta",
@@ -74,7 +75,9 @@ def build_command(radigest: str, fasta: Path, row: dict[str, str], out_tsv: Path
             if not opt:
                 continue
             if opt not in FLAG_MAP:
-                raise ValueError(f"unknown synthetic option {opt!r} in case {row['case_id']}")
+                raise ValueError(
+                    f"unknown synthetic option {opt!r} in case {row['case_id']}"
+                )
             cmd.append(FLAG_MAP[opt])
 
     return cmd
@@ -83,10 +86,18 @@ def build_command(radigest: str, fasta: Path, row: dict[str, str], out_tsv: Path
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--radigest", default="radigest")
-    parser.add_argument("--fasta", type=Path, default=Path("data/synthetic/synthetic_validation.fa"))
-    parser.add_argument("--expected", type=Path, default=Path("config/synthetic_expected.tsv"))
+    parser.add_argument(
+        "--fasta", type=Path, default=Path("data/synthetic/synthetic_validation.fa")
+    )
+    parser.add_argument(
+        "--expected", type=Path, default=Path("config/synthetic_expected.tsv")
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("results/raw/synthetic"))
-    parser.add_argument("--summary", type=Path, default=Path("results/processed/synthetic_validation_results.tsv"))
+    parser.add_argument(
+        "--summary",
+        type=Path,
+        default=Path("results/processed/synthetic_validation_results.tsv"),
+    )
     args = parser.parse_args(argv)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

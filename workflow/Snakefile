@@ -1,0 +1,396 @@
+import csv
+from itertools import product
+from pathlib import Path
+
+configfile: "workflow/config.yml"
+
+
+def read_tsv(path):
+    with open(path, newline="") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
+
+
+def load_datasets(path):
+    rows = read_tsv(path)
+    out = {}
+    for row in rows:
+        dataset_id = row.get("dataset_id") or row.get("dataset")
+        if not dataset_id:
+            raise ValueError(f"dataset row has no dataset_id/dataset field: {row}")
+        out[dataset_id] = row
+    return out
+
+
+def load_conditions(path):
+    rows = read_tsv(path)
+    out = {}
+    for row in rows:
+        condition_id = row.get("condition_id") or row.get("condition")
+        if not condition_id:
+            raise ValueError(f"condition row has no condition_id/condition field: {row}")
+        out[condition_id] = row
+    return out
+
+
+DATASETS = load_datasets(config["datasets_tsv"])
+CONDITIONS = load_conditions(config["conditions_tsv"])
+
+BENCHMARK_DATASETS = list(config["benchmark"].get("datasets", []))
+BENCHMARK_CONDITIONS = list(config["benchmark"].get("conditions", []))
+OUTPUT_MODES = list(config["benchmark"].get("output_modes", ["json"]))
+REPLICATES = range(1, int(config["benchmark"].get("replicates", 1)) + 1)
+
+
+def dataset_path(dataset_id):
+    try:
+        return DATASETS[dataset_id]["local_path"]
+    except KeyError as exc:
+        raise ValueError(f"unknown dataset ID in workflow config: {dataset_id}") from exc
+
+
+def condition_row(condition_id):
+    try:
+        return CONDITIONS[condition_id]
+    except KeyError as exc:
+        raise ValueError(f"unknown condition ID in workflow config: {condition_id}") from exc
+
+
+def condition_min(row):
+    return row.get("min_size") or row.get("min")
+
+
+def condition_max(row):
+    return row.get("max_size") or row.get("max")
+
+
+def truthy(value):
+    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
+def behavior_flags(row):
+    flags = []
+    if truthy(row.get("include_ends", "false")):
+        flags.append("-include-ends")
+    if truthy(row.get("allow_same", "false")):
+        flags.append("-allow-same")
+    return " ".join(flags)
+
+
+def extra_condition_args(condition_id):
+    return config.get("condition_extra_args", {}).get(condition_id, "")
+
+
+def stem(dataset, condition, mode, run):
+    return f"{dataset}__{condition}__{mode}__run{run}"
+
+
+def benchmark_outputs():
+    files = []
+    for dataset, condition, mode, run in product(
+        BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
+    ):
+        s = stem(dataset, condition, mode, run)
+        files.append(f"results/raw/radigest/{s}.json")
+        files.append(f"benchmark/memory/{s}.time")
+
+        if mode == "gff":
+            files.append(f"results/raw/radigest/{s}.gff3")
+        elif mode == "fragments_tsv":
+            files.append(f"results/raw/radigest/{s}.fragments.tsv")
+        elif mode == "fragments_fasta":
+            files.append(f"results/raw/radigest/{s}.fragments.fa")
+
+    return files
+
+
+def benchmark_jsons():
+    return [
+        f"results/raw/radigest/{stem(dataset, condition, mode, run)}.json"
+        for dataset, condition, mode, run in product(
+            BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
+        )
+    ]
+
+
+def benchmark_times():
+    return [
+        f"benchmark/memory/{stem(dataset, condition, mode, run)}.time"
+        for dataset, condition, mode, run in product(
+            BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
+        )
+    ]
+
+
+rule all:
+    input:
+        "results/processed/environment.txt",
+        "results/processed/synthetic_validation_results.tsv"
+
+
+rule capture_environment:
+    output:
+        "results/processed/environment.txt"
+    shell:
+        r"""
+        mkdir -p results/processed benchmark/logs
+        RADIGEST={config[radigest]:q} ./scripts/capture_environment.sh
+        """
+
+
+rule synthetic_validation:
+    input:
+        fasta=config["synthetic_fasta"],
+        expected=config["synthetic_expected_tsv"]
+    output:
+        "results/processed/synthetic_validation_results.tsv"
+    params:
+        outdir="results/raw/synthetic",
+        radigest=config["radigest"]
+    shell:
+        r"""
+        mkdir -p results/raw/synthetic results/processed
+        python3 scripts/validate_synthetic.py \
+          --radigest {params.radigest:q} \
+          --fasta {input.fasta:q} \
+          --expected {input.expected:q} \
+          --out-dir {params.outdir:q} \
+          --summary {output:q}
+        """
+
+
+rule benchmark_radigest_all:
+    input:
+        benchmark_outputs()
+
+
+rule radigest_json:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/radigest/{dataset}__{condition}__json__run{run}.json",
+        time="benchmark/memory/{dataset}__{condition}__json__run{run}.time"
+    log:
+        stdout="benchmark/logs/{dataset}__{condition}__json__run{run}.stdout.log",
+        stderr="benchmark/logs/{dataset}__{condition}__json__run{run}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
+        /usr/bin/time -v -o {output.time:q} \
+          {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule radigest_gff:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/radigest/{dataset}__{condition}__gff__run{run}.json",
+        gff="results/raw/radigest/{dataset}__{condition}__gff__run{run}.gff3",
+        time="benchmark/memory/{dataset}__{condition}__gff__run{run}.time"
+    log:
+        stdout="benchmark/logs/{dataset}__{condition}__gff__run{run}.stdout.log",
+        stderr="benchmark/logs/{dataset}__{condition}__gff__run{run}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
+        /usr/bin/time -v -o {output.time:q} \
+          {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -gff {output.gff:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule radigest_fragments_tsv:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/radigest/{dataset}__{condition}__fragments_tsv__run{run}.json",
+        tsv="results/raw/radigest/{dataset}__{condition}__fragments_tsv__run{run}.fragments.tsv",
+        time="benchmark/memory/{dataset}__{condition}__fragments_tsv__run{run}.time"
+    log:
+        stdout="benchmark/logs/{dataset}__{condition}__fragments_tsv__run{run}.stdout.log",
+        stderr="benchmark/logs/{dataset}__{condition}__fragments_tsv__run{run}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
+        /usr/bin/time -v -o {output.time:q} \
+          {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -fragments-tsv {output.tsv:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule radigest_fragments_fasta:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/radigest/{dataset}__{condition}__fragments_fasta__run{run}.json",
+        fasta="results/raw/radigest/{dataset}__{condition}__fragments_fasta__run{run}.fragments.fa",
+        time="benchmark/memory/{dataset}__{condition}__fragments_fasta__run{run}.time"
+    log:
+        stdout="benchmark/logs/{dataset}__{condition}__fragments_fasta__run{run}.stdout.log",
+        stderr="benchmark/logs/{dataset}__{condition}__fragments_fasta__run{run}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
+        /usr/bin/time -v -o {output.time:q} \
+          {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -fragments-fasta {output.fasta:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule summaries_all:
+    input:
+        "results/tables/radigest_json_summary.tsv",
+        "results/tables/radigest_memory_summary.tsv"
+
+
+rule summarize_radigest_json:
+    input:
+        benchmark_jsons()
+    output:
+        "results/tables/radigest_json_summary.tsv"
+    shell:
+        r"""
+        mkdir -p results/tables
+        python3 scripts/summarize_radigest_json.py {input} > {output:q}
+        """
+
+
+rule summarize_time_v:
+    input:
+        benchmark_times()
+    output:
+        "results/tables/radigest_memory_summary.tsv"
+    shell:
+        r"""
+        mkdir -p results/tables
+        python3 scripts/summarize_time_v.py {input} > {output:q}
+        """
+
+
+rule pair_screen_all:
+    input:
+        "results/tables/ranked_pairs.tsv"
+
+
+rule pair_screen:
+    input:
+        ref=lambda wc: dataset_path(config["pair_screen"]["dataset"]),
+        enzymes=config["pair_screen"]["enzymes"]
+    output:
+        ranked="results/tables/ranked_pairs.tsv"
+    log:
+        "benchmark/logs/pair_screen.log"
+    params:
+        screen=config["radigest_screen_pairs"],
+        rank=config["radigest_rank_pairs"],
+        outdir="results/raw/pair_screen",
+        min_size=config["pair_screen"]["min_size"],
+        max_size=config["pair_screen"]["max_size"],
+        score_min=config["pair_screen"]["score_min"],
+        score_max=config["pair_screen"]["score_max"],
+        size_model=config["pair_screen"]["size_model"],
+        jobs=config["pair_screen"]["jobs"],
+        radigest_threads=config["pair_screen"]["radigest_threads"],
+        objective=config["pair_screen"]["objective"]
+    shell:
+        r"""
+        mkdir -p results/raw/pair_screen results/tables benchmark/logs
+        {
+          {params.screen:q} \
+            --fasta {input.ref:q} \
+            --enzymes {input.enzymes:q} \
+            --min {params.min_size} \
+            --max {params.max_size} \
+            --score-min {params.score_min} \
+            --score-max {params.score_max} \
+            --size-model {params.size_model:q} \
+            --jobs {params.jobs} \
+            --radigest-threads {params.radigest_threads} \
+            --out-dir {params.outdir:q}
+
+          {params.rank:q} 'results/raw/pair_screen/json/*.json' \
+            --fasta {input.ref:q} \
+            --objective {params.objective:q} \
+            --out {output.ranked:q}
+        } > {log:q} 2>&1
+        """
