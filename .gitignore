@@ -1,0 +1,43 @@
+# large data
+data/reference/*
+data/empirical/*
+*.fa
+*.fasta
+*.fna
+*.fa.gz
+*.fasta.gz
+*.fna.gz
+*.fastq
+*.fastq.gz
+*.bam
+*.sam
+*.cram
+
+# benchmark outputs
+results/raw/*
+results/processed/*
+benchmark/time/*
+benchmark/memory/*
+benchmark/logs/*
+
+# keep directory structure
+!data/reference/.gitkeep
+!data/empirical/.gitkeep
+!results/raw/.gitkeep
+!results/processed/.gitkeep
+!benchmark/time/.gitkeep
+!benchmark/memory/.gitkeep
+!benchmark/logs/.gitkeep
+
+# environments/cache
+.venv/
+__pycache__/
+.Rhistory
+.RData
+.julia/
+snakemake_cache/
+.snakemake/
+
+# OS/editor
+.DS_Store
+.vscode/

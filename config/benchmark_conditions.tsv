@@ -1,0 +1,5 @@
+condition	enzymes	min	max	mode	notes
+B1	EcoRI,MseI	100	300	double	Common rare/frequent ddRAD condition
+B2	PstI,MspI	250	500	double	Common GC-rich ddRAD/GBS condition
+B3	SbfI,MspI	300	600	double	Rare-cutter condition
+B4	EcoRI	100	500	single	Single-digest condition

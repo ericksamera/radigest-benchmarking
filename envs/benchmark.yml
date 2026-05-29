@@ -1,0 +1,18 @@
+name: radigest-benchmarking
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.11
+  - r-base
+  - jq
+  - hyperfine
+  - time
+  - samtools
+  - seqkit
+  - snakemake
+  - pandas
+  - matplotlib
+  - pip
+  - pip:
+      - pyyaml

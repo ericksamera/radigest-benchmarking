@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use these benchmarking workflows, please cite the associated radigest software and manuscript."
+title: "radigest benchmarking and comparison workflows"
+authors:
+  - family-names: "Samera"
+    given-names: "Gennerick J."
+repository-code: "https://github.com/ericksamera/radigest-benchmarking"
+license: "MIT"

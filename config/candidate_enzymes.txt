@@ -1,0 +1,10 @@
+EcoRI
+MseI
+PstI
+MspI
+SbfI
+MluCI
+ApeKI
+NlaIII
+BfaI
+SphI
