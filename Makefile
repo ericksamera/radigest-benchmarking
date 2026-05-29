@@ -25,20 +25,25 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs summarize figures all dry-run dag clean
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke
 
 help:
 	@echo "Targets:"
-	@echo "  env                    Capture hardware/software metadata"
-	@echo "  synthetic              Show synthetic FASTA status"
-	@echo "  validate-radigest      Run synthetic interval validation via Snakemake"
-	@echo "  benchmark-radigest     Run configured radigest output-mode benchmarks"
-	@echo "  screen-pairs           Run configured enzyme-pair screen"
-	@echo "  summarize              Generate configured summary tables"
-	@echo "  all                    Run lightweight default workflow"
-	@echo "  dry-run                Show planned lightweight workflow"
-	@echo "  dag                    Write workflow DAG for configured benchmark"
-	@echo "  clean                  Remove generated benchmark outputs"
+	@echo "  env                      Capture hardware/software metadata"
+	@echo "  synthetic                Show synthetic FASTA status"
+	@echo "  validate-radigest        Run synthetic interval validation via Snakemake"
+	@echo "  benchmark-radigest       Run configured radigest output-mode benchmarks"
+	@echo "  screen-pairs             Run configured enzyme-pair screen"
+	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
+	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
+	@echo "  interval-smoke          Normalize radigest TSV intervals and compare interval set to itself"
+	@echo "  summarize                Generate configured summary tables"
+	@echo "  figures                  Generate figures when figure rules are added"
+	@echo "  all                      Run lightweight default workflow"
+	@echo "  dry-run                  Show planned lightweight workflow"
+	@echo "  dag                      Write workflow DAG for configured benchmark"
+	@echo "  check                    Run syntax and workflow dry-run checks"
+	@echo "  clean                    Remove generated benchmark outputs"
 
 env:
 	$(call smk,results/processed/environment.txt --force)
@@ -56,6 +61,12 @@ benchmark-radigest:
 screen-pairs:
 	$(call smk,pair_screen_all)
 
+download-reference-data:
+	$(call smk,results/processed/reference_checksums.tsv)
+
+fasta-summary:
+	$(call smk,fasta_summary_all)
+
 summarize:
 	$(call smk,summaries_all)
 
@@ -72,6 +83,27 @@ dag:
 	mkdir -p workflow
 	$(call smk,--dag benchmark_radigest_all) > workflow/benchmark_dag.dot
 
+check:
+	bash -n scripts/capture_environment.sh
+	bash -n scripts/download_reference_data.sh
+	python3 -m py_compile scripts/*.py
+	@if compgen -G "scripts/*.R" > /dev/null; then \
+	  Rscript -e 'for (f in list.files("scripts", pattern="\\.R$$", full.names=TRUE)) parse(f)' ; \
+	fi
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
+	  --config radigest="$(RADIGEST)" \
+	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	           threads=1
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all \
+	  --config radigest="$(RADIGEST)" \
+	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	           threads=1
+
 clean:
 	rm -rf results/raw/* results/processed/* benchmark/time/* benchmark/memory/* benchmark/logs/*
 	touch results/raw/.gitkeep results/processed/.gitkeep benchmark/time/.gitkeep benchmark/memory/.gitkeep benchmark/logs/.gitkeep
+
+interval-smoke:
+	$(call smk,interval_smoke_all)

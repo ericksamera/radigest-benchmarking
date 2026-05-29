@@ -375,7 +375,7 @@ rule pair_screen:
     shell:
         r"""
         mkdir -p results/raw/pair_screen results/tables benchmark/logs
-        {
+        (
           {params.screen:q} \
             --fasta {input.ref:q} \
             --enzymes {input.enzymes:q} \
@@ -392,5 +392,99 @@ rule pair_screen:
             --fasta {input.ref:q} \
             --objective {params.objective:q} \
             --out {output.ranked:q}
-        } > {log:q} 2>&1
+        ) > {log:q} 2>&1
+        """
+
+# --- reference data and FASTA summary rules ---
+
+def fasta_summary_outputs():
+    return [
+        f"results/processed/fasta/{dataset}.summary.tsv"
+        for dataset in BENCHMARK_DATASETS
+    ]
+
+
+rule reference_data_download:
+    input:
+        datasets=config["datasets_tsv"]
+    output:
+        "results/processed/reference_checksums.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed data/reference
+        ./scripts/download_reference_data.sh \
+          --datasets {input.datasets:q} \
+          --out {output:q}
+        """
+
+
+rule fasta_summary_all:
+    input:
+        fasta_summary_outputs()
+
+
+rule summarize_fasta_dataset:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        "results/processed/fasta/{dataset}.summary.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed/fasta
+        python3 scripts/summarize_fasta.py \
+          -o {output:q} \
+          {input.ref:q}
+        """
+
+# --- interval normalization and comparison smoke rules ---
+
+rule interval_smoke_all:
+    input:
+        "results/processed/intervals/synthetic_ecori_msei.self_compare.summary.tsv"
+
+
+rule interval_smoke:
+    input:
+        fasta=config["synthetic_fasta"]
+    output:
+        raw_tsv="results/raw/interval_smoke/synthetic_ecori_msei.fragments.tsv",
+        json="results/raw/interval_smoke/synthetic_ecori_msei.json",
+        normalized="results/processed/intervals/synthetic_ecori_msei.normalized.tsv",
+        summary="results/processed/intervals/synthetic_ecori_msei.self_compare.summary.tsv",
+        matching="results/processed/intervals/synthetic_ecori_msei.self_compare.matching.tsv",
+        only_first="results/processed/intervals/synthetic_ecori_msei.self_compare.only_first.tsv",
+        only_second="results/processed/intervals/synthetic_ecori_msei.self_compare.only_second.tsv"
+    log:
+        "benchmark/logs/interval_smoke.log"
+    params:
+        radigest=config["radigest"],
+        prefix="results/processed/intervals/synthetic_ecori_msei.self_compare"
+    shell:
+        r"""
+        mkdir -p results/raw/interval_smoke results/processed/intervals benchmark/logs
+
+        (
+          {params.radigest:q} \
+            -fasta {input.fasta:q} \
+            -enzymes EcoRI,MseI \
+            -min 1 \
+            -max 100 \
+            -threads 1 \
+            -fragments-tsv {output.raw_tsv:q} \
+            -json {output.json:q}
+
+          python3 scripts/normalize_radigest_tsv.py \
+            --input {output.raw_tsv:q} \
+            --output {output.normalized:q} \
+            --source-tool radigest
+
+          python3 scripts/compare_interval_sets.py \
+            --first {output.normalized:q} \
+            --second {output.normalized:q} \
+            --first-name radigest \
+            --second-name radigest_self \
+            --mode exact \
+            --out-prefix {params.prefix:q} \
+            --fail-on-difference
+        ) > {log:q} 2>&1
         """
