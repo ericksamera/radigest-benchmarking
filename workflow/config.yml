@@ -39,3 +39,9 @@ simrad:
     - simrad_smoke_single
   conditions:
     - S1
+digital_rads:
+  script: external/Digital_RADs/Digital_RADs.py
+  datasets:
+    - digital_rads_smoke_single
+  conditions:
+    - D1

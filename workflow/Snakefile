@@ -605,3 +605,173 @@ rule compare_radigest_simrad_counts:
           --condition {wildcards.condition:q} \
           --out {output:q}
         """
+
+# --- Digital_RADs.py coordinate comparator rules ---
+
+DIGITAL_RADS_DATASETS = list(config.get("digital_rads", {}).get("datasets", []))
+DIGITAL_RADS_CONDITIONS = list(config.get("digital_rads", {}).get("conditions", []))
+
+
+def digital_rads_outputs():
+    return [
+        f"results/processed/comparisons/digital_rads/{dataset}__{condition}.summary.tsv"
+        for dataset, condition in product(DIGITAL_RADS_DATASETS, DIGITAL_RADS_CONDITIONS)
+    ]
+
+
+def digital_enzyme1(wc):
+    return enzyme_parts_for_condition(wc.condition)[0]
+
+
+def digital_enzyme2(wc):
+    parts = enzyme_parts_for_condition(wc.condition)
+    if len(parts) != 2:
+        raise ValueError(f"Digital_RADs.py comparison requires exactly two enzymes for condition {wc.condition}")
+    return parts[1]
+
+
+rule compare_digital_rads_all:
+    input:
+        digital_rads_outputs()
+
+
+rule radigest_compare_tsv_for_digital:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset)
+    output:
+        json="results/raw/comparisons/radigest_tsv/{dataset}__{condition}.json",
+        tsv="results/raw/comparisons/radigest_tsv/{dataset}__{condition}.fragments.tsv"
+    log:
+        stdout="benchmark/logs/digital_radigest__{dataset}__{condition}.stdout.log",
+        stderr="benchmark/logs/digital_radigest__{dataset}__{condition}.stderr.log"
+    params:
+        radigest=config["radigest"],
+        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition)),
+        extra=lambda wc: " ".join(
+            x for x in [
+                behavior_flags(condition_row(wc.condition)),
+                extra_condition_args(wc.condition),
+            ] if x
+        ),
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/comparisons/radigest_tsv benchmark/logs
+        {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          {params.extra} \
+          -fragments-tsv {output.tsv:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule normalize_radigest_for_digital:
+    input:
+        "results/raw/comparisons/radigest_tsv/{dataset}__{condition}.fragments.tsv"
+    output:
+        "results/processed/intervals/radigest_for_digital/{dataset}__{condition}.normalized.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed/intervals/radigest_for_digital
+        python3 scripts/normalize_radigest_tsv.py \
+          --input {input:q} \
+          --output {output:q} \
+          --source-tool radigest \
+          --hard-kept-only
+        """
+
+
+rule digital_rads_run:
+    input:
+        ref=lambda wc: dataset_path(wc.dataset),
+        script=lambda wc: config["digital_rads"]["script"],
+        enzymes="config/enzymes.tsv"
+    output:
+        raw="results/raw/comparators/digital_rads/{dataset}__{condition}.raw.tsv",
+        summary="results/raw/comparators/digital_rads/{dataset}__{condition}.run_summary.tsv",
+        version="results/raw/comparators/digital_rads/{dataset}__{condition}.version.txt",
+        stdout="benchmark/logs/digital_rads__{dataset}__{condition}.stdout.log",
+        stderr="benchmark/logs/digital_rads__{dataset}__{condition}.stderr.log"
+    params:
+        workdir=lambda wc: f"results/raw/comparators/digital_rads/work/{wc.dataset}__{wc.condition}",
+        enzyme1=digital_enzyme1,
+        enzyme2=digital_enzyme2,
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition))
+    shell:
+        r"""
+        mkdir -p results/raw/comparators/digital_rads benchmark/logs
+        bash scripts/run_digital_rads.sh \
+          --digital-rads {input.script:q} \
+          --reference {input.ref:q} \
+          --enzyme1 {params.enzyme1:q} \
+          --enzyme2 {params.enzyme2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --enzymes-tsv {input.enzymes:q} \
+          --work-dir {params.workdir:q} \
+          --raw-out {output.raw:q} \
+          --summary-out {output.summary:q} \
+          --version-out {output.version:q} \
+          --stdout-log {output.stdout:q} \
+          --stderr-log {output.stderr:q}
+        """
+
+
+rule normalize_digital_rads:
+    input:
+        raw="results/raw/comparators/digital_rads/{dataset}__{condition}.raw.tsv",
+        enzymes="config/enzymes.tsv"
+    output:
+        normalized="results/processed/intervals/digital_rads/{dataset}__{condition}.normalized.tsv",
+        summary="results/processed/intervals/digital_rads/{dataset}__{condition}.normalize_summary.tsv"
+    params:
+        enzyme1=digital_enzyme1,
+        enzyme2=digital_enzyme2,
+        min_size=lambda wc: condition_min(condition_row(wc.condition)),
+        max_size=lambda wc: condition_max(condition_row(wc.condition))
+    shell:
+        r"""
+        mkdir -p results/processed/intervals/digital_rads
+        python3 scripts/normalize_digital_rads.py \
+          --input {input.raw:q} \
+          --output {output.normalized:q} \
+          --summary {output.summary:q} \
+          --enzymes-tsv {input.enzymes:q} \
+          --enzyme1 {params.enzyme1:q} \
+          --enzyme2 {params.enzyme2:q} \
+          --min {params.min_size} \
+          --max {params.max_size}
+        """
+
+
+rule compare_radigest_digital_rads_intervals:
+    input:
+        first="results/processed/intervals/radigest_for_digital/{dataset}__{condition}.normalized.tsv",
+        second="results/processed/intervals/digital_rads/{dataset}__{condition}.normalized.tsv"
+    output:
+        summary="results/processed/comparisons/digital_rads/{dataset}__{condition}.summary.tsv",
+        matching="results/processed/comparisons/digital_rads/{dataset}__{condition}.matching.tsv",
+        only_first="results/processed/comparisons/digital_rads/{dataset}__{condition}.only_first.tsv",
+        only_second="results/processed/comparisons/digital_rads/{dataset}__{condition}.only_second.tsv"
+    params:
+        prefix=lambda wc: f"results/processed/comparisons/digital_rads/{wc.dataset}__{wc.condition}"
+    shell:
+        r"""
+        mkdir -p results/processed/comparisons/digital_rads
+        python3 scripts/compare_interval_sets.py \
+          --first {input.first:q} \
+          --second {input.second:q} \
+          --first-name radigest \
+          --second-name Digital_RADs.py \
+          --mode exact \
+          --out-prefix {params.prefix:q} \
+          --fail-on-difference
+        """

@@ -1,0 +1,33 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = [
+  ".snakemake",
+  "external",
+  "results",
+  "benchmark",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.11"
+files = ["scripts"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+exclude = '''
+(?x)(
+    ^external/
+  | ^results/
+  | ^benchmark/
+  | ^\.snakemake/
+  | ^codebase\.json$
+)
+'''

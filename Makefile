@@ -25,7 +25,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad compare-digital-rads
 
 help:
 	@echo "Targets:"
@@ -38,6 +38,7 @@ help:
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
 	@echo "  interval-smoke          Normalize radigest TSV intervals and compare interval set to itself"
 	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
+	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
 	@echo "  summarize                Generate configured summary tables"
 	@echo "  figures                  Generate figures when figure rules are added"
 	@echo "  all                      Run lightweight default workflow"
@@ -96,7 +97,7 @@ check:
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
 	           threads=1
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all compare_simrad_all \
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all fasta_summary_all interval_smoke_all compare_simrad_all compare_digital_rads_all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
@@ -111,3 +112,6 @@ interval-smoke:
 
 compare-simrad:
 	$(call smk,compare_simrad_all)
+
+compare-digital-rads:
+	$(call smk,compare_digital_rads_all)

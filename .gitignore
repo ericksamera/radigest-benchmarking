@@ -84,3 +84,31 @@ results/raw/comparisons/*
 results/processed/comparisons/*
 results/raw/manual_test/*
 results/processed/manual_test/*
+
+# External tool checkouts.
+external/*
+!external/.gitkeep
+
+# Generated Digital_RADs.py comparator outputs.
+results/raw/comparators/digital_rads/*
+results/raw/comparisons/radigest_tsv/*
+results/processed/intervals/digital_rads/*
+results/processed/intervals/radigest_for_digital/*
+results/processed/comparisons/digital_rads/*
+benchmark/logs/digital_rads__*
+benchmark/logs/digital_radigest__*
+
+# External tool checkouts.
+external/*
+!external/.gitkeep
+
+# Generated comparator outputs and scratch directories.
+results/raw/comparators/*
+results/raw/comparisons/*
+results/processed/comparisons/*
+results/processed/intervals/*
+results/raw/manual_test/*
+results/processed/manual_test/*
+benchmark/logs/*
+benchmark/memory/*
+benchmark/time/*

@@ -71,7 +71,8 @@ def normalize_row(
         end0 = int(end_raw)
     except ValueError as exc:
         raise ValueError(
-            f"row {row_number}: start0/end0 must be integers, got {start_raw!r}/{end_raw!r}"
+            f"row {row_number}: start0/end0 must be integers, "
+            f"got {start_raw!r}/{end_raw!r}"
         ) from exc
 
     if start0 < 0:
@@ -127,9 +128,10 @@ def normalize_file(
     rows_seen = 0
     rows_written = 0
 
-    with input_path.open(newline="", encoding="utf-8") as in_handle, output_path.open(
-        "w", newline="", encoding="utf-8"
-    ) as out_handle:
+    with (
+        input_path.open(newline="", encoding="utf-8") as in_handle,
+        output_path.open("w", newline="", encoding="utf-8") as out_handle,
+    ):
         reader = csv.DictReader(in_handle, delimiter="\t")
         if reader.fieldnames is None:
             raise ValueError(f"{input_path}: missing header")
@@ -157,7 +159,9 @@ def normalize_file(
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
-        description="Normalize radigest fragment TSV to zero-based half-open interval TSV."
+        description=(
+            "Normalize radigest fragment TSV to zero-based half-open " "interval TSV."
+        )
     )
     parser.add_argument(
         "-i", "--input", required=True, type=Path, help="Input radigest fragments TSV"
@@ -206,7 +210,8 @@ def main(argv: list[str]) -> int:
         return 1
 
     print(
-        f"normalized {rows_written} of {rows_seen} interval row(s) from {args.input} to {args.output}",
+        f"normalized {rows_written} of {rows_seen} interval row(s) "
+        f"from {args.input} to {args.output}",
         file=sys.stderr,
     )
     return 0

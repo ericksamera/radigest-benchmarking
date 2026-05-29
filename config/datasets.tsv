@@ -5,3 +5,4 @@ moderate_genome	TO_BE_FILLED	TO_BE_FILLED	TO_BE_FILLED	data/reference/moderate.f
 sockeye_empirical	Oncorhynchus nerka	TO_BE_FILLED	TO_BE_FILLED	data/empirical/sockeye/	TO_BE_FILLED	empirical recovery modelling
 trichoderma_empirical	Trichoderma atroviride	TO_BE_FILLED	TO_BE_FILLED	data/empirical/trichoderma/	TO_BE_FILLED	empirical recovery modelling
 simrad_smoke_single	NA	designed_single_record	NA	data/synthetic/simrad_ecori_msei_double.fa	TO_BE_FILLED	SimRAD nonzero smoke comparison
+digital_rads_smoke_single	NA	designed_single_record	NA	data/synthetic/digital_rads_ecori_msei_double.fa	TO_BE_FILLED	Digital_RADs coordinate-normalization smoke comparison

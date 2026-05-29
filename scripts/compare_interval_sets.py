@@ -27,8 +27,8 @@ import argparse
 import csv
 import sys
 from collections import Counter
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 SUMMARY_COLUMNS = [
     "first_name",
@@ -85,7 +85,8 @@ def read_interval_counter(path: Path, mode: str) -> Counter[tuple[str, ...]]:
             if mode == "exact":
                 if seqid == "" or start_raw == "" or end_raw == "":
                     raise ValueError(
-                        f"{path}: row {row_number}: exact mode requires seqid/start0/end0"
+                        f"{path}: row {row_number}: exact mode requires "
+                        "seqid/start0/end0"
                     )
                 try:
                     start0 = int(start_raw)
@@ -102,7 +103,8 @@ def read_interval_counter(path: Path, mode: str) -> Counter[tuple[str, ...]]:
                 if length_raw == "":
                     if start_raw == "" or end_raw == "":
                         raise ValueError(
-                            f"{path}: row {row_number}: length-only mode requires length or start0/end0"
+                            f"{path}: row {row_number}: length-only mode requires "
+                            "length or start0/end0"
                         )
                     try:
                         length = int(end_raw) - int(start_raw)
@@ -290,7 +292,10 @@ def main(argv: list[str]) -> int:
         "--out-prefix",
         required=True,
         type=Path,
-        help="Output prefix. Suffixes .summary.tsv, .matching.tsv, .only_first.tsv, .only_second.tsv are added.",
+        help=(
+            "Output prefix. Suffixes .summary.tsv, .matching.tsv, "
+            ".only_first.tsv, .only_second.tsv are added."
+        ),
     )
     parser.add_argument(
         "--fail-on-difference",
