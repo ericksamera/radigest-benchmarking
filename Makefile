@@ -26,7 +26,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen benchmark-matched-tools benchmark-matched-tools-with-digital summarize-matched-tools prepare-plain-reference input-format-table
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen benchmark-matched-tools benchmark-matched-tools-with-digital summarize-matched-tools prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
 
 help:
 	@echo "Targets:"
@@ -47,6 +47,8 @@ help:
 	@echo "  interval-smoke           Normalize radigest TSV intervals and compare interval set to itself"
 	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
 	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
+	@echo "  compare-ddradseqtools    Run optional DDRADSEQTOOLS rsitesearch interval comparison"
+	@echo "  compare-cut-tools        Run installed digest-level comparator cut checks"
 	@echo "  benchmark-matched-tools Run timed matched radigest/SimRAD tasks"
 	@echo "  benchmark-matched-tools-with-digital Run optional matched Digital_RADs timing"
 	@echo "  summarize-matched-tools Summarize matched tool benchmark outputs"
@@ -192,7 +194,7 @@ summarize-matched-tools:
 	  --out-runs results/tables/matched_tool_benchmark_runs.tsv \
 	  --out-summary results/tables/matched_tool_benchmark_summary.tsv
 
-.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table
+.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
 
 benchmark-simrad-warm:
 	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
@@ -239,7 +241,7 @@ tool-timing-table:
 	  --condition B1 \
 	  --out results/tables/tool_timing_interpretation.tsv
 
-.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table
+.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
 
 benchmark-simrad-warm:
 	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
@@ -292,7 +294,7 @@ prepare-plain-reference:
 input-format-table:
 	$(call smk,input_format_table_all)
 
-.PHONY: tool-comparison-figures input-format-figures
+.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools
 
 tool-comparison-figures:
 	python3 scripts/make_tool_comparison_figures.py \
@@ -305,3 +307,12 @@ input-format-figures:
 	  --comparison results/tables/radigest_input_format_comparison.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
+
+compare-ddradseqtools:
+	$(call smk,compare_ddradseqtools_all)
+
+check-ddradseqtools:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n compare_ddradseqtools_all $(SMK_CONFIG)
+
+compare-cut-tools:
+	$(call smk,compare_simrad_all compare_digital_rads_all compare_ddradseqtools_all)

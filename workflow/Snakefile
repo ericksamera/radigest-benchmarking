@@ -927,3 +927,136 @@ rule build_input_format_table:
           --plain-dataset yeast_small_plain \
           --out {output:q}
         """
+
+# --- DDRADSEQTOOLS rsitesearch comparator rules ---
+
+rule compare_ddradseqtools_all:
+    input:
+        "results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.summary.tsv"
+
+
+rule ddradseqtools_rsitesearch_yeast_B1:
+    input:
+        ref="data/reference/yeast.fa",
+        rsitesearch="external/ddRADseqTools/Package/rsitesearch.py",
+        restrictionsites="external/ddRADseqTools/Package/restrictionsites.txt"
+    output:
+        frags="results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments.fasta",
+        stats="results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments-stats.txt",
+        summary="results/raw/comparators/ddradseqtools/yeast_B1_wide.summary.tsv",
+        version="results/raw/comparators/ddradseqtools/yeast_B1_wide.version.txt"
+    log:
+        stdout="benchmark/logs/ddradseqtools_yeast_B1_wide.stdout.log",
+        stderr="benchmark/logs/ddradseqtools_yeast_B1_wide.stderr.log"
+    params:
+        repo="external/ddRADseqTools",
+        work_dir="results/raw/comparators/ddradseqtools/yeast_B1_wide_work"
+    shell:
+        r"""
+        mkdir -p results/raw/comparators/ddradseqtools \
+                 results/processed/comparisons/ddradseqtools \
+                 benchmark/logs
+
+        bash scripts/run_ddradseqtools_rsitesearch.sh \
+          --repo {params.repo:q} \
+          --reference {input.ref:q} \
+          --enzyme1 EcoRI \
+          --enzyme2 MseI \
+          --min 100 \
+          --max 304 \
+          --work-dir {params.work_dir:q} \
+          --frags-out {output.frags:q} \
+          --stats-out {output.stats:q} \
+          --summary-out {output.summary:q} \
+          --version-out {output.version:q} \
+          --stdout-log {log.stdout:q} \
+          --stderr-log {log.stderr:q}
+        """
+
+
+rule normalize_ddradseqtools_yeast_B1:
+    input:
+        "results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments.fasta"
+    output:
+        normalized="results/processed/comparisons/ddradseqtools/yeast_B1.normalized.tsv",
+        summary="results/processed/comparisons/ddradseqtools/yeast_B1.normalize_summary.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed/comparisons/ddradseqtools
+
+        python3 scripts/normalize_ddradseqtools_fragments.py \
+          --frags {input:q} \
+          --enzymes-tsv config/enzymes.tsv \
+          --enzyme1 EcoRI \
+          --enzyme2 MseI \
+          --min 100 \
+          --max 300 \
+          --seqid-mode first-token \
+          --out {output.normalized:q} \
+          --summary {output.summary:q}
+        """
+
+
+rule radigest_for_ddradseqtools_yeast_B1:
+    input:
+        "data/reference/yeast.fa"
+    output:
+        json="results/raw/comparators/ddradseqtools/yeast_B1.radigest.json",
+        tsv="results/raw/comparators/ddradseqtools/yeast_B1.radigest.fragments.tsv"
+    params:
+        radigest=config["radigest"],
+        threads=config.get("threads", 1)
+    shell:
+        r"""
+        mkdir -p results/raw/comparators/ddradseqtools
+
+        {params.radigest:q} \
+          -fasta {input:q} \
+          -enzymes EcoRI,MseI \
+          -min 100 \
+          -max 300 \
+          -threads {params.threads} \
+          -fragments-tsv {output.tsv:q} \
+          -json {output.json:q}
+        """
+
+
+rule normalize_radigest_for_ddradseqtools_yeast_B1:
+    input:
+        "results/raw/comparators/ddradseqtools/yeast_B1.radigest.fragments.tsv"
+    output:
+        "results/processed/comparisons/ddradseqtools/yeast_B1.radigest.normalized.tsv"
+    shell:
+        r"""
+        mkdir -p results/processed/comparisons/ddradseqtools
+
+        python3 scripts/normalize_radigest_tsv.py \
+          --input {input:q} \
+          --output {output:q} \
+          --source-tool radigest \
+          --hard-kept-only
+        """
+
+
+rule compare_ddradseqtools_intervals_yeast_B1:
+    input:
+        radigest="results/processed/comparisons/ddradseqtools/yeast_B1.radigest.normalized.tsv",
+        ddradseqtools="results/processed/comparisons/ddradseqtools/yeast_B1.normalized.tsv"
+    output:
+        summary="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.summary.tsv",
+        matching="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.matching.tsv",
+        only_first="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.only_first.tsv",
+        only_second="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.only_second.tsv"
+    params:
+        prefix="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare"
+    shell:
+        r"""
+        python3 scripts/compare_interval_sets.py \
+          --first {input.radigest:q} \
+          --second {input.ddradseqtools:q} \
+          --first-name radigest \
+          --second-name DDRADSEQTOOLS_rsitesearch \
+          --mode exact \
+          --out-prefix {params.prefix:q} \
+          --fail-on-difference
+        """
