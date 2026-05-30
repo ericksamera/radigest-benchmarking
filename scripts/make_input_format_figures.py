@@ -76,7 +76,9 @@ def sorted_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return sorted(rows, key=lambda row: mode_order(row.get("output_mode", "")))
 
 
-def plot_runtime(rows: list[dict[str, str]], out_dir: Path, manuscript_dir: Path | None) -> None:
+def plot_runtime(
+    rows: list[dict[str, str]], out_dir: Path, manuscript_dir: Path | None
+) -> None:
     labels: list[str] = []
     gzip_values: list[float] = []
     plain_values: list[float] = []
@@ -137,7 +139,9 @@ def plot_runtime_ratio(
     save_figure(out_dir / "input_format_runtime_ratio.png", manuscript_dir)
 
 
-def plot_memory(rows: list[dict[str, str]], out_dir: Path, manuscript_dir: Path | None) -> None:
+def plot_memory(
+    rows: list[dict[str, str]], out_dir: Path, manuscript_dir: Path | None
+) -> None:
     labels: list[str] = []
     gzip_values: list[float] = []
     plain_values: list[float] = []
