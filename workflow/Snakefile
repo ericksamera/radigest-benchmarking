@@ -1,8 +1,9 @@
 import csv
+import os
 from itertools import product
 from pathlib import Path
 
-configfile: "workflow/config.yml"
+configfile: os.environ.get("RADIGEST_WORKFLOW_CONFIG", "workflow/config.yml")
 
 
 def read_tsv(path):
@@ -491,8 +492,8 @@ rule interval_smoke:
 
 # --- SimRAD count-level comparator rules ---
 
-SIMRAD_DATASETS = list(config.get("simrad", {}).get("datasets", BENCHMARK_DATASETS))
-SIMRAD_CONDITIONS = list(config.get("simrad", {}).get("conditions", BENCHMARK_CONDITIONS))
+SIMRAD_DATASETS = list(config.get("simrad", {}).get("datasets", []))
+SIMRAD_CONDITIONS = list(config.get("simrad", {}).get("conditions", []))
 
 
 def simrad_comparison_outputs():

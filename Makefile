@@ -3,6 +3,7 @@ SHELL := /usr/bin/env bash
 
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
+WORKFLOW_CONFIG ?= workflow/config.yml
 
 RADIGEST ?= radigest
 RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
@@ -10,7 +11,7 @@ RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
 
-SMK_BASE = $(SNAKEMAKE) -s $(SNAKEFILE) \
+SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) \
            --cores $(THREADS) \
            --rerun-incomplete \
            --printshellcmds
@@ -25,7 +26,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize figures all dry-run dag check clean interval-smoke compare-simrad compare-digital-rads benchmark-tables
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads
 
 help:
 	@echo "Targets:"
@@ -36,16 +37,18 @@ help:
 	@echo "  screen-pairs             Run configured enzyme-pair screen"
 	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
-	@echo "  interval-smoke          Normalize radigest TSV intervals and compare interval set to itself"
-	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
-	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
-	@echo "  summarize                Generate configured summary tables"
+	@echo "  summarize                Generate JSON/time summary tables"
 	@echo "  benchmark-tables         Build run-level and aggregate benchmark tables"
 	@echo "  figures                  Generate benchmark figures"
+	@echo "  interval-smoke           Normalize radigest TSV intervals and compare interval set to itself"
+	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
+	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
 	@echo "  all                      Run lightweight default workflow"
 	@echo "  dry-run                  Show planned lightweight workflow"
 	@echo "  dag                      Write workflow DAG for configured benchmark"
-	@echo "  check                    Run syntax and workflow dry-run checks"
+	@echo "  check                    Syntax checks + default all dry-run only"
+	@echo "  check-benchmark          Dry-run benchmark/summary/table/figure targets"
+	@echo "  check-comparators        Dry-run optional comparator targets; requires reference paths to exist"
 	@echo "  clean                    Remove generated benchmark outputs"
 
 env:
@@ -79,6 +82,15 @@ benchmark-tables:
 figures:
 	$(call smk,figures_all)
 
+interval-smoke:
+	$(call smk,interval_smoke_all)
+
+compare-simrad:
+	$(call smk,compare_simrad_all)
+
+compare-digital-rads:
+	$(call smk,compare_digital_rads_all)
+
 all:
 	$(call smk,all)
 
@@ -96,12 +108,23 @@ check:
 	@if compgen -G "scripts/*.R" > /dev/null; then \
 	  Rscript -e 'files <- list.files("scripts", pattern="[.]R$$", full.names=TRUE); invisible(lapply(files, parse))' ; \
 	fi
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
+	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
 	           threads=1
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n benchmark_radigest_all summaries_all benchmark_tables_all figures_all fasta_summary_all interval_smoke_all compare_simrad_all compare_digital_rads_all \
+
+check-benchmark:
+	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
+	  benchmark_radigest_all summaries_all benchmark_tables_all figures_all fasta_summary_all \
+	  --config radigest="$(RADIGEST)" \
+	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	           threads=1
+
+check-comparators:
+	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
+	  compare_simrad_all compare_digital_rads_all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
@@ -110,12 +133,3 @@ check:
 clean:
 	rm -rf results/raw/* results/processed/* benchmark/time/* benchmark/memory/* benchmark/logs/*
 	touch results/raw/.gitkeep results/processed/.gitkeep benchmark/time/.gitkeep benchmark/memory/.gitkeep benchmark/logs/.gitkeep
-
-interval-smoke:
-	$(call smk,interval_smoke_all)
-
-compare-simrad:
-	$(call smk,compare_simrad_all)
-
-compare-digital-rads:
-	$(call smk,compare_digital_rads_all)
