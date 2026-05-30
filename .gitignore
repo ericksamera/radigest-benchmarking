@@ -1,4 +1,4 @@
-# Large reference and empirical data.
+# Large reference and empirical data are excluded from Git.
 data/reference/*
 data/empirical/*
 !data/reference/.gitkeep
@@ -20,13 +20,17 @@ data/empirical/*
 *.bai
 *.crai
 
-# Allow committed small synthetic FASTA files.
+# Allow committed synthetic validation FASTA files.
 !data/synthetic/
 !data/synthetic/*.fa
 !data/synthetic/*.fasta
 !data/synthetic/*.fna
 
-# Generated workflow and benchmark outputs.
+# External comparator checkouts.
+external/*
+!external/.gitkeep
+
+# Raw workflow, benchmark, and processed outputs.
 results/raw/*
 results/processed/*
 results/tables/*
@@ -34,7 +38,6 @@ results/figures/*
 benchmark/time/*
 benchmark/memory/*
 benchmark/logs/*
-
 !results/raw/.gitkeep
 !results/processed/.gitkeep
 !results/tables/.gitkeep
@@ -43,16 +46,12 @@ benchmark/logs/*
 !benchmark/memory/.gitkeep
 !benchmark/logs/.gitkeep
 
-# Generated manuscript exports.
-# Curated final artifacts can be added explicitly with git add -f.
-manuscript_figures/*
+# Manuscript exports.
+# Final curated artifacts can be force-added with git add -f.
 manuscript_tables/*
-!manuscript_figures/.gitkeep
+manuscript_figures/*
 !manuscript_tables/.gitkeep
-
-# External comparator checkouts.
-external/*
-!external/.gitkeep
+!manuscript_figures/.gitkeep
 
 # Python/R/Snakemake/cache.
 .venv/

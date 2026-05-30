@@ -259,9 +259,17 @@ def build_run_rows(root: Path, time_dir: Path) -> list[dict[str, str]]:
     return rows
 
 
+def numeric_values(rows: list[dict[str, str]], key: str) -> list[float]:
+    values: list[float] = []
+    for row in rows:
+        value = to_float(row.get(key, ""))
+        if value is not None:
+            values.append(value)
+    return values
+
+
 def median_numeric(rows: list[dict[str, str]], key: str) -> float | None:
-    values = [to_float(row.get(key, "")) for row in rows]
-    values = [value for value in values if value is not None]
+    values = numeric_values(rows, key)
     if not values:
         return None
     return float(statistics.median(values))
@@ -301,13 +309,7 @@ def build_summary_rows(run_rows: list[dict[str, str]]) -> list[dict[str, str]]:
             for value in (to_float(row.get("max_rss_kb", "")) for row in rows)
             if value is not None
         ]
-        output_size_values = [
-            value
-            for value in (
-                to_float(row.get("primary_output_size_bytes", "")) for row in rows
-            )
-            if value is not None
-        ]
+        output_size_values = numeric_values(rows, "primary_output_size_bytes")
 
         elapsed = stat_bundle(elapsed_values)
         rss = stat_bundle(rss_values)
