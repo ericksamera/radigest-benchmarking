@@ -93,8 +93,12 @@ def build_comparison(
         )
         by_key[key] = row
 
-    conditions = sorted({row.get("condition", "") for row in rows if row.get("condition", "")})
-    modes = sorted({row.get("output_mode", "") for row in rows if row.get("output_mode", "")})
+    conditions = sorted(
+        {row.get("condition", "") for row in rows if row.get("condition", "")}
+    )
+    modes = sorted(
+        {row.get("output_mode", "") for row in rows if row.get("output_mode", "")}
+    )
 
     out: list[dict[str, str]] = []
 
@@ -113,14 +117,22 @@ def build_comparison(
                 notes.append("missing plain dataset row")
 
             gzip_elapsed = to_float(
-                None if gzip_row is None else gzip_row.get("median_elapsed_wall_seconds", "")
+                None
+                if gzip_row is None
+                else gzip_row.get("median_elapsed_wall_seconds", "")
             )
             plain_elapsed = to_float(
-                None if plain_row is None else plain_row.get("median_elapsed_wall_seconds", "")
+                None
+                if plain_row is None
+                else plain_row.get("median_elapsed_wall_seconds", "")
             )
 
-            gzip_rss = to_float(None if gzip_row is None else gzip_row.get("median_max_rss_kb", ""))
-            plain_rss = to_float(None if plain_row is None else plain_row.get("median_max_rss_kb", ""))
+            gzip_rss = to_float(
+                None if gzip_row is None else gzip_row.get("median_max_rss_kb", "")
+            )
+            plain_rss = to_float(
+                None if plain_row is None else plain_row.get("median_max_rss_kb", "")
+            )
 
             elapsed_delta = None
             elapsed_ratio = None
@@ -133,10 +145,18 @@ def build_comparison(
             if gzip_rss is not None and plain_rss is not None:
                 rss_delta = plain_rss - gzip_rss
 
-            gzip_fragments = "" if gzip_row is None else gzip_row.get("median_total_fragments", "")
-            plain_fragments = "" if plain_row is None else plain_row.get("median_total_fragments", "")
-            gzip_bases = "" if gzip_row is None else gzip_row.get("median_total_bases", "")
-            plain_bases = "" if plain_row is None else plain_row.get("median_total_bases", "")
+            gzip_fragments = (
+                "" if gzip_row is None else gzip_row.get("median_total_fragments", "")
+            )
+            plain_fragments = (
+                "" if plain_row is None else plain_row.get("median_total_fragments", "")
+            )
+            gzip_bases = (
+                "" if gzip_row is None else gzip_row.get("median_total_bases", "")
+            )
+            plain_bases = (
+                "" if plain_row is None else plain_row.get("median_total_bases", "")
+            )
 
             out.append(
                 {
@@ -144,8 +164,12 @@ def build_comparison(
                     "output_mode": mode,
                     "gzip_dataset": gzip_dataset,
                     "plain_dataset": plain_dataset,
-                    "gzip_n_runs": "" if gzip_row is None else gzip_row.get("n_runs", ""),
-                    "plain_n_runs": "" if plain_row is None else plain_row.get("n_runs", ""),
+                    "gzip_n_runs": (
+                        "" if gzip_row is None else gzip_row.get("n_runs", "")
+                    ),
+                    "plain_n_runs": (
+                        "" if plain_row is None else plain_row.get("n_runs", "")
+                    ),
                     "gzip_median_elapsed_wall_seconds": fmt(gzip_elapsed),
                     "plain_median_elapsed_wall_seconds": fmt(plain_elapsed),
                     "elapsed_delta_plain_minus_gzip": fmt(elapsed_delta),

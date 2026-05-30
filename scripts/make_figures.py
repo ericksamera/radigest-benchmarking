@@ -117,11 +117,7 @@ def bar_with_errors(
     lower_errors: list[float] = []
     upper_errors: list[float] = []
 
-    dataset_values = {
-        row.get("dataset", "")
-        for row in rows
-        if row.get("dataset", "")
-    }
+    dataset_values = {row.get("dataset", "") for row in rows if row.get("dataset", "")}
     include_dataset = len(dataset_values) > 1
 
     for row in rows:
