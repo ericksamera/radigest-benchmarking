@@ -132,3 +132,27 @@ results/raw/matched_tool_benchmarks/*
 benchmark/memory/matched_tools/*
 benchmark/logs/matched_tools/*
 results/tables/matched_tool_benchmark_*.tsv
+
+# External comparator checkouts.
+external/*
+!external/.gitkeep
+
+# Generated screening-speed outputs.
+results/raw/screening_speed/*
+results/processed/screening_speed/*
+benchmark/memory/screening_speed/*
+benchmark/logs/screening_speed/*
+results/tables/screening_speed_*.tsv
+
+# Generated ddgRADer comparator outputs.
+results/raw/comparators/ddgrader/*
+results/processed/comparisons/ddgrader/*
+benchmark/memory/ddgrader_*.time
+benchmark/logs/ddgrader_*.log
+
+# Generated DDRADSEQTOOLS comparator outputs.
+results/raw/comparators/ddradseqtools/*
+results/processed/comparisons/ddradseqtools/*
+results/processed/ddradseqtools_probe.txt
+benchmark/memory/ddradseqtools_*.time
+benchmark/logs/ddradseqtools_*.log
