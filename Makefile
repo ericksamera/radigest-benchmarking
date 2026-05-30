@@ -291,3 +291,17 @@ prepare-plain-reference:
 
 input-format-table:
 	$(call smk,input_format_table_all)
+
+.PHONY: tool-comparison-figures input-format-figures
+
+tool-comparison-figures:
+	python3 scripts/make_tool_comparison_figures.py \
+	  --timing-table results/tables/tool_timing_interpretation.tsv \
+	  --out-dir results/figures \
+	  --manuscript-dir manuscript_figures
+
+input-format-figures:
+	python3 scripts/make_input_format_figures.py \
+	  --comparison results/tables/radigest_input_format_comparison.tsv \
+	  --out-dir results/figures \
+	  --manuscript-dir manuscript_figures
