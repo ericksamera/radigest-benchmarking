@@ -26,7 +26,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen benchmark-matched-tools benchmark-matched-tools-with-digital summarize-matched-tools prepare-plain-reference input-format-table
 
 help:
 	@echo "Targets:"
@@ -39,12 +39,17 @@ help:
 	@echo "  pair-screen-figures     Generate enzyme-pair screening heatmap"
 	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
+	@echo "  prepare-plain-reference  Decompress yeast reference for input-format benchmark"
 	@echo "  summarize                Generate JSON/time summary tables"
 	@echo "  benchmark-tables         Build run-level and aggregate benchmark tables"
+	@echo "  input-format-table       Compare radigest gzipped vs plain FASTA benchmark rows"
 	@echo "  figures                  Generate benchmark figures"
 	@echo "  interval-smoke           Normalize radigest TSV intervals and compare interval set to itself"
 	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
 	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
+	@echo "  benchmark-matched-tools Run timed matched radigest/SimRAD tasks"
+	@echo "  benchmark-matched-tools-with-digital Run optional matched Digital_RADs timing"
+	@echo "  summarize-matched-tools Summarize matched tool benchmark outputs"
 	@echo "  all                      Run lightweight default workflow"
 	@echo "  dry-run                  Show planned lightweight workflow"
 	@echo "  dag                      Write workflow DAG for configured benchmark"
@@ -150,3 +155,139 @@ check-pair-screen:
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
 	           threads=1
+
+benchmark-matched-tools:
+	bash scripts/run_matched_tool_benchmarks.sh \
+	  --reference data/reference/yeast.fa.gz \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --enzymes EcoRI,MseI \
+	  --min 100 \
+	  --max 300 \
+	  --runs 5 \
+	  --threads $(THREADS) \
+	  --radigest "$(RADIGEST)" \
+	  --digital-rads external/Digital_RADs/Digital_RADs.py \
+	  --skip-digital-rads
+
+benchmark-matched-tools-with-digital:
+	bash scripts/run_matched_tool_benchmarks.sh \
+	  --reference data/reference/yeast.fa.gz \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --enzymes EcoRI,MseI \
+	  --min 100 \
+	  --max 300 \
+	  --runs 5 \
+	  --threads $(THREADS) \
+	  --radigest "$(RADIGEST)" \
+	  --digital-rads external/Digital_RADs/Digital_RADs.py
+
+summarize-matched-tools:
+	python3 scripts/summarize_matched_tool_benchmarks.py \
+	  --root results/raw/matched_tool_benchmarks \
+	  --time-dir benchmark/memory/matched_tools \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --out-runs results/tables/matched_tool_benchmark_runs.tsv \
+	  --out-summary results/tables/matched_tool_benchmark_summary.tsv
+
+.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table
+
+benchmark-simrad-warm:
+	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
+	/usr/bin/time -v \
+	  -o benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  Rscript scripts/run_simrad_warm_benchmark.R \
+	    --reference data/reference/yeast.fa.gz \
+	    --enzyme1 EcoRI \
+	    --enzyme2 MseI \
+	    --min 100 \
+	    --max 300 \
+	    --runs 5 \
+	    --enzymes-tsv config/enzymes.tsv \
+	    --out-runs results/tables/simrad_warm_runs.tsv \
+	    --out-summary results/tables/simrad_warm_summary.tsv \
+	    --version-log results/tables/simrad_warm_version.txt \
+	    > benchmark/logs/matched_tools/simrad_warm.stdout.log \
+	    2> benchmark/logs/matched_tools/simrad_warm.stderr.log
+	/usr/bin/time -v \
+	  -o benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  Rscript scripts/run_simrad_warm_benchmark.R \
+	    --reference data/reference/yeast.fa.gz \
+	    --enzyme1 EcoRI \
+	    --enzyme2 MseI \
+	    --min 100 \
+	    --max 300 \
+	    --runs 5 \
+	    --enzymes-tsv config/enzymes.tsv \
+	    --out-runs results/tables/simrad_reuse_reference_runs.tsv \
+	    --out-summary results/tables/simrad_reuse_reference_summary.tsv \
+	    --version-log results/tables/simrad_reuse_reference_version.txt \
+	    --reuse-reference \
+	    > benchmark/logs/matched_tools/simrad_reuse_reference.stdout.log \
+	    2> benchmark/logs/matched_tools/simrad_reuse_reference.stderr.log
+
+tool-timing-table:
+	python3 scripts/build_tool_timing_interpretation_table.py \
+	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
+	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
+	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
+	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --out results/tables/tool_timing_interpretation.tsv
+
+.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table
+
+benchmark-simrad-warm:
+	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
+	/usr/bin/time -v \
+	  -o benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  Rscript scripts/run_simrad_warm_benchmark.R \
+	    --reference data/reference/yeast.fa.gz \
+	    --enzyme1 EcoRI \
+	    --enzyme2 MseI \
+	    --min 100 \
+	    --max 300 \
+	    --runs 5 \
+	    --enzymes-tsv config/enzymes.tsv \
+	    --out-runs results/tables/simrad_warm_runs.tsv \
+	    --out-summary results/tables/simrad_warm_summary.tsv \
+	    --version-log results/tables/simrad_warm_version.txt \
+	    > benchmark/logs/matched_tools/simrad_warm.stdout.log \
+	    2> benchmark/logs/matched_tools/simrad_warm.stderr.log
+	/usr/bin/time -v \
+	  -o benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  Rscript scripts/run_simrad_warm_benchmark.R \
+	    --reference data/reference/yeast.fa.gz \
+	    --enzyme1 EcoRI \
+	    --enzyme2 MseI \
+	    --min 100 \
+	    --max 300 \
+	    --runs 5 \
+	    --enzymes-tsv config/enzymes.tsv \
+	    --out-runs results/tables/simrad_reuse_reference_runs.tsv \
+	    --out-summary results/tables/simrad_reuse_reference_summary.tsv \
+	    --version-log results/tables/simrad_reuse_reference_version.txt \
+	    --reuse-reference \
+	    > benchmark/logs/matched_tools/simrad_reuse_reference.stdout.log \
+	    2> benchmark/logs/matched_tools/simrad_reuse_reference.stderr.log
+
+tool-timing-table:
+	python3 scripts/build_tool_timing_interpretation_table.py \
+	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
+	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
+	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
+	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --out results/tables/tool_timing_interpretation.tsv
+
+prepare-plain-reference:
+	$(call smk,prepare_plain_reference_all)
+
+input-format-table:
+	$(call smk,input_format_table_all)

@@ -117,6 +117,13 @@ def bar_with_errors(
     lower_errors: list[float] = []
     upper_errors: list[float] = []
 
+    dataset_values = {
+        row.get("dataset", "")
+        for row in rows
+        if row.get("dataset", "")
+    }
+    include_dataset = len(dataset_values) > 1
+
     for row in rows:
         median, lower, upper = value_and_error(
             row=row,
@@ -130,9 +137,16 @@ def bar_with_errors(
         if median is None:
             continue
 
+        dataset = row.get("dataset", "")
         condition = row.get("condition", "")
         mode = row.get("output_mode", "")
-        label = f"{condition}\n{mode}" if condition else mode
+
+        if include_dataset:
+            label = f"{dataset}\n{condition}\n{mode}"
+        elif condition:
+            label = f"{condition}\n{mode}"
+        else:
+            label = mode
 
         labels.append(label)
         values.append(median)

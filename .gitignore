@@ -126,3 +126,9 @@ results/tables/ranked_pairs.tsv
 results/tables/pair_screen_*.tsv
 results/figures/pair_screening_heatmap.png
 manuscript_figures/pair_screening_heatmap.png
+
+# Generated matched-tool benchmark outputs.
+results/raw/matched_tool_benchmarks/*
+benchmark/memory/matched_tools/*
+benchmark/logs/matched_tools/*
+results/tables/matched_tool_benchmark_*.tsv

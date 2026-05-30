@@ -123,11 +123,27 @@ mkdir -p "$WORK_DIR"
 
 DIGITAL_RADS_ABS=$(readlink -f "$DIGITAL_RADS")
 
-if [[ "$REFERENCE" == *.gz ]]; then
-  gzip -cd "$REFERENCE" > "$WORK_DIR/input.fa"
-else
-  cp "$REFERENCE" "$WORK_DIR/input.fa"
-fi
+python3 - "$REFERENCE" "$WORK_DIR/input.fa" <<'PYREF'
+from __future__ import annotations
+
+import gzip
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dst = Path(sys.argv[2])
+
+open_in = gzip.open if str(src).endswith(".gz") else open
+
+with open_in(src, "rt", encoding="utf-8", errors="replace") as inp, dst.open(
+    "w", encoding="utf-8"
+) as out:
+    for raw in inp:
+        if raw.startswith(">"):
+            out.write(raw)
+        else:
+            out.write(raw.upper())
+PYREF
 
 pushd "$WORK_DIR" >/dev/null
 

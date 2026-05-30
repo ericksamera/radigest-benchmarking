@@ -881,3 +881,49 @@ rule pair_screen_heatmap:
           --manuscript-dir manuscript_figures \
           --log10
         """
+
+# --- plain reference preparation rules ---
+
+rule prepare_plain_reference_all:
+    input:
+        "data/reference/yeast.fa"
+
+
+rule prepare_plain_reference_yeast:
+    input:
+        "data/reference/yeast.fa.gz"
+    output:
+        "data/reference/yeast.fa"
+    log:
+        "benchmark/logs/prepare_plain_reference_yeast.log"
+    shell:
+        r"""
+        mkdir -p data/reference results/processed benchmark/logs
+        bash scripts/prepare_plain_reference.sh \
+          --source {input:q} \
+          --dest {output:q} \
+          --out results/processed/plain_reference_checksums.tsv \
+          > {log:q} 2>&1
+        """
+
+# --- input-format comparison rules ---
+
+rule input_format_table_all:
+    input:
+        "results/tables/radigest_input_format_comparison.tsv"
+
+
+rule build_input_format_table:
+    input:
+        "results/tables/radigest_benchmark_summary.tsv"
+    output:
+        "results/tables/radigest_input_format_comparison.tsv"
+    shell:
+        r"""
+        mkdir -p results/tables
+        python3 scripts/compare_input_format_benchmark.py \
+          --summary {input:q} \
+          --gzip-dataset yeast_small \
+          --plain-dataset yeast_small_plain \
+          --out {output:q}
+        """

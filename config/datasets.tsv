@@ -6,3 +6,4 @@ sockeye_empirical	Oncorhynchus nerka	TO_BE_FILLED	TO_BE_FILLED	data/empirical/so
 trichoderma_empirical	Trichoderma atroviride	TO_BE_FILLED	TO_BE_FILLED	data/empirical/trichoderma/	TO_BE_FILLED	empirical recovery modelling
 simrad_smoke_single	NA	designed_single_record	NA	data/synthetic/simrad_ecori_msei_double.fa	TO_BE_FILLED	SimRAD nonzero smoke comparison
 digital_rads_smoke_single	NA	designed_single_record	NA	data/synthetic/digital_rads_ecori_msei_double.fa	TO_BE_FILLED	Digital_RADs coordinate-normalization smoke comparison
+yeast_small_plain	Saccharomyces cerevisiae S288C	R64 / GCF_000146045.2	DERIVED_FROM:yeast_small	data/reference/yeast.fa	fe42735d3e6242f8c40b457a232940e34ef15eb4502717e54a34ed118face4c1	plain FASTA input-format benchmark derived from yeast_small
