@@ -1,7 +1,7 @@
 dataset	species	assembly	accession_or_url	local_path	sha256	purpose
 synthetic_validation	NA	designed	NA	data/synthetic/synthetic_validation.fa	TO_BE_FILLED	synthetic validation
 yeast_small	Saccharomyces cerevisiae S288C	R64 / GCF_000146045.2	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.fna.gz	data/reference/yeast.fa.gz	1ec41f951b35f2752d5065edeafe6972455609d4383fb36dae12519a60b27a73	small genome benchmark and comparator smoke benchmark
-moderate_genome	TO_BE_FILLED	TO_BE_FILLED	TO_BE_FILLED	data/reference/moderate.fa.gz	TO_BE_FILLED	moderate genome benchmark
+moderate_genome	Cannabis sativa	ASM2916894v1 / GCA_029168945.1 / Pink Pepper	GCA_029168945.1	data/reference/moderate.fa.gz	TO_BE_FILLED	moderate genome radigest scaling benchmark
 sockeye_empirical	Oncorhynchus nerka	TO_BE_FILLED	TO_BE_FILLED	data/empirical/sockeye/	TO_BE_FILLED	empirical recovery modelling
 trichoderma_empirical	Trichoderma atroviride	TO_BE_FILLED	TO_BE_FILLED	data/empirical/trichoderma/	TO_BE_FILLED	empirical recovery modelling
 simrad_smoke_single	NA	designed_single_record	NA	data/synthetic/simrad_ecori_msei_double.fa	TO_BE_FILLED	SimRAD nonzero smoke comparison
