@@ -26,8 +26,6 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen benchmark-matched-tools benchmark-matched-tools-with-digital summarize-matched-tools prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
-
 help:
 	@echo "Targets:"
 	@echo "  env                      Capture hardware/software metadata"
@@ -193,55 +191,6 @@ summarize-matched-tools:
 	  --condition B1 \
 	  --out-runs results/tables/matched_tool_benchmark_runs.tsv \
 	  --out-summary results/tables/matched_tool_benchmark_summary.tsv
-
-.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
-
-benchmark-simrad-warm:
-	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
-	/usr/bin/time -v \
-	  -o benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
-	    --reference data/reference/yeast.fa.gz \
-	    --enzyme1 EcoRI \
-	    --enzyme2 MseI \
-	    --min 100 \
-	    --max 300 \
-	    --runs 5 \
-	    --enzymes-tsv config/enzymes.tsv \
-	    --out-runs results/tables/simrad_warm_runs.tsv \
-	    --out-summary results/tables/simrad_warm_summary.tsv \
-	    --version-log results/tables/simrad_warm_version.txt \
-	    > benchmark/logs/matched_tools/simrad_warm.stdout.log \
-	    2> benchmark/logs/matched_tools/simrad_warm.stderr.log
-	/usr/bin/time -v \
-	  -o benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
-	    --reference data/reference/yeast.fa.gz \
-	    --enzyme1 EcoRI \
-	    --enzyme2 MseI \
-	    --min 100 \
-	    --max 300 \
-	    --runs 5 \
-	    --enzymes-tsv config/enzymes.tsv \
-	    --out-runs results/tables/simrad_reuse_reference_runs.tsv \
-	    --out-summary results/tables/simrad_reuse_reference_summary.tsv \
-	    --version-log results/tables/simrad_reuse_reference_version.txt \
-	    --reuse-reference \
-	    > benchmark/logs/matched_tools/simrad_reuse_reference.stdout.log \
-	    2> benchmark/logs/matched_tools/simrad_reuse_reference.stderr.log
-
-tool-timing-table:
-	python3 scripts/build_tool_timing_interpretation_table.py \
-	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
-	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
-	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
-	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --out results/tables/tool_timing_interpretation.tsv
-
-.PHONY: benchmark-simrad-warm tool-timing-table prepare-plain-reference input-format-table compare-ddradseqtools check-ddradseqtools compare-cut-tools
 
 benchmark-simrad-warm:
 	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools

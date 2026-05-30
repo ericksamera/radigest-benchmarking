@@ -1,7 +1,6 @@
-# Large reference and empirical data are excluded from Git.
+# Large reference and empirical data.
 data/reference/*
 data/empirical/*
-
 !data/reference/.gitkeep
 !data/empirical/.gitkeep
 
@@ -21,38 +20,46 @@ data/empirical/*
 *.bai
 *.crai
 
-# Allow small designed synthetic validation FASTA.
+# Allow committed small synthetic FASTA files.
 !data/synthetic/
 !data/synthetic/*.fa
 !data/synthetic/*.fasta
 !data/synthetic/*.fna
 
-# Benchmark and raw workflow outputs.
+# Generated workflow and benchmark outputs.
 results/raw/*
 results/processed/*
+results/tables/*
+results/figures/*
 benchmark/time/*
 benchmark/memory/*
 benchmark/logs/*
 
 !results/raw/.gitkeep
 !results/processed/.gitkeep
+!results/tables/.gitkeep
+!results/figures/.gitkeep
 !benchmark/time/.gitkeep
 !benchmark/memory/.gitkeep
 !benchmark/logs/.gitkeep
 
-# Curated manuscript-ready tables/figures may be tracked selectively.
-# Generated scratch files should remain ignored unless intentionally staged.
+# Generated manuscript exports.
+# Curated final artifacts can be added explicitly with git add -f.
+manuscript_figures/*
+manuscript_tables/*
+!manuscript_figures/.gitkeep
+!manuscript_tables/.gitkeep
 
-# Generated summary outputs.
-results/tables/*
-results/figures/*
+# External comparator checkouts.
+external/*
+!external/.gitkeep
 
-!results/tables/.gitkeep
-!results/figures/.gitkeep
-
-# Environments/cache.
+# Python/R/Snakemake/cache.
 .venv/
 __pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .Rhistory
 .RData
 .julia/
@@ -66,93 +73,6 @@ snakemake_cache/
 .vscode/
 .idea/
 
+# Generated codebase snapshots.
+codebase.json
 *codebase*
-
-# Generated comparator outputs.
-results/raw/comparators/*
-results/raw/comparisons/*
-results/processed/comparisons/*
-
-# Generated comparator outputs.
-results/raw/comparators/*
-results/raw/comparisons/*
-results/processed/comparisons/*
-
-# Generated comparator outputs.
-results/raw/comparators/*
-results/raw/comparisons/*
-results/processed/comparisons/*
-results/raw/manual_test/*
-results/processed/manual_test/*
-
-# External tool checkouts.
-external/*
-!external/.gitkeep
-
-# Generated Digital_RADs.py comparator outputs.
-results/raw/comparators/digital_rads/*
-results/raw/comparisons/radigest_tsv/*
-results/processed/intervals/digital_rads/*
-results/processed/intervals/radigest_for_digital/*
-results/processed/comparisons/digital_rads/*
-benchmark/logs/digital_rads__*
-benchmark/logs/digital_radigest__*
-
-# External tool checkouts.
-external/*
-!external/.gitkeep
-
-# Generated comparator outputs and scratch directories.
-results/raw/comparators/*
-results/raw/comparisons/*
-results/processed/comparisons/*
-results/processed/intervals/*
-results/raw/manual_test/*
-results/processed/manual_test/*
-benchmark/logs/*
-benchmark/memory/*
-benchmark/time/*
-
-# Generated manuscript export directories.
-# Final curated manuscript artifacts can be added explicitly with git add -f.
-manuscript_figures/*
-manuscript_tables/*
-!manuscript_figures/.gitkeep
-!manuscript_tables/.gitkeep
-
-# Generated pair-screening outputs.
-results/raw/pair_screen/*
-results/tables/ranked_pairs.tsv
-results/tables/pair_screen_*.tsv
-results/figures/pair_screening_heatmap.png
-manuscript_figures/pair_screening_heatmap.png
-
-# Generated matched-tool benchmark outputs.
-results/raw/matched_tool_benchmarks/*
-benchmark/memory/matched_tools/*
-benchmark/logs/matched_tools/*
-results/tables/matched_tool_benchmark_*.tsv
-
-# External comparator checkouts.
-external/*
-!external/.gitkeep
-
-# Generated screening-speed outputs.
-results/raw/screening_speed/*
-results/processed/screening_speed/*
-benchmark/memory/screening_speed/*
-benchmark/logs/screening_speed/*
-results/tables/screening_speed_*.tsv
-
-# Generated ddgRADer comparator outputs.
-results/raw/comparators/ddgrader/*
-results/processed/comparisons/ddgrader/*
-benchmark/memory/ddgrader_*.time
-benchmark/logs/ddgrader_*.log
-
-# Generated DDRADSEQTOOLS comparator outputs.
-results/raw/comparators/ddradseqtools/*
-results/processed/comparisons/ddradseqtools/*
-results/processed/ddradseqtools_probe.txt
-benchmark/memory/ddradseqtools_*.time
-benchmark/logs/ddradseqtools_*.log
