@@ -112,3 +112,10 @@ results/processed/manual_test/*
 benchmark/logs/*
 benchmark/memory/*
 benchmark/time/*
+
+# Generated manuscript export directories.
+# Final curated manuscript artifacts can be added explicitly with git add -f.
+manuscript_figures/*
+manuscript_tables/*
+!manuscript_figures/.gitkeep
+!manuscript_tables/.gitkeep
