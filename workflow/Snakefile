@@ -825,3 +825,59 @@ rule benchmark_figures:
           --out-dir results/figures \
           --manuscript-dir manuscript_figures
         """
+
+# --- pair-screening table and figure rules ---
+
+rule pair_screen_tables_all:
+    input:
+        "results/tables/pair_screen_top.tsv",
+        "results/tables/pair_screen_matrix.tsv",
+        "results/tables/pair_screen_summary.tsv"
+
+
+rule summarize_pair_screen:
+    input:
+        ranked="results/tables/ranked_pairs.tsv",
+        enzymes=config["pair_screen"]["enzymes"]
+    output:
+        top="results/tables/pair_screen_top.tsv",
+        matrix="results/tables/pair_screen_matrix.tsv",
+        summary="results/tables/pair_screen_summary.tsv"
+    params:
+        objective=config["pair_screen"]["objective"],
+        json_dir="results/raw/pair_screen/json",
+        top_n=20
+    shell:
+        r"""
+        mkdir -p results/tables
+        python3 scripts/summarize_pair_screen.py \
+          --ranked {input.ranked:q} \
+          --out-top {output.top:q} \
+          --out-matrix {output.matrix:q} \
+          --out-summary {output.summary:q} \
+          --objective {params.objective:q} \
+          --top-n {params.top_n} \
+          --candidate-enzymes {input.enzymes:q} \
+          --json-dir {params.json_dir:q}
+        """
+
+
+rule pair_screen_figures_all:
+    input:
+        "results/figures/pair_screening_heatmap.png"
+
+
+rule pair_screen_heatmap:
+    input:
+        "results/tables/pair_screen_matrix.tsv"
+    output:
+        "results/figures/pair_screening_heatmap.png"
+    shell:
+        r"""
+        mkdir -p results/figures manuscript_figures
+        python3 scripts/make_pair_screen_figures.py \
+          --matrix {input:q} \
+          --out {output:q} \
+          --manuscript-dir manuscript_figures \
+          --log10
+        """

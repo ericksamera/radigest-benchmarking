@@ -119,3 +119,10 @@ manuscript_figures/*
 manuscript_tables/*
 !manuscript_figures/.gitkeep
 !manuscript_tables/.gitkeep
+
+# Generated pair-screening outputs.
+results/raw/pair_screen/*
+results/tables/ranked_pairs.tsv
+results/tables/pair_screen_*.tsv
+results/figures/pair_screening_heatmap.png
+manuscript_figures/pair_screening_heatmap.png

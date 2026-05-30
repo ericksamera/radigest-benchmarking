@@ -26,7 +26,7 @@ SMK_CONFIG = --config \
 #   $(call smk,<target-or-options-and-target>)
 smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 
-.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads
+.PHONY: help env synthetic validate-radigest benchmark-radigest screen-pairs download-reference-data fasta-summary summarize benchmark-tables figures all dry-run dag check check-benchmark check-comparators clean interval-smoke compare-simrad compare-digital-rads pair-screen-tables pair-screen-figures check-pair-screen
 
 help:
 	@echo "Targets:"
@@ -35,6 +35,8 @@ help:
 	@echo "  validate-radigest        Run synthetic interval validation via Snakemake"
 	@echo "  benchmark-radigest       Run configured radigest output-mode benchmarks"
 	@echo "  screen-pairs             Run configured enzyme-pair screen"
+	@echo "  pair-screen-tables      Summarize ranked enzyme-pair screening table"
+	@echo "  pair-screen-figures     Generate enzyme-pair screening heatmap"
 	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
 	@echo "  summarize                Generate JSON/time summary tables"
@@ -48,6 +50,7 @@ help:
 	@echo "  dag                      Write workflow DAG for configured benchmark"
 	@echo "  check                    Syntax checks + default all dry-run only"
 	@echo "  check-benchmark          Dry-run benchmark/summary/table/figure targets"
+	@echo "  check-pair-screen       Dry-run pair-screening summary and figure targets"
 	@echo "  check-comparators        Dry-run optional comparator targets; requires reference paths to exist"
 	@echo "  clean                    Remove generated benchmark outputs"
 
@@ -133,3 +136,17 @@ check-comparators:
 clean:
 	rm -rf results/raw/* results/processed/* benchmark/time/* benchmark/memory/* benchmark/logs/*
 	touch results/raw/.gitkeep results/processed/.gitkeep benchmark/time/.gitkeep benchmark/memory/.gitkeep benchmark/logs/.gitkeep
+
+pair-screen-tables:
+	$(call smk,pair_screen_tables_all)
+
+pair-screen-figures:
+	$(call smk,pair_screen_figures_all)
+
+check-pair-screen:
+	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
+	  pair_screen_all pair_screen_tables_all pair_screen_figures_all \
+	  --config radigest="$(RADIGEST)" \
+	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	           threads=1
