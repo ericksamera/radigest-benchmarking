@@ -1,0 +1,17 @@
+dataset	analysis	rank	model	params	delta_aic	kl	obs_mean	pred_mean	obs_pairs	pred_weight_sum	source
+sockeye_ddrad	pooled	1	soft-window	size_edge_sd=55	0.000	0.129275	238.68	238.03	106247606	151340.372	results/tables/sockeye_ddrad.size_model_fit.tsv
+sockeye_ddrad	pooled	2	normal	size_mean=306,size_sd=120	3694772.553	0.146663	238.68	236.68	106247606	222047.638	results/tables/sockeye_ddrad.size_model_fit.tsv
+sockeye_ddrad	pooled	3	triangular	size_mean=260	3355550282.376	15.9205	238.68	277.90	106247606	64764.326	results/tables/sockeye_ddrad.size_model_fit.tsv
+sockeye_ddrad	pooled	4	hard	min=200,max=400	3378413588.412	16.0281	238.68	283.55	106247606	127385.000	results/tables/sockeye_ddrad.size_model_fit.tsv
+sockeye_ddrad	downsampled_100k_per_sample	1	soft-window	size_edge_sd=60	0.000	0.168536	248.56	232.47	7398944	155306.906	results/tables/sockeye_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+sockeye_ddrad	downsampled_100k_per_sample	2	normal	size_mean=331,size_sd=135	314833.190	0.189811	248.56	248.12	7398944	231177.592	results/tables/sockeye_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+sockeye_ddrad	downsampled_100k_per_sample	3	triangular	size_mean=265	238192140.315	16.2649	248.56	279.71	7398944	64125.121	results/tables/sockeye_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+sockeye_ddrad	downsampled_100k_per_sample	4	hard	min=200,max=400	239716924.790	16.3679	248.56	283.55	7398944	127385.000	results/tables/sockeye_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+trichoderma_ddrad	pooled	1	normal	size_mean=246,size_sd=100	0.000	0.127388	217.06	216.19	6964895	6603.671	results/tables/trichoderma_ddrad.size_model_fit.tsv
+trichoderma_ddrad	pooled	2	soft-window	size_edge_sd=80	3034728.755	0.345247	217.06	285.43	6964895	6064.520	results/tables/trichoderma_ddrad.size_model_fit.tsv
+trichoderma_ddrad	pooled	3	triangular	size_mean=205	213243931.529	15.4359	217.06	286.46	6964895	3228.532	results/tables/trichoderma_ddrad.size_model_fit.tsv
+trichoderma_ddrad	pooled	4	hard	min=200,max=500	215645366.838	15.6083	217.06	327.00	6964895	5672.000	results/tables/trichoderma_ddrad.size_model_fit.tsv
+trichoderma_ddrad	downsampled_100k_per_sample	1	normal	size_mean=251,size_sd=100	0.000	0.128226	219.91	220.81	2889282	6505.341	results/tables/trichoderma_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+trichoderma_ddrad	downsampled_100k_per_sample	2	soft-window	size_edge_sd=75	1186392.062	0.333536	219.91	287.98	2889282	6039.558	results/tables/trichoderma_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+trichoderma_ddrad	downsampled_100k_per_sample	3	triangular	size_mean=205	86397617.173	15.0796	219.91	286.46	2889282	3228.532	results/tables/trichoderma_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
+trichoderma_ddrad	downsampled_100k_per_sample	4	hard	min=200,max=500	87346867.440	15.2439	219.91	327.00	2889282	5672.000	results/tables/trichoderma_ddrad.size_model_fit.downsampled_100k_per_sample.tsv
