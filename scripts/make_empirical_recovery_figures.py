@@ -134,6 +134,7 @@ def plot_distribution(
     weighted: list[float],
     nominal_min: int,
     nominal_max: int,
+    label: str,
     out: Path,
     manuscript_dir: Path | None,
 ) -> None:
@@ -148,7 +149,7 @@ def plot_distribution(
 
     plt.xlabel("Insert or fragment length (bp)")
     plt.ylabel("Relative frequency / weight")
-    plt.title("Empirical recovery model for sockeye ddRAD")
+    plt.title(label)
     plt.legend()
 
     save_figure(out, manuscript_dir)
@@ -165,7 +166,7 @@ def plot_ratio(
     ratio_weighted_to_hard: list[float] = []
     ratio_obs_to_hard: list[float] = []
 
-    for obs, hrd, wgt in zip(observed, hard, weighted):
+    for obs, hrd, wgt in zip(observed, hard, weighted, strict=True):
         if hrd > 0:
             ratio_weighted_to_hard.append(wgt / hrd)
             ratio_obs_to_hard.append(obs / hrd)
@@ -194,6 +195,16 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--nominal-max", required=True, type=int)
     parser.add_argument("--max-length", type=int, default=1000)
     parser.add_argument("--bin-width", type=int, default=10)
+    parser.add_argument(
+        "--label",
+        default="Empirical recovery",
+        help="Dataset label used in figure titles.",
+    )
+    parser.add_argument(
+        "--prefix",
+        default="empirical_recovery",
+        help="Output filename prefix.",
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("results/figures"))
     parser.add_argument(
         "--manuscript-dir",
@@ -235,7 +246,8 @@ def main(argv: list[str]) -> int:
             weighted=weighted,
             nominal_min=args.nominal_min,
             nominal_max=args.nominal_max,
-            out=args.out_dir / "sockeye_empirical_recovery_distribution.png",
+            label=args.label,
+            out=args.out_dir / f"{args.prefix}_distribution.png",
             manuscript_dir=manuscript_dir,
         )
 
@@ -244,7 +256,7 @@ def main(argv: list[str]) -> int:
             observed=observed,
             hard=hard,
             weighted=weighted,
-            out=args.out_dir / "sockeye_empirical_recovery_ratio.png",
+            out=args.out_dir / f"{args.prefix}_ratio.png",
             manuscript_dir=manuscript_dir,
         )
 

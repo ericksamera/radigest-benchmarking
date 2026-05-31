@@ -13,7 +13,7 @@ RADIGEST=~/radigest/bin/radigest
 RADIGEST_SCREEN_PAIRS=~/radigest/bin/radigest-screen-pairs
 RADIGEST_RANK_PAIRS=~/radigest/bin/radigest-rank-pairs
 RADIGEST_FIT_SIZE_MODEL=~/radigest/bin/radigest-fit-size-model
-````
+```
 
 Or build from a local source checkout:
 
@@ -47,11 +47,11 @@ make compare-cut-tools RADIGEST=.local/bin/radigest THREADS=1
 
 Interpretation rules:
 
-* Digital_RADs.py is compared after motif-boundary normalization.
-* DDRADSEQTOOLS is compared only through `rsitesearch.py` and after coordinate
+- Digital_RADs.py is compared after motif-boundary normalization.
+- DDRADSEQTOOLS is compared only through `rsitesearch.py` and after coordinate
   and FASTA-defline normalization.
-* SimRAD is count-level only.
-* ddgRADer is binned screening/speed only.
+- SimRAD is count-level only.
+- ddgRADer is binned screening/speed only.
 
 ## 4. Runtime and memory benchmarks
 
@@ -88,10 +88,10 @@ make empirical-recovery-local \
 
 Outputs include:
 
-* `results/tables/sockeye_ddrad.empirical_recovery_summary.tsv`
-* `results/tables/trichoderma_ddrad.empirical_recovery_summary.tsv`
-* `results/tables/empirical_recovery_summary.tsv`
-* `results/tables/empirical_recovery_model_sensitivity.tsv`
+- `results/tables/sockeye_ddrad.empirical_recovery_summary.tsv`
+- `results/tables/trichoderma_ddrad.empirical_recovery_summary.tsv`
+- `results/tables/empirical_recovery_summary.tsv`
+- `results/tables/empirical_recovery_model_sensitivity.tsv`
 
 ## 6. Manuscript tables
 
@@ -106,10 +106,10 @@ outputs remain ignored by Git.
 
 Do not make the following part of default CI or `make all`:
 
-* empirical BAM/CRAM recovery workflows;
-* large reference genome downloads;
-* ddgRADer screening-speed comparisons;
-* full comparator installation;
-* large Cannabis pair-screening runs.
+- empirical BAM/CRAM recovery workflows;
+- large reference genome downloads;
+- ddgRADer screening-speed comparisons;
+- full comparator installation;
+- large Cannabis pair-screening runs.
 
 These are optional manuscript analyses and should be reproduced explicitly.

@@ -1,6 +1,6 @@
 # radigest benchmarking and comparison repository
 
-This repository contains reproducible validation, matched-task comparison, and benchmarking workflows for the radigest manuscript intended for BMC Bioinformatics.
+This repository contains reproducible validation, matched-task comparison, and benchmarking workflows for the associated radigest manuscript.
 
 The repository is designed to make transparent:
 

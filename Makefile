@@ -72,6 +72,8 @@ help:
 	@echo "  dry-run                  Show planned lightweight workflow"
 	@echo "  dag                      Write workflow DAG for configured benchmark"
 	@echo "  check                    Syntax checks + default all dry-run only"
+	@echo "  audit                    Check reproducibility repo state"
+	@echo "  audit-strict             Treat audit warnings as failures"
 	@echo "  check-benchmark          Dry-run benchmark/summary/table/figure targets"
 	@echo "  check-pair-screen       Dry-run pair-screening summary and figure targets"
 	@echo "  check-comparators        Dry-run optional comparator targets; requires reference paths to exist"
@@ -261,7 +263,7 @@ prepare-plain-reference:
 input-format-table:
 	$(call smk,input_format_table_all)
 
-.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables
+.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict
 
 tool-comparison-figures:
 	python3 scripts/make_tool_comparison_figures.py \
@@ -335,3 +337,9 @@ empirical-recovery-local: radigest-local
 
 manuscript-tables:
 	python3 scripts/make_manuscript_tables.py --out-dir manuscript_tables
+
+audit:
+	python3 scripts/audit_reproducibility.py
+
+audit-strict:
+	python3 scripts/audit_reproducibility.py --fail-on-warn

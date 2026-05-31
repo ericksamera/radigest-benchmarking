@@ -1,3 +1,3 @@
 dataset_id	species	reference_fasta	bam_glob	enzyme1	enzyme2	nominal_min	nominal_max	score_min	score_max	mapq	notes
-sockeye_ddrad	Oncorhynchus nerka	data/empirical/sockeye/reference.fa	data/empirical/sockeye/bam/*.bam	EcoRI	MseI	300	600	1	2000	20	TO_BE_FILLED: confirm exact nominal size-selection window and reference assembly
-trichoderma_ddrad	Trichoderma atroviride	data/empirical/trichoderma/reference.fa	data/empirical/trichoderma/bam/*.bam	SphI	MspI	300	600	1	2000	20	TO_BE_FILLED: confirm exact nominal size-selection window and reference assembly
+sockeye_ddrad	Oncorhynchus nerka	data/empirical/sockeye/reference.fa	data/empirical/sockeye/bam/*.bam	EcoRI	MseI	200	400	1	2000	20	Empirical recovery analysis; EcoRI+MseI; nominal window used in manuscript analysis is 200-400 bp. Confirm final reference assembly/accession before submission.
+trichoderma_ddrad	Trichoderma atroviride	data/empirical/trichoderma/reference.fa	data/empirical/trichoderma/bam/*.bam	SphI	MspI	200	500	1	2000	20	Empirical recovery analysis; SphI+MspI; nominal window used in manuscript analysis is 200-500 bp. Confirm final reference assembly/accession before submission.
