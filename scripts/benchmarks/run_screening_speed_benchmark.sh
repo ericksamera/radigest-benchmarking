@@ -85,6 +85,15 @@ if ! command -v "$RADIGEST_SCREEN_PAIRS" >/dev/null 2>&1 && [[ ! -x "$RADIGEST_S
   exit 2
 fi
 
+# Make the local radigest tool directory visible to radigest-screen-pairs.
+# This matters inside Snakemake-managed Conda environments, where PATH does not
+# automatically include .local/bin even when the executable is invoked by path.
+if [[ -x "$RADIGEST_SCREEN_PAIRS" ]]; then
+  RADIGEST_SCREEN_PAIRS="$(realpath "$RADIGEST_SCREEN_PAIRS")"
+  export PATH="$(dirname "$RADIGEST_SCREEN_PAIRS"):$PATH"
+fi
+
+
 if [[ ! -d "$DDGRADER_REPO" ]]; then
   echo "error: ddgRADer repo not found: $DDGRADER_REPO" >&2
   echo "Run: bash scripts/install_ddgrader.sh" >&2
