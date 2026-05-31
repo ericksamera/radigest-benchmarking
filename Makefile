@@ -139,7 +139,7 @@ dag:
 check:
 	bash -n scripts/capture_environment.sh
 	bash -n scripts/download_reference_data.sh
-	python3 -m py_compile scripts/*.py
+	python3 scripts/core/compile_python_tree.py scripts
 	@if compgen -G "scripts/*.R" > /dev/null; then \
 	  Rscript -e 'files <- list.files("scripts", pattern="[.]R$$", full.names=TRUE); invisible(lapply(files, parse))' ; \
 	fi

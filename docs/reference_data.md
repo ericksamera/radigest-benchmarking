@@ -9,19 +9,19 @@ the genomic FASTA and metadata reports.
 
 ## Public references
 
-| dataset | accession | local gzipped FASTA | local plain FASTA | purpose |
-|---|---|---|---|---|
-| yeast_small | GCF_000146045.2 | data/reference/yeast.fa.gz | data/reference/yeast.fa | small matched digest benchmark |
-| moderate_genome | GCA_029168945.1 | data/reference/moderate.fa.gz | data/reference/moderate.fa | Cannabis moderate-genome scaling and screening |
-| sockeye_reference | GCF_034236695.1 | data/empirical/sockeye/reference.fa.gz | data/empirical/sockeye/reference.fa | sockeye empirical recovery reference |
-| trichoderma_reference | GCF_020647795.1 | data/empirical/trichoderma/reference.fa.gz | data/empirical/trichoderma/reference.fa | Trichoderma empirical recovery reference |
+| dataset               | accession       | local gzipped FASTA                        | local plain FASTA                       | purpose                                        |
+| --------------------- | --------------- | ------------------------------------------ | --------------------------------------- | ---------------------------------------------- |
+| yeast_small           | GCF_000146045.2 | data/reference/yeast.fa.gz                 | data/reference/yeast.fa                 | small matched digest benchmark                 |
+| moderate_genome       | GCA_029168945.1 | data/reference/moderate.fa.gz              | data/reference/moderate.fa              | Cannabis moderate-genome scaling and screening |
+| sockeye_reference     | GCF_034236695.1 | data/empirical/sockeye/reference.fa.gz     | data/empirical/sockeye/reference.fa     | sockeye empirical recovery reference           |
+| trichoderma_reference | GCF_020647795.1 | data/empirical/trichoderma/reference.fa.gz | data/empirical/trichoderma/reference.fa | Trichoderma empirical recovery reference       |
 
 ## Install environment
 
 ```bash
 mamba env create -f envs/benchmark.yml
 mamba activate radigest-benchmarking
-````
+```
 
 The benchmark environment includes Go for building radigest and
 `ncbi-datasets-cli` for reference downloads.
