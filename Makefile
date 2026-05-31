@@ -10,8 +10,6 @@ RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
 RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
-SIMRAD_ENV ?= radigest-simrad
-SIMRAD_RSCRIPT ?= mamba run -n $(SIMRAD_ENV) Rscript
 
 
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
@@ -391,8 +389,4 @@ build-radigest:
 
 .PHONY: check-r
 check-r:
-	@if compgen -G "scripts/*.R" > /dev/null; then \
-	  $(SIMRAD_RSCRIPT) -e 'files <- list.files("scripts", pattern="[.]R$$", recursive=TRUE, full.names=TRUE); invisible(lapply(files, parse))'; \
-	else \
-	  echo "No R scripts found."; \
-	fi
+	@echo "R/SimRAD checks are Snakemake-managed; no named SimRAD env is required."

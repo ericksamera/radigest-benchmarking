@@ -86,3 +86,13 @@ codebase.json
 .phase2_backups/
 .phase2_1_backups/
 .snakemake_build_patch_backups
+
+# One-off patch-script backups.
+.snakemake_build_patch_backups/
+.phase1_backups/
+.phase2_backups/
+.phase2_1_backups/
+
+# Local radigest build and Snakemake env cache.
+.local/
+.snakemake/
