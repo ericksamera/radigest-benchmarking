@@ -360,13 +360,13 @@ audit-strict:
 .PHONY: reference-data-dry-run reference-data reference-checksums
 
 reference-data-dry-run:
-	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 -n all \
+	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 -n $(SNAKEMAKE_CONDA_ARGS) all \
 	  --config datasets_tsv="config/datasets.tsv" \
 	           dataset_ids="$(REFERENCE_DATASETS)" \
 	           prepare_plain=true
 
 reference-data:
-	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 --rerun-incomplete --printshellcmds all \
+	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 $(SNAKEMAKE_CONDA_ARGS) --rerun-incomplete --printshellcmds all \
 	  --config datasets_tsv="config/datasets.tsv" \
 	           dataset_ids="$(REFERENCE_DATASETS)" \
 	           prepare_plain=true

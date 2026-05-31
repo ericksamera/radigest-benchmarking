@@ -70,6 +70,8 @@ rule download_references:
     params:
         dataset_ids=",".join(DATASET_IDS),
         prepare_plain="--prepare-plain" if PREPARE_PLAIN else ""
+    conda:
+        "../envs/reference.yml"
     shell:
         r"""
         mkdir -p data/reference results/processed results/processed/fasta
@@ -87,6 +89,8 @@ rule summarize_reference_fasta:
         lambda wildcards: local_path(wildcards.dataset)
     output:
         "results/processed/fasta/{dataset}.summary.tsv"
+    conda:
+        "../envs/reference.yml"
     shell:
         r"""
         mkdir -p results/processed/fasta

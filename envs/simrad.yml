@@ -1,4 +1,3 @@
-name: radigest-simrad
 channels:
   - conda-forge
   - bioconda
