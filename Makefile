@@ -4,11 +4,13 @@ SHELL := /usr/bin/env bash
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 MATCHED_TOOLS_SNAKEFILE ?= workflow/matched_tools.smk
+DDGRADER_BINNED_SNAKEFILE ?= workflow/ddgrader_binned.smk
+SCREENING_SPEED_SNAKEFILE ?= workflow/screening_speed.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
 
-RADIGEST ?= radigest
-RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
-RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
+RADIGEST ?= $(LOCAL_RADIGEST)
+RADIGEST_SCREEN_PAIRS ?= $(LOCAL_RADIGEST_SCREEN_PAIRS)
+RADIGEST_RANK_PAIRS ?= $(LOCAL_RADIGEST_RANK_PAIRS)
 
 THREADS ?= 4
 
@@ -35,6 +37,10 @@ EMPIRICAL_DATASETS ?= sockeye_ddrad,trichoderma_ddrad
 RADIGEST_FIT_SIZE_MODEL ?= radigest-fit-size-model
 
 
+EFFECTIVE_RADIGEST = $(if $(strip $(RADIGEST)),$(RADIGEST),$(LOCAL_RADIGEST))
+EFFECTIVE_RADIGEST_SCREEN_PAIRS = $(if $(strip $(RADIGEST_SCREEN_PAIRS)),$(RADIGEST_SCREEN_PAIRS),$(LOCAL_RADIGEST_SCREEN_PAIRS))
+EFFECTIVE_RADIGEST_RANK_PAIRS = $(if $(strip $(RADIGEST_RANK_PAIRS)),$(RADIGEST_RANK_PAIRS),$(LOCAL_RADIGEST_RANK_PAIRS))
+
 SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) \
            --cores $(THREADS) \
            --rerun-incomplete \
@@ -42,9 +48,9 @@ SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKE
            $(SNAKEMAKE_CONDA_ARGS)
 
 SMK_CONFIG = --config \
-             radigest="$(RADIGEST)" \
-             radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-             radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+             radigest="$(EFFECTIVE_RADIGEST)" \
+             radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+             radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
              threads=$(THREADS)
 
 # Usage:
@@ -155,25 +161,25 @@ check:
 	python3 scripts/core/compile_python_tree.py scripts
 	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	  --config radigest="$(EFFECTIVE_RADIGEST)" \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	           threads=1
 
 check-benchmark:
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
 	  benchmark_radigest_all summaries_all benchmark_tables_all figures_all fasta_summary_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	  --config radigest="$(EFFECTIVE_RADIGEST)" \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	           threads=1
 
 check-comparators:
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
 	  compare_simrad_all compare_digital_rads_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	  --config radigest="$(EFFECTIVE_RADIGEST)" \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	           threads=1
 
 clean:
@@ -189,9 +195,9 @@ pair-screen-figures:
 check-pair-screen:
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
 	  pair_screen_all pair_screen_tables_all pair_screen_figures_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
+	  --config radigest="$(EFFECTIVE_RADIGEST)" \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	           radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	           threads=1
 
 benchmark-matched-tools:
@@ -295,9 +301,10 @@ check-ddradseqtools:
 compare-cut-tools:
 	$(call smk,compare_simrad_all compare_digital_rads_all compare_ddradseqtools_all)
 	$(MAKE) compare-ddgrader-binned \
-	  RADIGEST="$(RADIGEST)" \
+	  RADIGEST="$(EFFECTIVE_RADIGEST)" \
 	  YEAST_PLAIN_REF="$(YEAST_PLAIN_REF)"
 	$(MAKE) build-cut-equivalence-table
+
 
 radigest-local: build-radigest
 	@echo "RADIGEST=$(LOCAL_RADIGEST)"
@@ -326,7 +333,7 @@ empirical-recovery-dry-run:
 	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores 1 -n all \
 	  --config empirical_table="config/empirical_recovery.tsv" \
 	           datasets="$(EMPIRICAL_DATASETS)" \
-	           radigest="$(RADIGEST)" \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
 	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
 	           threads=1
 
@@ -334,7 +341,7 @@ empirical-recovery:
 	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores $(THREADS) --rerun-incomplete --printshellcmds all \
 	  --config empirical_table="config/empirical_recovery.tsv" \
 	           datasets="$(EMPIRICAL_DATASETS)" \
-	           radigest="$(RADIGEST)" \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
 	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
 	           threads=$(THREADS)
 
@@ -403,7 +410,7 @@ benchmark-matched-tools-with-simrad:
 	           max_size=300 \
 	           runs=5 \
 	           threads=$(THREADS) \
-	           radigest="$(RADIGEST)" \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
 	           digital_rads="external/Digital_RADs/Digital_RADs.py" \
 	           include_digital=false
 
@@ -462,7 +469,7 @@ benchmark-digest-tool-comparison:
 	           max_size=300 \
 	           runs=$(MATCHED_RUNS) \
 	           threads=1 \
-	           radigest="$(RADIGEST)" \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
 	           digital_rads="external/Digital_RADs/Digital_RADs.py" \
 	           include_digital=true
 	$(SNAKEMAKE) -s $(SIMRAD_WARM_SNAKEFILE) --cores 1 \
@@ -489,21 +496,22 @@ benchmark-digest-tool-comparison:
 benchmark-matched-tools-full: benchmark-digest-tool-comparison
 
 benchmark-screening-speed:
-	test -s "$(YEAST_PLAIN_REF)"
-	bash scripts/run_screening_speed_benchmark.sh \
-	  --reference "$(YEAST_PLAIN_REF)" \
-	  --dataset "$(YEAST_PLAIN_DATASET)" \
-	  --enzymes config/candidate_enzymes.txt \
-	  --min 300 \
-	  --max 600 \
-	  --score-min 1 \
-	  --score-max 2000 \
-	  --size-model hard \
-	  --runs $(SCREENING_RUNS) \
-	  --radigest-screen-pairs "$(RADIGEST_SCREEN_PAIRS)" \
-	  --ddgrader-repo external/ddRadSeqWebTool \
-	  --jobs 2 \
-	  --radigest-threads 1
+	$(SNAKEMAKE) -s $(SCREENING_SPEED_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="$(YEAST_PLAIN_REF)" \
+	           dataset="$(YEAST_PLAIN_DATASET)" \
+	           enzymes="config/candidate_enzymes.txt" \
+	           min_size=300 \
+	           max_size=600 \
+	           score_min=1 \
+	           score_max=2000 \
+	           size_model="hard" \
+	           runs=$(SCREENING_RUNS) \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	           ddgrader_repo="external/ddRadSeqWebTool" \
+	           jobs=2 \
+	           radigest_threads=1
 
 benchmark-tool-comparison: benchmark-digest-tool-comparison benchmark-screening-speed
 
@@ -649,46 +657,18 @@ reviewer-rerun-nonempirical:
 .PHONY: compare-ddgrader-binned build-cut-equivalence-table
 
 compare-ddgrader-binned:
-	test -s "$(YEAST_PLAIN_REF)"
-	test -d external/ddRadSeqWebTool
-	mkdir -p results/raw/comparators/ddgrader \
-	  results/processed/comparisons/ddgrader
-
-	$(RADIGEST) \
-	  -fasta "$(YEAST_PLAIN_REF)" \
-	  -enzymes EcoRI,MseI \
-	  -min 1 \
-	  -max 1010 \
-	  -threads 1 \
-	  -fragments-tsv results/raw/comparators/ddgrader/yeast_B1.radigest.fragments.tsv \
-	  -json results/raw/comparators/ddgrader/yeast_B1.radigest.json
-
-	python3 scripts/bin_radigest_fragments.py \
-	  --input results/raw/comparators/ddgrader/yeast_B1.radigest.fragments.tsv \
-	  --enzyme-pair EcoRI+MseI \
-	  --min 100 \
-	  --max 300 \
-	  --out-bins results/raw/comparators/ddgrader/yeast_B1.radigest.bins.tsv \
-	  --out-summary results/raw/comparators/ddgrader/yeast_B1.radigest.summary.tsv
-
-	python3 scripts/run_ddgrader_backend.py \
-	  --repo external/ddRadSeqWebTool \
-	  --reference "$(YEAST_PLAIN_REF)" \
-	  --enzyme-pairs "EcoRI,MseI" \
-	  --min 100 \
-	  --max 300 \
-	  --out-raw-csv results/raw/comparators/ddgrader/yeast_B1.raw.csv \
-	  --out-bins results/raw/comparators/ddgrader/yeast_B1.bins.tsv \
-	  --out-summary results/raw/comparators/ddgrader/yeast_B1.summary.tsv \
-	  --version-log results/raw/comparators/ddgrader/yeast_B1.version.txt
-
-	python3 scripts/compare_binned_fragment_tables.py \
-	  --first results/raw/comparators/ddgrader/yeast_B1.radigest.bins.tsv \
-	  --second results/raw/comparators/ddgrader/yeast_B1.bins.tsv \
-	  --first-name radigest_binned \
-	  --second-name ddgRADer_backend \
-	  --out-detail results/processed/comparisons/ddgrader/yeast_B1.binned.detail.tsv \
-	  --out-summary results/processed/comparisons/ddgrader/yeast_B1.binned.summary.tsv
+	$(SNAKEMAKE) -s $(DDGRADER_BINNED_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="$(YEAST_PLAIN_REF)" \
+	           dataset="$(YEAST_PLAIN_DATASET)" \
+	           condition="$(YEAST_CONDITION)" \
+	           enzymes="EcoRI,MseI" \
+	           enzyme_pair="EcoRI+MseI" \
+	           min_size=100 \
+	           max_size=300 \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
+	           ddgrader_repo="external/ddRadSeqWebTool"
 
 build-cut-equivalence-table:
 	python3 scripts/build_cut_equivalence_table.py
