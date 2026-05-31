@@ -2,6 +2,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - python>=3.11
   - r-base
   - r-seqinr
   - bioconductor-biostrings
@@ -9,3 +10,4 @@ dependencies:
   - bioconductor-zlibbioc
   - zlib
   - libzlib
+  - coreutils

@@ -8,11 +8,5 @@ if [[ -z "${CONDA_PREFIX:-}" ]]; then
   exit 2
 fi
 
-if [[ ! -x "${CONDA_PREFIX}/bin/Rscript" ]]; then
-  echo "error: Rscript not found in ${CONDA_PREFIX}/bin" >&2
-  exit 2
-fi
-
 "${CONDA_PREFIX}/bin/Rscript" scripts/install_simrad_archive.R
-
 "${CONDA_PREFIX}/bin/Rscript" -e 'library(SimRAD); packageVersion("SimRAD")'

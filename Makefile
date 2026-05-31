@@ -3,6 +3,7 @@ SHELL := /usr/bin/env bash
 
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
+MATCHED_TOOLS_SNAKEFILE ?= workflow/matched_tools.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
 
 RADIGEST ?= radigest
@@ -205,7 +206,8 @@ benchmark-matched-tools:
 	  --threads $(THREADS) \
 	  --radigest "$(RADIGEST)" \
 	  --digital-rads external/Digital_RADs/Digital_RADs.py \
-	  --skip-digital-rads
+	  --skip-digital-rads \
+	  --skip-simrad
 
 benchmark-matched-tools-with-digital:
 	bash scripts/run_matched_tool_benchmarks.sh \
@@ -218,7 +220,8 @@ benchmark-matched-tools-with-digital:
 	  --runs 5 \
 	  --threads $(THREADS) \
 	  --radigest "$(RADIGEST)" \
-	  --digital-rads external/Digital_RADs/Digital_RADs.py
+	  --digital-rads external/Digital_RADs/Digital_RADs.py \
+	  --skip-simrad
 
 summarize-matched-tools:
 	python3 scripts/summarize_matched_tool_benchmarks.py \
@@ -390,3 +393,36 @@ build-radigest:
 .PHONY: check-r
 check-r:
 	@echo "R/SimRAD checks are Snakemake-managed; no named SimRAD env is required."
+
+
+benchmark-matched-tools-with-simrad:
+	$(SNAKEMAKE) -s $(MATCHED_TOOLS_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="data/reference/yeast.fa.gz" \
+	           dataset="yeast_small" \
+	           condition="B1" \
+	           enzymes="EcoRI,MseI" \
+	           min_size=100 \
+	           max_size=300 \
+	           runs=5 \
+	           threads=$(THREADS) \
+	           radigest="$(RADIGEST)" \
+	           digital_rads="external/Digital_RADs/Digital_RADs.py" \
+	           include_digital=false
+
+benchmark-matched-tools-full:
+	$(SNAKEMAKE) -s $(MATCHED_TOOLS_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="data/reference/yeast.fa.gz" \
+	           dataset="yeast_small" \
+	           condition="B1" \
+	           enzymes="EcoRI,MseI" \
+	           min_size=100 \
+	           max_size=300 \
+	           runs=5 \
+	           threads=$(THREADS) \
+	           radigest="$(RADIGEST)" \
+	           digital_rads="external/Digital_RADs/Digital_RADs.py" \
+	           include_digital=true
