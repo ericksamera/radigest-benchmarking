@@ -266,17 +266,6 @@ benchmark-simrad-warm:
 	    > benchmark/logs/matched_tools/simrad_reuse_reference.stdout.log \
 	    2> benchmark/logs/matched_tools/simrad_reuse_reference.stderr.log
 
-tool-timing-table:
-	python3 scripts/build_tool_timing_interpretation_table.py \
-	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
-	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
-	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
-	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --out results/tables/tool_timing_interpretation.tsv
-
 prepare-plain-reference:
 	$(call smk,prepare_plain_reference_all)
 
@@ -426,3 +415,31 @@ benchmark-matched-tools-full:
 	           radigest="$(RADIGEST)" \
 	           digital_rads="external/Digital_RADs/Digital_RADs.py" \
 	           include_digital=true
+
+SIMRAD_WARM_SNAKEFILE ?= workflow/simrad_warm.smk
+
+.PHONY: benchmark-simrad-warm-managed tool-timing-table
+
+benchmark-simrad-warm-managed:
+	$(SNAKEMAKE) -s $(SIMRAD_WARM_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="data/reference/yeast.fa.gz" \
+	           dataset="yeast_small" \
+	           condition="B1" \
+	           enzyme1="EcoRI" \
+	           enzyme2="MseI" \
+	           min_size=100 \
+	           max_size=300 \
+	           runs=5
+
+tool-timing-table:
+	python3 scripts/build_tool_timing_interpretation_table.py \
+	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
+	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
+	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
+	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  --dataset yeast_small \
+	  --condition B1 \
+	  --out results/tables/tool_timing_interpretation.tsv
