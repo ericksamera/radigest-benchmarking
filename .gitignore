@@ -81,3 +81,7 @@ snakemake_cache/
 # Generated codebase snapshots.
 codebase.json
 *codebase*
+
+# Temporary backups written by polish scripts.
+.phase2_backups/
+.phase2_1_backups/

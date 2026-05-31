@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for scripts/core/phase1_polish_repository.py."""
+"""Compatibility wrapper for ``scripts/core/phase1_polish_repository.py``.
+
+The implementation was moved during repository layout cleanup. This wrapper is
+kept so existing Makefile, Snakemake, and documentation paths continue to work.
+"""
 
 from __future__ import annotations
 
 import runpy
-import sys
 from pathlib import Path
 
-target = Path(__file__).resolve().parent / "core" / "phase1_polish_repository.py"
-sys.argv[0] = str(target)
-runpy.run_path(str(target), run_name="__main__")
+TARGET = Path(__file__).resolve().parent / "core" / "phase1_polish_repository.py"
+
+
+if __name__ == "__main__":
+    runpy.run_path(str(TARGET), run_name="__main__")

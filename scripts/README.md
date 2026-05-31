@@ -8,15 +8,15 @@ continue to use the old paths while the codebase transitions to the new layout.
 
 ## Categories
 
-| Directory | Purpose |
-|---|---|
-| `scripts/core/` | Repository, environment, local radigest build, and audit helpers |
-| `scripts/reference/` | Reference download, preparation, checksum, and FASTA summary helpers |
-| `scripts/validation/` | Synthetic validation and interval normalization/comparison helpers |
+| Directory              | Purpose                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| `scripts/core/`        | Repository, environment, local radigest build, and audit helpers                   |
+| `scripts/reference/`   | Reference download, preparation, checksum, and FASTA summary helpers               |
+| `scripts/validation/`  | Synthetic validation and interval normalization/comparison helpers                 |
 | `scripts/comparators/` | External comparator installation, execution, normalization, and comparison helpers |
-| `scripts/benchmarks/` | Benchmark execution and summary helpers |
-| `scripts/empirical/` | Empirical TLEN extraction, recovery fitting, and input checks |
-| `scripts/manuscript/` | Manuscript table and figure generation |
+| `scripts/benchmarks/`  | Benchmark execution and summary helpers                                            |
+| `scripts/empirical/`   | Empirical TLEN extraction, recovery fitting, and input checks                      |
+| `scripts/manuscript/`  | Manuscript table and figure generation                                             |
 
 ## Compatibility wrappers
 

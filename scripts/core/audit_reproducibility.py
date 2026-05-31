@@ -54,6 +54,8 @@ MANUSCRIPT_TABLES = [
 def is_target_line(line: str) -> bool:
     if line.startswith((" ", "\t", "#")):
         return False
+    if line.startswith("."):
+        return False
     if ":=" in line or "?=" in line or "+=" in line:
         return False
     before = line.split(":", 1)[0]

@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for scripts/reference/summarize_fasta.py."""
+"""Compatibility wrapper for ``scripts/reference/summarize_fasta.py``.
+
+The implementation was moved during repository layout cleanup. This wrapper is
+kept so existing Makefile, Snakemake, and documentation paths continue to work.
+"""
 
 from __future__ import annotations
 
 import runpy
-import sys
 from pathlib import Path
 
-target = Path(__file__).resolve().parent / "reference" / "summarize_fasta.py"
-sys.argv[0] = str(target)
-runpy.run_path(str(target), run_name="__main__")
+TARGET = Path(__file__).resolve().parent / "reference" / "summarize_fasta.py"
+
+
+if __name__ == "__main__":
+    runpy.run_path(str(TARGET), run_name="__main__")
