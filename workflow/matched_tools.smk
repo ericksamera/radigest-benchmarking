@@ -19,8 +19,6 @@ INCLUDE_DIGITAL = str(config.get("include_digital", "false")).lower() in {
     "yes",
 }
 
-DIGITAL_ARG = "" if INCLUDE_DIGITAL else "--skip-digital-rads"
-
 
 rule all:
     input:
@@ -32,23 +30,42 @@ rule matched_tool_benchmarks:
     output:
         runs="results/tables/matched_tool_benchmark_runs.tsv",
         summary="results/tables/matched_tool_benchmark_summary.tsv"
+    params:
+        reference=REFERENCE,
+        dataset=DATASET,
+        condition=CONDITION,
+        enzymes=ENZYMES,
+        min_size=MIN_SIZE,
+        max_size=MAX_SIZE,
+        runs=RUNS,
+        threads=THREADS,
+        radigest=RADIGEST,
+        digital_rads=DIGITAL_RADS,
+        include_digital="true" if INCLUDE_DIGITAL else "false"
     conda:
         "../envs/simrad.yml"
     shell:
         r"""
+        set -euo pipefail
+
         mkdir -p results/tables results/raw/matched_tool_benchmarks \
           benchmark/memory/matched_tools benchmark/logs/matched_tools
 
+        digital_args=()
+        if [[ "{params.include_digital}" != "true" ]]; then
+          digital_args+=(--skip-digital-rads)
+        fi
+
         bash scripts/run_matched_tool_benchmarks.sh \
-          --reference {REFERENCE:q} \
-          --dataset {DATASET:q} \
-          --condition {CONDITION:q} \
-          --enzymes {ENZYMES:q} \
-          --min {MIN_SIZE:q} \
-          --max {MAX_SIZE:q} \
-          --runs {RUNS:q} \
-          --threads {THREADS:q} \
-          --radigest {RADIGEST:q} \
-          --digital-rads {DIGITAL_RADS:q} \
-          {DIGITAL_ARG}
+          --reference {params.reference:q} \
+          --dataset {params.dataset:q} \
+          --condition {params.condition:q} \
+          --enzymes {params.enzymes:q} \
+          --min {params.min_size:q} \
+          --max {params.max_size:q} \
+          --runs {params.runs:q} \
+          --threads {params.threads:q} \
+          --radigest {params.radigest:q} \
+          --digital-rads {params.digital_rads:q} \
+          "${{digital_args[@]}}"
         """
