@@ -574,6 +574,8 @@ rule simrad_run:
         enzyme2=simrad_enzyme2,
         min_size=lambda wc: condition_min(condition_row(wc.condition)),
         max_size=lambda wc: condition_max(condition_row(wc.condition))
+    conda:
+        "../envs/simrad.yml"
     shell:
         r"""
         mkdir -p results/raw/comparators/simrad benchmark/logs
