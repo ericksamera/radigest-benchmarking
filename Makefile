@@ -11,6 +11,18 @@ RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
 
+RADIGEST_REPO ?= ../radigest
+RADIGEST_REF ?= HEAD
+LOCAL_BIN ?= .local/bin
+LOCAL_RADIGEST ?= $(LOCAL_BIN)/radigest
+LOCAL_RADIGEST_SCREEN_PAIRS ?= $(LOCAL_BIN)/radigest-screen-pairs
+LOCAL_RADIGEST_RANK_PAIRS ?= $(LOCAL_BIN)/radigest-rank-pairs
+LOCAL_RADIGEST_FIT_SIZE_MODEL ?= $(LOCAL_BIN)/radigest-fit-size-model
+EMPIRICAL_SNAKEFILE ?= workflow/empirical_recovery.smk
+EMPIRICAL_DATASETS ?= sockeye_ddrad,trichoderma_ddrad
+RADIGEST_FIT_SIZE_MODEL ?= radigest-fit-size-model
+
+
 SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) \
            --cores $(THREADS) \
            --rerun-incomplete \
@@ -29,8 +41,14 @@ smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 help:
 	@echo "Targets:"
 	@echo "  env                      Capture hardware/software metadata"
+	@echo "  radigest-local           Build radigest from RADIGEST_REPO/RADIGEST_REF into .local/bin"
+	@echo "  check-local              Build local radigest and run lightweight checks"
+	@echo "  validate-local           Build local radigest and run synthetic validation"
 	@echo "  synthetic                Show synthetic FASTA status"
 	@echo "  validate-radigest        Run synthetic interval validation via Snakemake"
+	@echo "  empirical-recovery       Run optional empirical TLEN recovery workflow"
+	@echo "  empirical-recovery-local Build local radigest and run empirical recovery"
+	@echo "  manuscript-tables        Build curated manuscript tables"
 	@echo "  benchmark-radigest       Run configured radigest output-mode benchmarks"
 	@echo "  screen-pairs             Run configured enzyme-pair screen"
 	@echo "  pair-screen-tables      Summarize ranked enzyme-pair screening table"
@@ -243,7 +261,7 @@ prepare-plain-reference:
 input-format-table:
 	$(call smk,input_format_table_all)
 
-.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools
+.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables
 
 tool-comparison-figures:
 	python3 scripts/make_tool_comparison_figures.py \
@@ -265,3 +283,55 @@ check-ddradseqtools:
 
 compare-cut-tools:
 	$(call smk,compare_simrad_all compare_digital_rads_all compare_ddradseqtools_all)
+
+radigest-local:
+	scripts/ensure_radigest.sh \
+	  --source "$(RADIGEST_REPO)" \
+	  --ref "$(RADIGEST_REF)" \
+	  --out-dir .local/radigest \
+	  --bin-dir "$(LOCAL_BIN)"
+
+radigest-local-version: radigest-local
+	$(LOCAL_RADIGEST) -version || true
+	@echo "RADIGEST=$(LOCAL_RADIGEST)"
+	@echo "RADIGEST_SCREEN_PAIRS=$(LOCAL_RADIGEST_SCREEN_PAIRS)"
+	@echo "RADIGEST_RANK_PAIRS=$(LOCAL_RADIGEST_RANK_PAIRS)"
+
+check-local: radigest-local
+	$(MAKE) check \
+	  RADIGEST="$(LOCAL_RADIGEST)" \
+	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
+	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
+	  THREADS=1
+
+validate-local: radigest-local
+	$(MAKE) validate-radigest \
+	  RADIGEST="$(LOCAL_RADIGEST)" \
+	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
+	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
+	  THREADS=1
+
+empirical-recovery-dry-run:
+	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores 1 -n all \
+	  --config empirical_table="config/empirical_recovery.tsv" \
+	           datasets="$(EMPIRICAL_DATASETS)" \
+	           radigest="$(RADIGEST)" \
+	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
+	           threads=1
+
+empirical-recovery:
+	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores $(THREADS) --rerun-incomplete --printshellcmds all \
+	  --config empirical_table="config/empirical_recovery.tsv" \
+	           datasets="$(EMPIRICAL_DATASETS)" \
+	           radigest="$(RADIGEST)" \
+	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
+	           threads=$(THREADS)
+
+empirical-recovery-local: radigest-local
+	$(MAKE) empirical-recovery \
+	  RADIGEST="$(LOCAL_RADIGEST)" \
+	  RADIGEST_FIT_SIZE_MODEL="$(LOCAL_RADIGEST_FIT_SIZE_MODEL)" \
+	  THREADS="$(THREADS)"
+
+manuscript-tables:
+	python3 scripts/make_manuscript_tables.py --out-dir manuscript_tables

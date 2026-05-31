@@ -22,7 +22,6 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-
 FIELDS = [
     "dataset",
     "species",
@@ -351,8 +350,8 @@ def main(argv: list[str]) -> int:
         row["fit_table"] = str(args.fit_table)
         row["hard_json"] = str(args.hard_json)
         row["weighted_json"] = str(args.weighted_json)
-        row["sample_summary"] = "" if args.sample_summary is None else str(
-            args.sample_summary
+        row["sample_summary"] = (
+            "" if args.sample_summary is None else str(args.sample_summary)
         )
         row["notes"] = (
             "Empirical recovery model fit to pooled positive TLENs. "

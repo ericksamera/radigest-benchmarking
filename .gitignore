@@ -75,3 +75,5 @@ snakemake_cache/
 # Generated codebase snapshots.
 codebase.json
 *codebase*
+
+.local/
