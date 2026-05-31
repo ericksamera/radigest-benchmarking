@@ -537,8 +537,7 @@ def claim_audit(out_dir: Path) -> None:
             ),
             "manuscript_artifact": "table_08_empirical_recovery.tsv",
             "notes": (
-                "Second empirical dataset with a different taxon "
-                "and enzyme pair."
+                "Second empirical dataset with a different taxon " "and enzyme pair."
             ),
         },
         {
@@ -554,9 +553,7 @@ def claim_audit(out_dir: Path) -> None:
             "status": exists_text(
                 "results/tables/empirical_recovery_model_sensitivity.tsv"
             ),
-            "manuscript_artifact": (
-                "table_s04_empirical_recovery_sensitivity.tsv"
-            ),
+            "manuscript_artifact": ("table_s04_empirical_recovery_sensitivity.tsv"),
             "notes": (
                 "Robustness check against high-depth samples dominating "
                 "pooled TLENs."

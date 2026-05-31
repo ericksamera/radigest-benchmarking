@@ -123,6 +123,58 @@ def audit_to_be_filled(paths: list[Path]) -> list[str]:
     return out
 
 
+def audit_public_reference_config(path: Path) -> list[str]:
+    out: list[str] = []
+    if not path.exists():
+        return [f"FAIL\tdatasets_config_missing\t{path}"]
+
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        rows = list(reader)
+
+    dataset_col = "dataset_id"
+    if rows and "dataset_id" not in rows[0] and "dataset" in rows[0]:
+        dataset_col = "dataset"
+
+    expected = {
+        "yeast_small": ("GCF_000146045.2", "data/reference/yeast.fa.gz"),
+        "moderate_genome": ("GCA_029168945.1", "data/reference/moderate.fa.gz"),
+        "sockeye_reference": (
+            "GCF_034236695.1",
+            "data/empirical/sockeye/reference.fa.gz",
+        ),
+        "trichoderma_reference": (
+            "GCF_020647795.1",
+            "data/empirical/trichoderma/reference.fa.gz",
+        ),
+    }
+
+    seen = {row.get(dataset_col, ""): row for row in rows}
+
+    for dataset, (accession, local_path) in expected.items():
+        row = seen.get(dataset)
+        if row is None:
+            out.append(f"FAIL\tpublic_reference_missing\t{dataset}")
+            continue
+
+        observed_accession = row.get("accession_or_url", "")
+        observed_path = row.get("local_path", "")
+
+        accession_status = "PASS" if observed_accession == accession else "FAIL"
+        out.append(
+            f"{accession_status}\tpublic_reference_accession\t{dataset}\t"
+            f"observed={observed_accession}\texpected={accession}"
+        )
+
+        path_status = "PASS" if observed_path == local_path else "FAIL"
+        out.append(
+            f"{path_status}\tpublic_reference_local_path\t{dataset}\t"
+            f"observed={observed_path}\texpected={local_path}"
+        )
+
+    return out
+
+
 def audit_empirical_config(path: Path) -> list[str]:
     out: list[str] = []
     if not path.exists():
@@ -198,6 +250,7 @@ def main() -> int:
     checks: list[str] = []
     checks.extend(audit_required_files())
     checks.extend(audit_makefile(Path("Makefile")))
+    checks.extend(audit_public_reference_config(Path("config/datasets.tsv")))
     checks.extend(audit_empirical_config(Path("config/empirical_recovery.tsv")))
     checks.extend(
         audit_to_be_filled(

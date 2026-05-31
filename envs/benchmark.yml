@@ -3,16 +3,43 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  # Core workflow/runtime
   - python>=3.11
-  - r-base
+  - snakemake
+  - pip
+  - pyyaml
+  - pandas
+  - matplotlib
+
+  # radigest build support
+  - go
+  - git
+  - make
+
+  # Reference/data download and archive handling
+  - ncbi-datasets-cli
+  - unzip
+  - curl
+  - wget
+  - pigz
+  - rsync
+
+  # Bioinformatics utilities
+  - samtools
+  - bedtools
+  - seqkit
+
+  # Benchmarking and metadata
   - jq
   - hyperfine
   - time
-  - samtools
-  - seqkit
-  - snakemake
-  - pandas
-  - matplotlib
-  - pip
-  - pip:
-      - pyyaml
+  - coreutils
+
+  # R base for SimRAD wrappers; full SimRAD deps remain in envs/simrad.yml
+  - r-base
+
+  # QA / preflight-compatible tools
+  - shellcheck
+  - black
+  - ruff
+  - mypy

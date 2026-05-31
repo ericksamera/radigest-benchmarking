@@ -53,6 +53,12 @@ manuscript_figures/*
 !manuscript_tables/.gitkeep
 !manuscript_figures/.gitkeep
 
+# Local radigest source/build checkout.
+.local/
+
+# Temporary backups written by repository polish scripts.
+.phase1_backups/
+
 # Python/R/Snakemake/cache.
 .venv/
 __pycache__/
@@ -75,5 +81,3 @@ snakemake_cache/
 # Generated codebase snapshots.
 codebase.json
 *codebase*
-
-.local/

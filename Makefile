@@ -11,6 +11,10 @@ RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
 
+REFERENCE_SNAKEFILE ?= workflow/reference_data.smk
+REFERENCE_DATASETS ?= yeast_small,moderate_genome,sockeye_reference,trichoderma_reference
+
+
 RADIGEST_REPO ?= ../radigest
 RADIGEST_REF ?= HEAD
 LOCAL_BIN ?= .local/bin
@@ -54,6 +58,9 @@ help:
 	@echo "  pair-screen-tables      Summarize ranked enzyme-pair screening table"
 	@echo "  pair-screen-figures     Generate enzyme-pair screening heatmap"
 	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
+	@echo "  reference-data           Download public references via NCBI Datasets"
+	@echo "  reference-data-dry-run   Dry-run public reference download workflow"
+	@echo "  reference-checksums      Check/download configured public references directly"
 	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
 	@echo "  prepare-plain-reference  Decompress yeast reference for input-format benchmark"
 	@echo "  summarize                Generate JSON/time summary tables"
@@ -263,7 +270,7 @@ prepare-plain-reference:
 input-format-table:
 	$(call smk,input_format_table_all)
 
-.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict
+.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict reference-data reference-data-dry-run reference-checksums
 
 tool-comparison-figures:
 	python3 scripts/make_tool_comparison_figures.py \
@@ -343,3 +350,24 @@ audit:
 
 audit-strict:
 	python3 scripts/audit_reproducibility.py --fail-on-warn
+
+.PHONY: reference-data-dry-run reference-data reference-checksums
+
+reference-data-dry-run:
+	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 -n all \
+	  --config datasets_tsv="config/datasets.tsv" \
+	           dataset_ids="$(REFERENCE_DATASETS)" \
+	           prepare_plain=true
+
+reference-data:
+	$(SNAKEMAKE) -s $(REFERENCE_SNAKEFILE) --cores 1 --rerun-incomplete --printshellcmds all \
+	  --config datasets_tsv="config/datasets.tsv" \
+	           dataset_ids="$(REFERENCE_DATASETS)" \
+	           prepare_plain=true
+
+reference-checksums:
+	scripts/download_reference_data.sh \
+	  --datasets config/datasets.tsv \
+	  --dataset "$(REFERENCE_DATASETS)" \
+	  --prepare-plain \
+	  --out results/processed/reference_checksums.tsv

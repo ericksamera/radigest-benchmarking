@@ -12,7 +12,7 @@ cd radigest-comparison-bmc
 
 mamba env create -f envs/benchmark.yml
 mamba activate radigest-benchmarking
-````
+```
 
 Optional SimRAD environment:
 
@@ -299,4 +299,3 @@ git restore --staged \
   codebase.json \
   2>/dev/null || true
 ```
-
