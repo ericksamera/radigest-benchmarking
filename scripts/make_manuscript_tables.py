@@ -503,6 +503,65 @@ def claim_audit(out_dir: Path) -> None:
             "manuscript_artifact": "table_s01_environment.tsv",
             "notes": "Large FASTA files should not be tracked in Git.",
         },
+        {
+            "claim_id": "C11",
+            "manuscript_section": "Empirical recovery",
+            "claim": (
+                "Sockeye ddRAD insert-length recovery was modelled "
+                "from observed TLENs."
+            ),
+            "required_output": (
+                "results/tables/sockeye_ddrad.empirical_recovery_summary.tsv"
+            ),
+            "status": exists_text(
+                "results/tables/sockeye_ddrad.empirical_recovery_summary.tsv"
+            ),
+            "manuscript_artifact": "table_08_empirical_recovery.tsv",
+            "notes": (
+                "Use as empirical recovery model validation; "
+                "do not claim exact locus recovery."
+            ),
+        },
+        {
+            "claim_id": "C12",
+            "manuscript_section": "Empirical recovery",
+            "claim": (
+                "Trichoderma ddRAD insert-length recovery was modelled "
+                "from observed TLENs."
+            ),
+            "required_output": (
+                "results/tables/trichoderma_ddrad.empirical_recovery_summary.tsv"
+            ),
+            "status": exists_text(
+                "results/tables/trichoderma_ddrad.empirical_recovery_summary.tsv"
+            ),
+            "manuscript_artifact": "table_08_empirical_recovery.tsv",
+            "notes": (
+                "Second empirical dataset with a different taxon "
+                "and enzyme pair."
+            ),
+        },
+        {
+            "claim_id": "C13",
+            "manuscript_section": "Empirical recovery",
+            "claim": (
+                "Empirical recovery model choice was stable under "
+                "per-sample TLEN downsampling."
+            ),
+            "required_output": (
+                "results/tables/empirical_recovery_model_sensitivity.tsv"
+            ),
+            "status": exists_text(
+                "results/tables/empirical_recovery_model_sensitivity.tsv"
+            ),
+            "manuscript_artifact": (
+                "table_s04_empirical_recovery_sensitivity.tsv"
+            ),
+            "notes": (
+                "Robustness check against high-depth samples dominating "
+                "pooled TLENs."
+            ),
+        },
     ]
 
     write_tsv(
