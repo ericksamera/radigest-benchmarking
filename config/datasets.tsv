@@ -7,3 +7,4 @@ trichoderma_empirical	Trichoderma atroviride	TO_BE_FILLED	TO_BE_FILLED	data/empi
 simrad_smoke_single	NA	designed_single_record	NA	data/synthetic/simrad_ecori_msei_double.fa	TO_BE_FILLED	SimRAD nonzero smoke comparison
 digital_rads_smoke_single	NA	designed_single_record	NA	data/synthetic/digital_rads_ecori_msei_double.fa	TO_BE_FILLED	Digital_RADs coordinate-normalization smoke comparison
 yeast_small_plain	Saccharomyces cerevisiae S288C	R64 / GCF_000146045.2	DERIVED_FROM:yeast_small	data/reference/yeast.fa	fe42735d3e6242f8c40b457a232940e34ef15eb4502717e54a34ed118face4c1	plain FASTA input-format benchmark derived from yeast_small
+maize_b73_refgenv5	Zea mays	Zm-B73-REFERENCE-NAM-5.0 / B73 RefGen_v5	GCF_902167145.1	data/reference/maize_b73_refgenv5.fa.gz	TO_BE_FILLED	large agricultural genome radigest screening benchmark
