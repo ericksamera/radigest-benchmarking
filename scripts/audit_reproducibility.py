@@ -7,10 +7,8 @@ import argparse
 import csv
 import re
 import subprocess
-import sys
 from collections import Counter
 from pathlib import Path
-
 
 TARGET_RE = re.compile(r"^([A-Za-z0-9_.-]+)\s*:")
 

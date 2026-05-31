@@ -1,0 +1,7 @@
+tool_or_analysis	comparison_level	issue	resolution
+SimRAD	count-level only	SimRAD does not expose radigest-style genomic intervals.	Report aggregate fragment/locus counts and bases separately; do not use for coordinate-level claims.
+Digital_RADs.py	interval after normalization	Raw output is motif-bounded rather than cut-coordinate interval output.	Normalize Digital_RADs.py output to zero-based half-open cut-coordinate intervals using enzyme cut offsets.
+DDRADSEQTOOLS rsitesearch.py	interval after normalization	Raw FASTA records include restriction-site residual sequence, and locus identifiers preserve the full FASTA defline.	Normalize header coordinates using cut offsets and canonicalize sequence IDs to first FASTA defline token.
+ddgRADer backend	binned screening throughput	Backend reports binned fragment distributions, not native intervals.	Use as binned screening/speed comparator only; do not claim coordinate equivalence.
+radigest single-digest thread scaling	radigest-only performance	Single digest jobs on Cannabis did not show consistent speedup with additional per-digest threads.	Report measured wall time/RSS and invariant fragment totals; do not claim linear per-digest scaling.
+radigest-screen-pairs job scaling	radigest-only screening throughput	Job-level parallelism improves throughput, but returns diminish at high job counts.	Report observed speedup and parallel efficiency with Q1-Q3; do not claim linear scaling beyond supported results.
