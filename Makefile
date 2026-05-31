@@ -10,6 +10,15 @@ RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
 RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
 
 THREADS ?= 4
+SIMRAD_ENV ?= radigest-simrad
+SIMRAD_RSCRIPT ?= mamba run -n $(SIMRAD_ENV) Rscript
+
+
+SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
+SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
+RADIGEST_BUILD_SNAKEFILE ?= workflow/radigest_build.smk
+RADIGEST_BUILD_DIR ?= .local/radigest
+
 
 REFERENCE_SNAKEFILE ?= workflow/reference_data.smk
 REFERENCE_DATASETS ?= yeast_small,moderate_genome,sockeye_reference,trichoderma_reference
@@ -30,7 +39,8 @@ RADIGEST_FIT_SIZE_MODEL ?= radigest-fit-size-model
 SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) \
            --cores $(THREADS) \
            --rerun-incomplete \
-           --printshellcmds
+           --printshellcmds \
+           $(SNAKEMAKE_CONDA_ARGS)
 
 SMK_CONFIG = --config \
              radigest="$(RADIGEST)" \
@@ -45,6 +55,10 @@ smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
 help:
 	@echo "Targets:"
 	@echo "  env                      Capture hardware/software metadata"
+	@echo "  build-radigest           Build radigest via Snakemake rule env"
+	@echo "  radigest-local           Show local radigest executable paths"
+	@echo "  check-local              Build local radigest and run checks"
+	@echo "  validate-local           Build local radigest and validate synthetic data"
 	@echo "  radigest-local           Build radigest from RADIGEST_REPO/RADIGEST_REF into .local/bin"
 	@echo "  check-local              Build local radigest and run lightweight checks"
 	@echo "  validate-local           Build local radigest and run synthetic validation"
@@ -140,9 +154,7 @@ check:
 	bash -n scripts/capture_environment.sh
 	bash -n scripts/download_reference_data.sh
 	python3 scripts/core/compile_python_tree.py scripts
-	@if compgen -G "scripts/*.R" > /dev/null; then \
-	  Rscript -e 'files <- list.files("scripts", pattern="[.]R$$", full.names=TRUE); invisible(lapply(files, parse))' ; \
-	fi
+	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(RADIGEST)" \
 	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
@@ -270,7 +282,7 @@ prepare-plain-reference:
 input-format-table:
 	$(call smk,input_format_table_all)
 
-.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict reference-data reference-data-dry-run reference-checksums
+.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict reference-data reference-data-dry-run reference-checksums build-radigest
 
 tool-comparison-figures:
 	python3 scripts/make_tool_comparison_figures.py \
@@ -293,33 +305,29 @@ check-ddradseqtools:
 compare-cut-tools:
 	$(call smk,compare_simrad_all compare_digital_rads_all compare_ddradseqtools_all)
 
-radigest-local:
-	scripts/ensure_radigest.sh \
-	  --source "$(RADIGEST_REPO)" \
-	  --ref "$(RADIGEST_REF)" \
-	  --out-dir .local/radigest \
-	  --bin-dir "$(LOCAL_BIN)"
-
+radigest-local: build-radigest
+	@echo "RADIGEST=$(LOCAL_RADIGEST)"
+	@echo "RADIGEST_SCREEN_PAIRS=$(LOCAL_RADIGEST_SCREEN_PAIRS)"
+	@echo "RADIGEST_RANK_PAIRS=$(LOCAL_RADIGEST_RANK_PAIRS)"
+	@echo "RADIGEST_FIT_SIZE_MODEL=$(LOCAL_RADIGEST_FIT_SIZE_MODEL)"
 radigest-local-version: radigest-local
 	$(LOCAL_RADIGEST) -version || true
 	@echo "RADIGEST=$(LOCAL_RADIGEST)"
 	@echo "RADIGEST_SCREEN_PAIRS=$(LOCAL_RADIGEST_SCREEN_PAIRS)"
 	@echo "RADIGEST_RANK_PAIRS=$(LOCAL_RADIGEST_RANK_PAIRS)"
 
-check-local: radigest-local
+check-local: build-radigest
 	$(MAKE) check \
 	  RADIGEST="$(LOCAL_RADIGEST)" \
 	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
 	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
-
-validate-local: radigest-local
+validate-local: build-radigest
 	$(MAKE) validate-radigest \
 	  RADIGEST="$(LOCAL_RADIGEST)" \
 	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
 	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
-
 empirical-recovery-dry-run:
 	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores 1 -n all \
 	  --config empirical_table="config/empirical_recovery.tsv" \
@@ -371,3 +379,20 @@ reference-checksums:
 	  --dataset "$(REFERENCE_DATASETS)" \
 	  --prepare-plain \
 	  --out results/processed/reference_checksums.tsv
+
+build-radigest:
+	$(SNAKEMAKE) -s $(RADIGEST_BUILD_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds all \
+	  --config radigest_repo="$(RADIGEST_REPO)" \
+	           radigest_ref="$(RADIGEST_REF)" \
+	           local_bin="$(LOCAL_BIN)" \
+	           radigest_build_dir="$(RADIGEST_BUILD_DIR)"
+
+.PHONY: check-r
+check-r:
+	@if compgen -G "scripts/*.R" > /dev/null; then \
+	  $(SIMRAD_RSCRIPT) -e 'files <- list.files("scripts", pattern="[.]R$$", recursive=TRUE, full.names=TRUE); invisible(lapply(files, parse))'; \
+	else \
+	  echo "No R scripts found."; \
+	fi

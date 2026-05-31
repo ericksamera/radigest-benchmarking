@@ -85,3 +85,4 @@ codebase.json
 # Temporary backups written by polish scripts.
 .phase2_backups/
 .phase2_1_backups/
+.snakemake_build_patch_backups

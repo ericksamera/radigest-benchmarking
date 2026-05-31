@@ -1,2 +1,5 @@
-status	source	notes
-MISSING	results/tables/radigest_input_format_comparison.tsv	Input-format comparison table not found.
+condition	output_mode	gzip_dataset	plain_dataset	gzip_n_runs	plain_n_runs	gzip_median_elapsed_wall_seconds	plain_median_elapsed_wall_seconds	elapsed_delta_plain_minus_gzip	elapsed_ratio_gzip_over_plain	gzip_median_max_rss_kb	plain_median_max_rss_kb	rss_delta_plain_minus_gzip	gzip_median_fragments	plain_median_fragments	gzip_median_bases	plain_median_bases	fragments_match	bases_match	notes
+B1	fragments_fasta	yeast_small	yeast_small_plain	5	5	0.090000	0.020000	-0.070000	4.500000	16016.000000	20064.000000	4048.000000	3117.000000	3117.000000	558663.000000	558663.000000	true	true	
+B1	fragments_tsv	yeast_small	yeast_small_plain	5	5	0.080000	0.020000	-0.060000	4.000000	15664.000000	20768.000000	5104.000000	3117.000000	3117.000000	558663.000000	558663.000000	true	true	
+B1	gff	yeast_small	yeast_small_plain	5	5	0.080000	0.030000	-0.050000	2.666667	15312.000000	20944.000000	5632.000000	3117.000000	3117.000000	558663.000000	558663.000000	true	true	
+B1	json	yeast_small	yeast_small_plain	5	5	0.090000	0.020000	-0.070000	4.500000	14072.000000	19412.000000	5340.000000	3117.000000	3117.000000	558663.000000	558663.000000	true	true	

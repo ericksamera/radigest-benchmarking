@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+dependencies:
+  - go
+  - git
+  - make
+  - coreutils

@@ -113,3 +113,29 @@ Do not make the following part of default CI or `make all`:
 - large Cannabis pair-screening runs.
 
 These are optional manuscript analyses and should be reproduced explicitly.
+
+## Environment model
+
+This repository uses three environment layers:
+
+1. `radigest-benchmark-driver`: a named driver environment for Make,
+   Snakemake, Python helpers, linting, and audit scripts.
+2. Snakemake-managed rule environments under `.snakemake/conda`.
+3. `.local/bin/` executables built by the Snakemake rule
+   `workflow/radigest_build.smk` from a local or remote radigest source
+   checkout.
+
+Do not set Snakemake's `--conda-prefix` to `$CONDA_PREFIX` or to any path
+inside an active Conda environment. Rule environments should live under the
+workflow cache directory, normally `.snakemake/conda`.
+
+Recommended setup from a clean clone:
+
+```bash
+mamba env create -f envs/driver.yml
+conda config --set channel_priority strict
+mamba activate radigest-benchmark-driver
+
+make build-radigest RADIGEST_REPO=../radigest RADIGEST_REF=HEAD
+make check-local THREADS=1
+```
