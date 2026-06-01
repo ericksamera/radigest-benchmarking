@@ -14,7 +14,7 @@ import csv
 import re
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +45,17 @@ TSV_SPECS = {
         "max_size",
         "size_model",
         "notes",
+    ],
+    "config/synthetic_expected.tsv": [
+        "case_id",
+        "record_id",
+        "enzymes",
+        "min",
+        "max",
+        "options",
+        "expected_intervals_0based_halfopen",
+        "expected_gff_1based_closed",
+        "note",
     ],
     "config/comparators.tsv": [
         "tool_id",
@@ -82,6 +93,9 @@ SCENARIO_SPECS = {
 
 EXTRA_REQUIRED_FILES = [
     "config/candidate_enzymes.txt",
+    "data/synthetic/synthetic_validation.fa",
+    "scripts/validation/validate_synthetic.py",
+    "scripts/manuscript/make_synthetic_validation_table.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
@@ -101,7 +115,7 @@ DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
 TOP_LEVEL_RE = re.compile(r"^([A-Za-z0-9_\-]+):\s*(?:#.*)?$")
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     print(f"ERROR: {message}", file=sys.stderr)
     raise SystemExit(1)
 
@@ -120,12 +134,18 @@ def read_tsv(path: str, required_columns: list[str]) -> list[dict[str, str]]:
     file_path = rel(path)
     with file_path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
-        if reader.fieldnames is None:
+        fieldnames = reader.fieldnames
+        if fieldnames is None:
             fail(f"{path} has no header")
-        missing = [column for column in required_columns if column not in reader.fieldnames]
+        fieldname_set = set(fieldnames)
+        missing = [column for column in required_columns if column not in fieldname_set]
         if missing:
             fail(f"{path} missing columns: {', '.join(missing)}")
-        rows = [row for row in reader if any((value or "").strip() for value in row.values())]
+        rows = [
+            row
+            for row in reader
+            if any((value or "").strip() for value in row.values())
+        ]
     if not rows:
         fail(f"{path} has no data rows")
     primary_key = required_columns[0]
@@ -147,13 +167,36 @@ def read_tsv(path: str, required_columns: list[str]) -> list[dict[str, str]]:
     return rows
 
 
+def parse_expected_intervals(value: str) -> list[tuple[int, int]]:
+    value = value.strip()
+    if value in {"", "NONE"}:
+        return []
+    intervals: list[tuple[int, int]] = []
+    for part in value.split(";"):
+        part = part.strip()
+        if not (part.startswith("[") and part.endswith(")")):
+            fail(f"invalid expected interval syntax: {part!r}")
+        start, end = part[1:-1].split(",", 1)
+        try:
+            start_i = int(start)
+            end_i = int(end)
+        except ValueError:
+            fail(f"invalid expected interval coordinates: {part!r}")
+        if end_i < start_i:
+            fail(f"expected interval end before start: {part!r}")
+        intervals.append((start_i, end_i))
+    return intervals
+
+
 def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
     if path == "config/enzymes.tsv":
         for row in rows:
             enzyme = row["enzyme_id"]
             sequence = row["recognition_sequence"]
             if not DNA_RE.fullmatch(sequence):
-                fail(f"{path}: enzyme {enzyme} has non-IUPAC recognition sequence {sequence!r}")
+                fail(
+                    f"{path}: enzyme {enzyme} has non-IUPAC recognition sequence {sequence!r}"
+                )
             try:
                 cut_offset = int(row["cut_offset"])
             except ValueError:
@@ -167,16 +210,43 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                 min_size = int(row["min_size"])
                 max_size = int(row["max_size"])
             except ValueError:
-                fail(f"{path}: condition {condition} min_size/max_size must be integers")
+                fail(
+                    f"{path}: condition {condition} min_size/max_size must be integers"
+                )
             if min_size < 0 or max_size <= min_size:
                 fail(f"{path}: condition {condition} has invalid size interval")
+    if path == "config/synthetic_expected.tsv":
+        for row in rows:
+            case = row["case_id"]
+            try:
+                min_size = int(row["min"])
+                max_size = int(row["max"])
+            except ValueError:
+                fail(f"{path}: case {case} min/max must be integers")
+            if min_size < 0 or max_size < min_size:
+                fail(f"{path}: case {case} has invalid size interval")
+            parse_expected_intervals(row["expected_intervals_0based_halfopen"])
+            options = [
+                option.strip()
+                for option in row["options"].split(",")
+                if option.strip() and option.strip() != "none"
+            ]
+            allowed_options = {"include_ends", "allow_same"}
+            invalid_options = sorted(set(options) - allowed_options)
+            if invalid_options:
+                fail(
+                    f"{path}: case {case} has invalid options: "
+                    + ", ".join(invalid_options)
+                )
     if path == "config/artifacts.tsv":
         for row in rows:
             claim = row["claim_id"]
             for column in ["required_output", "manuscript_artifact"]:
                 value = row[column]
                 if value == "NA" or value.startswith("/"):
-                    fail(f"{path}: claim {claim} column {column} must be a relative repository path")
+                    fail(
+                        f"{path}: claim {claim} column {column} must be a relative repository path"
+                    )
 
 
 def read_top_level_yaml_keys(path: str) -> set[str]:

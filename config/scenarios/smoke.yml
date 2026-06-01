@@ -1,6 +1,8 @@
 synthetic_validation:
   enabled: true
-  cases: [tiny]
+  fasta: data/synthetic/synthetic_validation.fa
+  expected: config/synthetic_expected.tsv
+  cases: all
   runs: 1
 
 manifest_check:

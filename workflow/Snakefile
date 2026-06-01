@@ -16,6 +16,7 @@ MANIFESTS = [
     "config/comparators.tsv",
     "config/artifacts.tsv",
     "config/candidate_enzymes.txt",
+    "config/synthetic_expected.tsv",
     "config/scenarios/smoke.yml",
     "config/scenarios/reviewer_nonempirical.yml",
     "config/scenarios/reviewer_empirical.yml",
@@ -39,6 +40,7 @@ SCAFFOLD_PLACEHOLDERS = [
     "benchmark/logs/.gitkeep",
     "benchmark/memory/.gitkeep",
     "data/reference/.gitkeep",
+    "data/synthetic/synthetic_validation.fa",
 ]
 
 rule all:
@@ -55,7 +57,7 @@ rule smoke_all:
     input:
         MANIFESTS,
         "config/scenarios/smoke.yml",
-        "results/validation/.gitkeep"
+        SYNTHETIC_VALIDATION_OUTPUTS
 
 rule references_all:
     input:
@@ -68,7 +70,7 @@ rule reviewer_nonempirical_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_nonempirical.yml",
-        "results/validation/.gitkeep",
+        SYNTHETIC_VALIDATION_OUTPUTS,
         "results/comparators/.gitkeep",
         "results/performance/.gitkeep"
 
@@ -82,7 +84,7 @@ rule reviewer_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_all.yml",
-        "results/validation/.gitkeep",
+        SYNTHETIC_VALIDATION_OUTPUTS,
         "results/comparators/.gitkeep",
         "results/performance/.gitkeep",
         "results/empirical/.gitkeep"
@@ -90,7 +92,7 @@ rule reviewer_all:
 rule manuscript_all:
     input:
         MANIFESTS,
-        "results/manuscript/tables/.gitkeep",
+        SYNTHETIC_VALIDATION_TABLE,
         "results/manuscript/figures/.gitkeep"
 
 rule audit_all:

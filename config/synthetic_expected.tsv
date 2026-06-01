@@ -1,0 +1,15 @@
+case_id	record_id	enzymes	min	max	options	expected_intervals_0based_halfopen	expected_gff_1based_closed	note
+A1_no_cut_default	no_cut	EcoRI	1	100	none	NONE	NONE	No internal fragment when no cut exists and terminal fragments are excluded.
+A2_no_cut_terminal	no_cut	EcoRI	1	100	include_ends	[0,8)	1-8	No-cut contig emitted only when terminal fragments are included.
+A3_one_cut_default	one_cut	EcoRI	1	100	none	NONE	NONE	One cut does not define an internal single-digest fragment.
+A4_one_cut_terminal	one_cut	EcoRI	1	100	include_ends	[0,4);[4,12)	1-4;5-12	Terminal intervals around one EcoRI cut.
+A5_two_cuts_single	two_cuts_mlu	MluCI	1	100	none	[0,8)	1-8	Single digest uses consecutive MluCI cut coordinates.
+A6_inclusive_bounds	two_cuts_mlu	MluCI	8	8	none	[0,8)	1-8	Minimum and maximum size bounds are inclusive.
+A7_exclusive_bounds	two_cuts_mlu	MluCI	9	9	none	NONE	NONE	Fragment of length 8 is rejected outside an exact 9 bp window.
+A8_double_ab_ba	ecori_msei_double	EcoRI,MseI	1	100	none	[5,11);[11,16)	6-11;12-16	Default double digest keeps AB and BA adjacencies.
+A9_double_terminal	ecori_msei_double	EcoRI,MseI	1	100	include_ends	[0,5);[5,11);[11,16);[16,21)	1-5;6-11;12-16;17-21	Double digest with terminal fragments included.
+A10_same_suppressed	same_enzyme_ecori	EcoRI,NcoI	1	100	none	NONE	NONE	AA adjacency is suppressed by default when the second enzyme is absent.
+A11_same_allowed	same_enzyme_ecori	EcoRI,NcoI	1	100	allow_same	[5,15)	6-15	AA adjacency is retained with allow_same.
+A12_coincident_zero_length	coincident_dpnii_mboi	DpnII,MboI	0	100	none	[3,3);[10,10)	GFF_NA	Coincident cuts emit zero-length intervals only when the minimum includes zero; do not claim positive GFF3 validation from this case.
+A13_apeki_iupac	apeki_iupac	ApeKI	1	100	none	[3,10)	4-10	Degenerate W motif matches A/T at the enzyme position.
+A14_hinfi_reference_N	hinfi_reference_N	HinfI	1	100	none	[1,17)	2-17	Enzyme motif N matches unambiguous bases; reference N does not match.
