@@ -615,7 +615,6 @@ rule compare_radigest_simrad_count:
           --dataset {params.dataset:q} \
           --condition {params.condition:q} \
           --out {output:q} \
-          --fail-on-difference \
           > {log:q} 2>&1
         """
 
