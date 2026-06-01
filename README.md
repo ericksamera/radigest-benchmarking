@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 3 adds public reference acquisition. The smoke target still exercises synthetic validation, while `make references` now downloads and prepares the public `small_yeast_s288c` and `moderate_cannabis_pink_pepper` FASTA files declared in `config/references.tsv`.
+Stage 3 adds public reference acquisition. The smoke target still exercises synthetic validation, while `make references` now downloads and prepares the public `small_yeast_s288c` and `moderate_cannabis_pink-pepper` FASTA files declared in `config/references.tsv`.
 
 ```bash
 make check
@@ -30,8 +30,8 @@ Expected reference outputs:
 ```text
 data/reference/small_yeast_s288c.fa.gz
 data/reference/small_yeast_s288c.fa
-data/reference/moderate_cannabis_pink_pepper.fa.gz
-data/reference/moderate_cannabis_pink_pepper.fa
+data/reference/moderate_cannabis_pink-pepper.fa.gz
+data/reference/moderate_cannabis_pink-pepper.fa
 results/references/reference_checksums.tsv
 ```
 

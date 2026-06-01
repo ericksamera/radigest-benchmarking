@@ -1,8 +1,8 @@
 references:
   small_yeast_s288c_plain: data/reference/small_yeast_s288c.fa
   small_yeast_s288c_gzip: data/reference/small_yeast_s288c.fa.gz
-  moderate_cannabis_pink_pepper_plain: data/reference/moderate_cannabis_pink_pepper.fa
-  moderate_cannabis_pink_pepper_gzip: data/reference/moderate_cannabis_pink_pepper.fa.gz
+  moderate_cannabis_pink-pepper_plain: data/reference/moderate_cannabis_pink-pepper.fa
+  moderate_cannabis_pink-pepper_gzip: data/reference/moderate_cannabis_pink-pepper.fa.gz
 
 matched_digest:
   dataset: small_yeast_s288c_plain
@@ -28,16 +28,16 @@ screening_speed:
   radigest_threads: 1
 
 thread_scaling:
-  dataset: moderate_cannabis_pink_pepper_plain
-  reference: data/reference/moderate_cannabis_pink_pepper.fa
+  dataset: moderate_cannabis_pink-pepper_plain
+  reference: data/reference/moderate_cannabis_pink-pepper.fa
   conditions: [B1, B2]
   modes: [json, fragments_tsv]
   threads: [1, 2, 4, 8]
   runs: 7
 
 pair_screen_scaling:
-  dataset: moderate_cannabis_pink_pepper_plain
-  reference: data/reference/moderate_cannabis_pink_pepper.fa
+  dataset: moderate_cannabis_pink-pepper_plain
+  reference: data/reference/moderate_cannabis_pink-pepper.fa
   candidate_enzymes: config/candidate_enzymes.txt
   jobs: [1, 2, 4, 8]
   runs: 3

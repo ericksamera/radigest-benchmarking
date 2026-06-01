@@ -22,8 +22,8 @@ Stage 3 reference outputs are:
 ```text
 data/reference/small_yeast_s288c.fa.gz
 data/reference/small_yeast_s288c.fa
-data/reference/moderate_cannabis_pink_pepper.fa.gz
-data/reference/moderate_cannabis_pink_pepper.fa
+data/reference/moderate_cannabis_pink-pepper.fa.gz
+data/reference/moderate_cannabis_pink-pepper.fa
 results/references/reference_checksums.tsv
 benchmark/logs/references/*.log
 results/references/metadata/*

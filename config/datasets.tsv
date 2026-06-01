@@ -2,6 +2,6 @@ dataset_id	display_name	reference_path	format	scope	required_for_smoke	notes
 synthetic_tiny	Synthetic tiny validation	data/synthetic/synthetic_validation.fa	fasta	validation	true	Tracked synthetic FASTA for Stage 2 validation.
 small_yeast_s288c_plain	Saccharomyces cerevisiae S288C R64 plain FASTA	data/reference/small_yeast_s288c.fa	fasta	reviewer_nonempirical	false	Small public yeast reference prepared in Stage 3.
 small_yeast_s288c_gzip	Saccharomyces cerevisiae S288C R64 gzip FASTA	data/reference/small_yeast_s288c.fa.gz	fasta_gzip	reviewer_nonempirical	false	Small public yeast reference prepared in Stage 3.
-moderate_cannabis_pink_pepper_plain	Cannabis sativa Pink Pepper ASM2916894v1 plain FASTA	data/reference/moderate_cannabis_pink_pepper.fa	fasta	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
-moderate_cannabis_pink_pepper_gzip	Cannabis sativa Pink Pepper ASM2916894v1 gzip FASTA	data/reference/moderate_cannabis_pink_pepper.fa.gz	fasta_gzip	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
+moderate_cannabis_pink-pepper_plain	Cannabis sativa Pink Pepper ASM2916894v1 plain FASTA	data/reference/moderate_cannabis_pink-pepper.fa	fasta	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
+moderate_cannabis_pink-pepper_gzip	Cannabis sativa Pink Pepper ASM2916894v1 gzip FASTA	data/reference/moderate_cannabis_pink-pepper.fa.gz	fasta_gzip	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
 sockeye_ddrad	Sockeye empirical ddRAD	NA	empirical	empirical	false	Optional until public empirical inputs are configured.
