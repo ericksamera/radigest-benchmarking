@@ -89,14 +89,18 @@ final manuscript artifacts.
 
 `make manuscript-tables` is a collector. It reads existing `results/` files and
 writes curated `manuscript_tables/` files. It does not rerun every upstream
-analysis.
+analysis. Before export, it checks `config/artifacts.tsv` in warning mode so
+missing upstream claim support is visible in `results/processed/`.
 
 For final release, run all intended analyses first, then run:
 
 ```bash
-make manuscript-tables
+make check-artifacts
+make manuscript-tables-strict
 make audit
 ```
 
 Only stage manuscript tables after confirming that required claim rows are
 `present`, not `MISSING`.
+
+See `docs/artifact_contracts.md` for the manifest schema and strict-check workflow.

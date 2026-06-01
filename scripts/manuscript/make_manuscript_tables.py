@@ -58,6 +58,60 @@ def first_existing(paths: list[str]) -> str:
     return ""
 
 
+def split_manifest_paths(value: str) -> list[str]:
+    return [part.strip() for part in value.split(";") if part.strip()]
+
+
+def artifact_status(required_input: str) -> str:
+    paths = split_manifest_paths(required_input)
+    if not paths:
+        return "present"
+    return "present" if all(Path(path).exists() for path in paths) else MISSING
+
+
+def claim_audit_from_artifacts(manifest: Path, out_dir: Path) -> bool:
+    rows = read_tsv(manifest)
+    if not rows:
+        return False
+
+    claims: list[dict[str, str]] = []
+    for row in rows:
+        claim_id = row.get("claim_id", "")
+        if not claim_id:
+            continue
+
+        required_output = row.get("required_input", "")
+        claims.append(
+            {
+                "claim_id": claim_id,
+                "manuscript_section": row.get("manuscript_section", ""),
+                "claim": row.get("claim", ""),
+                "required_output": required_output,
+                "status": artifact_status(required_output),
+                "manuscript_artifact": row.get("manuscript_artifact", ""),
+                "notes": row.get("notes", ""),
+            }
+        )
+
+    if not claims:
+        return False
+
+    write_tsv(
+        out_dir / "claim_audit.tsv",
+        claims,
+        [
+            "claim_id",
+            "manuscript_section",
+            "claim",
+            "required_output",
+            "status",
+            "manuscript_artifact",
+            "notes",
+        ],
+    )
+    return True
+
+
 def table_interval_comparisons(out_dir: Path) -> None:
     rows: list[dict[str, str]] = []
 
@@ -391,6 +445,10 @@ def table_environment_data(out_dir: Path) -> None:
 
 
 def claim_audit(out_dir: Path) -> None:
+    manifest = Path("config/artifacts.tsv")
+    if claim_audit_from_artifacts(manifest, out_dir):
+        return
+
     claims = [
         {
             "claim_id": "C01",

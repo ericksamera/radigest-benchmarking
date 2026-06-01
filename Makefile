@@ -9,6 +9,7 @@ SCREENING_SPEED_SNAKEFILE ?= workflow/screening_speed.smk
 SCALING_SNAKEFILE ?= workflow/scaling.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
 BENCHMARK_CATEGORIES ?= config/benchmark_categories.tsv
+ARTIFACT_CONTRACTS ?= config/artifacts.tsv
 
 RADIGEST ?= $(LOCAL_RADIGEST)
 RADIGEST_SCREEN_PAIRS ?= $(LOCAL_RADIGEST_SCREEN_PAIRS)
@@ -74,6 +75,10 @@ help:
 	@echo "  empirical-recovery       Run optional empirical TLEN recovery workflow"
 	@echo "  empirical-recovery-local Build local radigest and run empirical recovery"
 	@echo "  manuscript-tables        Build curated manuscript tables"
+	@echo "  manuscript-tables-strict Build curated manuscript tables with strict artifact checks"
+	@echo "  artifact-contracts       Show manuscript artifact contracts"
+	@echo "  check-artifacts          Validate manuscript artifact contract manifest"
+	@echo "  check-manuscript-inputs  Validate upstream inputs for manuscript-table export"
 	@echo "  benchmark-categories     Show claim-oriented benchmark categories"
 	@echo "  check-benchmark-categories Validate benchmark category manifest"
 	@echo "  benchmark-validation     Run lightweight validation category"
@@ -177,6 +182,7 @@ check:
 	  --categories "$(BENCHMARK_CATEGORIES)" \
 	  --makefile Makefile \
 	  --out results/processed/benchmark_category_qc.tsv
+	python3 scripts/core/check_artifacts.py --manifest "$(ARTIFACT_CONTRACTS)" --out results/processed/artifact_contracts.tsv
 	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(EFFECTIVE_RADIGEST)" \
@@ -228,6 +234,20 @@ check-benchmark-categories:
 	  --categories "$(BENCHMARK_CATEGORIES)" \
 	  --makefile Makefile \
 	  --out results/processed/benchmark_category_qc.tsv
+
+artifact-contracts:
+	@column -t -s $$'\t' "$(ARTIFACT_CONTRACTS)" 2>/dev/null || cat "$(ARTIFACT_CONTRACTS)"
+
+check-artifacts:
+	python3 scripts/core/check_artifacts.py \
+	  --manifest "$(ARTIFACT_CONTRACTS)" \
+	  --out results/processed/artifact_contracts.tsv \
+	  --check-generated
+
+check-manuscript-inputs:
+	python3 scripts/core/check_artifacts.py \
+	  --manifest "$(ARTIFACT_CONTRACTS)" \
+	  --out results/processed/manuscript_input_contracts.tsv
 
 benchmark-matched-tools:
 	bash scripts/benchmarks/run_matched_tool_benchmarks.sh \
@@ -380,11 +400,28 @@ empirical-recovery-local: radigest-local
 	  RADIGEST_FIT_SIZE_MODEL="$(LOCAL_RADIGEST_FIT_SIZE_MODEL)" \
 	  THREADS="$(THREADS)"
 
-manuscript-tables:
+manuscript-tables: check-manuscript-inputs
 	python3 scripts/manuscript/make_manuscript_tables.py --out-dir manuscript_tables
 	@if [ -s results/tables/cut_equivalence_summary.tsv ]; then \
 	  python3 scripts/comparators/build_cut_equivalence_table.py; \
 	fi
+
+manuscript-tables-strict:
+	python3 scripts/core/check_artifacts.py \
+	  --manifest "$(ARTIFACT_CONTRACTS)" \
+	  --out results/processed/manuscript_input_contracts.tsv \
+	  --release-only \
+	  --strict
+	python3 scripts/manuscript/make_manuscript_tables.py --out-dir manuscript_tables
+	@if [ -s results/tables/cut_equivalence_summary.tsv ]; then \
+	  python3 scripts/comparators/build_cut_equivalence_table.py; \
+	fi
+	python3 scripts/core/check_artifacts.py \
+	  --manifest "$(ARTIFACT_CONTRACTS)" \
+	  --out results/processed/artifact_contracts.tsv \
+	  --check-generated \
+	  --release-only \
+	  --strict
 
 audit:
 	python3 scripts/core/audit_reproducibility.py
@@ -494,7 +531,7 @@ PAIR_SCREEN_STEM_PREFIX ?= cannabis
 .PHONY: benchmark-input-format benchmark-scaling radigest-thread-scaling
 .PHONY: pair-screen-scaling benchmark-screening-speed figures-nonempirical
 .PHONY: reviewer-rerun-nonempirical
-.PHONY: benchmark-categories check-benchmark-categories benchmark-validation
+.PHONY: benchmark-categories check-benchmark-categories artifact-contracts check-artifacts check-manuscript-inputs manuscript-tables-strict benchmark-validation
 .PHONY: benchmark-comparators benchmark-performance benchmark-nonempirical
 .PHONY: benchmark-empirical benchmark-manuscript-artifacts
 

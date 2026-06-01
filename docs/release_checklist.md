@@ -15,7 +15,8 @@ Before tagging a public release:
 - [ ] Public reference FASTA files can be downloaded with `make reference-data`.
 - [ ] Empirical BAM/CRAM files are either archived externally or documented as required local inputs.
 - [ ] BAM/reference compatibility checks pass for empirical recovery datasets where coordinate-level interpretation is used.
-- [ ] `make manuscript-tables` was run after all intended analyses were regenerated.
+- [ ] `make check-artifacts` reports expected upstream artifact support.
+- [ ] `make manuscript-tables-strict` passes after all intended analyses were regenerated.
 - [ ] Curated manuscript tables are force-added with `git add -f manuscript_tables/*.tsv`.
 - [ ] Raw FASTA, FASTQ, BAM, CRAM, external checkouts, and benchmark scratch outputs are not staged.
 - [ ] The radigest source commit or release tag used for the analysis is recorded.

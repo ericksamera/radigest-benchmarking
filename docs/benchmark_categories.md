@@ -80,3 +80,7 @@ processing-stage locations for now.
 A future restructuring can move to claim-oriented directories such as
 `results/performance/`, `results/comparators/`, and `results/empirical/`, but
 that should happen only after all execution entrypoints are manifest-driven.
+
+## Relationship to artifact contracts
+
+Benchmark categories describe broad workflow groups. `config/artifacts.tsv` is the stricter manuscript-facing contract layer: it maps concrete upstream result files to claims and curated tables. Use `make check-artifacts` before manuscript export.
