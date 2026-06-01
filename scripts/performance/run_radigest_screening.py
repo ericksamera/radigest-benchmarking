@@ -264,9 +264,9 @@ def run_once(
         "run_index": str(run_index),
         "wall_seconds": f"{elapsed:.6f}",
         "exit_code": str(exit_code),
-        "candidate_pairs_reported": "NA"
-        if reported_count is None
-        else str(reported_count),
+        "candidate_pairs_reported": (
+            "NA" if reported_count is None else str(reported_count)
+        ),
         "screening_binary": screen_binary,
         "screening_output": str(run_dir),
         "json_output": str(json_dir),
