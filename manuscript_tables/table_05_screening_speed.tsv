@@ -1,3 +1,0 @@
-dataset	tool	task	n_runs	candidate_pairs	median_completed_pairs	median_elapsed_wall_seconds	q1_elapsed_wall_seconds	q3_elapsed_wall_seconds	median_max_rss_kb	median_pairs_per_second	notes
-yeast_small_plain	ddgRADer_backend	ddgrader_backend	5	45	45.000000	306.850000	200.500000	333.445000	131572.000000	0.146651	ddgRADer backend binned fragment distribution over same pairs
-yeast_small_plain	radigest	radigest_screen_pairs	5	45	45.000000	2.430000	2.005000	2.535000	22880.000000	18.518519	radigest-screen-pairs over unordered candidate enzyme pairs

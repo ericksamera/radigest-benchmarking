@@ -1,5 +1,0 @@
-use-conda: true
-conda-prefix: .snakemake/conda
-rerun-incomplete: true
-printshellcmds: true
-cores: 4

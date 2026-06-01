@@ -1,3 +1,0 @@
-tool	dataset_condition	comparison_scope	radigest_intervals	tool_intervals	matching_intervals	jaccard	status	source	notes
-Digital_RADs.py	synthetic/smoke	exact normalized interval comparison	2	2	2	1.00000000	PASS	results/processed/comparisons/digital_rads/digital_rads_smoke_single__D1.summary.tsv	Digital_RADs.py motif-bounded output normalized to cut-to-cut intervals
-DDRADSEQTOOLS rsitesearch.py	yeast_small_plain B1	exact normalized interval comparison	3117	3117	3117	1.00000000	PASS	results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.summary.tsv	rsitesearch.py FASTA header coordinates normalized with enzyme cut offsets and first-token sequence identifiers
