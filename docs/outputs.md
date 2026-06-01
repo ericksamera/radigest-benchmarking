@@ -89,7 +89,6 @@ results/performance/thread_scaling/raw/*/*.fragments.tsv
 
 The Stage 5c claim is limited to intra-tool radigest thread scaling on the moderate public cannabis Pink Pepper reference. JSON-summary and fragment-TSV output modes are summarized separately, and retained-fragment counts must agree within each thread-scaling comparison group before speedups are interpreted. The default reviewer tier uses 1, 2, and 4 threads so `make performance-thread-scaling THREADS=4` can run without Snakemake thread downscaling.
 
-
 Stage 5d pair-screen job-scaling performance outputs are:
 
 ```text

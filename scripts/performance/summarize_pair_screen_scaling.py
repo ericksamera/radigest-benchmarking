@@ -245,9 +245,9 @@ def summarize_case(
         "reference_path": case["reference_path"],
         "candidate_enzymes": case["candidate_enzymes"],
         "candidate_enzyme_count": next(iter(sorted(candidate_enzyme_counts)), "NA"),
-        "candidate_pairs_evaluated": str(evaluated_unique[0])
-        if len(evaluated_unique) == 1
-        else "NA",
+        "candidate_pairs_evaluated": (
+            str(evaluated_unique[0]) if len(evaluated_unique) == 1 else "NA"
+        ),
         "min_size": case["min_size"],
         "max_size": case["max_size"],
         "score_min": case["score_min"],
@@ -258,9 +258,9 @@ def summarize_case(
         "configured_runs": str(configured_runs),
         "observed_runs": str(len(run_rows)),
         "successful_runs": str(len(successes)),
-        "candidate_pairs_reported": str(reported_unique[0])
-        if len(reported_unique) == 1
-        else "NA",
+        "candidate_pairs_reported": (
+            str(reported_unique[0]) if len(reported_unique) == 1 else "NA"
+        ),
         "reported_pair_consistency": reported_pair_consistency,
         "reported_pair_coverage": reported_pair_coverage,
         "screening_binary": next(iter(sorted(screening_binaries)), "NA"),
@@ -306,7 +306,9 @@ def add_group_consistency_and_speedups(rows: list[dict[str, str]]) -> None:
         if len(baselines) != 1:
             for row in group_rows:
                 row["status"] = "FAIL"
-                row["notes"] = row["notes"] + f" Missing valid 1-job baseline for {group}."
+                row["notes"] = (
+                    row["notes"] + f" Missing valid 1-job baseline for {group}."
+                )
             continue
 
         baseline_median = float(baselines[0]["wall_seconds_median"])
