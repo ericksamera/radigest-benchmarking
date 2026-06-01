@@ -16,6 +16,7 @@ MANIFESTS = [
     "config/comparators.tsv",
     "config/comparator_cases.tsv",
     "config/noncoordinate_comparator_cases.tsv",
+    "config/performance_cases.tsv",
     "config/artifacts.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
@@ -76,7 +77,7 @@ rule reviewer_nonempirical_all:
         SYNTHETIC_VALIDATION_OUTPUTS,
         REFERENCE_ALL_OUTPUTS,
         COMPARATOR_ALL_OUTPUTS,
-        "results/performance/.gitkeep"
+        PERFORMANCE_ALL_OUTPUTS
 
 rule reviewer_empirical_all:
     input:
@@ -91,7 +92,7 @@ rule reviewer_all:
         SYNTHETIC_VALIDATION_OUTPUTS,
         REFERENCE_ALL_OUTPUTS,
         COMPARATOR_ALL_OUTPUTS,
-        "results/performance/.gitkeep",
+        PERFORMANCE_ALL_OUTPUTS,
         "results/empirical/.gitkeep"
 
 rule manuscript_all:
@@ -100,6 +101,7 @@ rule manuscript_all:
         SYNTHETIC_VALIDATION_TABLE,
         COMPARATOR_INTERVAL_TABLE,
         COMPARATOR_SEMANTICS_TABLE,
+        PERFORMANCE_INPUT_FORMAT_TABLE,
         "results/manuscript/figures/.gitkeep"
 
 rule audit_all:

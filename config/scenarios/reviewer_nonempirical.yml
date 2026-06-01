@@ -43,6 +43,20 @@ pair_screen_scaling:
   runs: 3
   radigest_threads: 1
 
+input_format:
+  cases: config/performance_cases.tsv
+  comparison_group: small_yeast_s288c_B1
+  datasets: [small_yeast_s288c_plain, small_yeast_s288c_gzip]
+  references:
+    plain: data/reference/small_yeast_s288c.fa
+    gzip: data/reference/small_yeast_s288c.fa.gz
+  condition: B1
+  enzymes: [EcoRI, MseI]
+  min_size: 100
+  max_size: 300
+  runs: 5
+  threads: 1
+
 comparators:
   interval_cases: config/comparator_cases.tsv
   noncoordinate_cases: config/noncoordinate_comparator_cases.tsv

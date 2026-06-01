@@ -7,7 +7,7 @@ SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
 SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" ddgrader_repo="$(DDGRADER_REPO)"
 
-.PHONY: help smoke comparator-smoke comparator-small-yeast reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -22,6 +22,8 @@ help:
 	  '  make comparator-smoke RADIGEST=/path/to/radigest' \
 	  '  make comparator-small-yeast RADIGEST=/path/to/radigest' \
 	  '  make comparators RADIGEST=/path/to/radigest' \
+	  '  make performance-input-format RADIGEST=/path/to/radigest' \
+	  '  make performance RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
 	  '  make reviewer-all THREADS=4' \
@@ -42,6 +44,12 @@ comparator-small-yeast:
 
 comparators:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)
+
+performance-input-format:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_input_format_all $(SNAKEMAKE_CONFIG_ARGS)
+
+performance:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_all $(SNAKEMAKE_CONFIG_ARGS)
 
 install-digital-rads:
 	bash scripts/comparators/install_digital_rads.sh
@@ -73,6 +81,7 @@ audit:
 check-manifests:
 	python3 scripts/core/check_manifests.py
 	python3 scripts/core/check_noncoordinate_comparators.py
+	python3 scripts/core/check_performance_cases.py
 
 check: check-manifests
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)

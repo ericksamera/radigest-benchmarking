@@ -49,3 +49,16 @@ benchmark/logs/comparators/**/*.log
 ```
 
 Raw comparator output, normalized interval TSVs, binned-count TSVs, detail comparison TSVs, version logs, and benchmark logs are generated artifacts and are not tracked.
+
+Stage 5a input-format performance outputs are:
+
+```text
+results/performance/input_format/radigest_input_format_comparison.tsv
+results/manuscript/tables/table_06_input_format.tsv
+benchmark/logs/performance/input_format/*.log
+results/performance/input_format/raw/*.runs.tsv
+results/performance/input_format/raw/*/*.fragments.tsv
+results/performance/input_format/raw/*/*.json
+```
+
+The Stage 5a claim is limited to radigest plain-FASTA versus gzip-FASTA input-format timing on the small public yeast reference. Fragment-count consistency is enforced before wall-time ratios are interpreted.

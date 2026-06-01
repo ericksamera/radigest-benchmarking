@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 4 now includes comparator workflows with explicit claim boundaries. Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` are normalized to interval sets and support coordinate-equivalence checks. Stage 4b adds non-coordinate comparator checks: SimRAD is count-level only, and ddgRADer is binned-screening only. Stage 4c adds shared synthetic comparator smoke and a small-yeast radigest-anchor comparator matrix.
+Stage 5a now starts the performance port with a radigest input-format timing workflow. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
 
 ```bash
 make check
@@ -22,6 +22,7 @@ make install-ddgrader
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
+make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 ```
 
 SimRAD is installed into the Snakemake conda environment through `workflow/envs/simrad.post-deploy.sh`. `make install-simrad` is available for a manual active R environment.
@@ -60,6 +61,17 @@ results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
 
+Expected Stage 5a performance outputs:
+
+```text
+results/performance/input_format/radigest_input_format_comparison.tsv
+results/manuscript/tables/table_06_input_format.tsv
+benchmark/logs/performance/input_format/*.log
+results/performance/input_format/raw/*.runs.tsv
+results/performance/input_format/raw/*/*.fragments.tsv
+results/performance/input_format/raw/*/*.json
+```
+
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
 
 ## Comparator matrix boundaries
@@ -88,6 +100,7 @@ These targets remain dispatch shims while later stages are ported.
 make smoke RADIGEST=/path/to/radigest
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
+make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -102,6 +115,7 @@ Primary contracts live in:
 - `config/comparators.tsv` for comparator semantics and required external paths.
 - `config/comparator_cases.tsv` for normalized interval-equivalence comparator cases.
 - `config/noncoordinate_comparator_cases.tsv` for count-only and binned-screening comparator cases.
+- `config/performance_cases.tsv` for Stage 5 performance cases and run counts.
 - `config/artifacts.tsv` for manuscript claim outputs and release requirements.
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
