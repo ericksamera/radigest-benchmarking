@@ -105,6 +105,24 @@ TSV_SPECS = {
         "command_template",
         "notes",
     ],
+    "config/thread_scaling_cases.tsv": [
+        "case_id",
+        "category",
+        "dataset_id",
+        "reference_path",
+        "condition_id",
+        "enzyme_1",
+        "enzyme_2",
+        "min_size",
+        "max_size",
+        "output_mode",
+        "threads",
+        "runs",
+        "comparison_group",
+        "input_format",
+        "required_for_nonempirical",
+        "notes",
+    ],
     "config/artifacts.tsv": [
         "claim_id",
         "category",
@@ -151,8 +169,10 @@ EXTRA_REQUIRED_FILES = [
     "scripts/performance/summarize_radigest_timing.py",
     "scripts/performance/run_radigest_screening.py",
     "scripts/performance/summarize_screening_speed.py",
+    "scripts/performance/summarize_thread_scaling.py",
     "scripts/manuscript/make_input_format_table.py",
     "scripts/manuscript/make_screening_speed_table.py",
+    "scripts/manuscript/make_thread_scaling_table.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
@@ -169,6 +189,7 @@ BOOL_COLUMNS = {
     "config/references.tsv": ["required_for_nonempirical"],
     "config/comparator_cases.tsv": ["required_for_nonempirical"],
     "config/screening_speed_cases.tsv": ["required_for_nonempirical"],
+    "config/thread_scaling_cases.tsv": ["required_for_nonempirical"],
 }
 
 DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
@@ -345,6 +366,35 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                 fail(
                     f"{path}: case {case} reference_path must be a relative repository path"
                 )
+
+    if path == "config/thread_scaling_cases.tsv":
+        valid_categories = {"thread_scaling"}
+        valid_output_modes = {"json", "fragments_tsv", "both"}
+        valid_input_formats = {"plain", "gzip"}
+        for row in rows:
+            case = row["case_id"]
+            if row["category"] not in valid_categories:
+                fail(f"{path}: case {case} has invalid category {row['category']!r}")
+            if row["output_mode"] not in valid_output_modes:
+                fail(f"{path}: case {case} has invalid output_mode {row['output_mode']!r}")
+            if row["input_format"] not in valid_input_formats:
+                fail(f"{path}: case {case} has invalid input_format {row['input_format']!r}")
+            ref_path = row["reference_path"]
+            if ref_path == "NA" or ref_path.startswith("/"):
+                fail(
+                    f"{path}: case {case} reference_path must be a relative repository path"
+                )
+            try:
+                min_size = int(row["min_size"])
+                max_size = int(row["max_size"])
+                threads = int(row["threads"])
+                runs = int(row["runs"])
+            except ValueError:
+                fail(f"{path}: case {case} min/max/threads/runs must be integers")
+            if min_size < 0 or max_size <= min_size:
+                fail(f"{path}: case {case} has invalid size interval")
+            if threads < 1 or runs < 1:
+                fail(f"{path}: case {case} threads/runs must be >= 1")
 
     if path == "config/artifacts.tsv":
         for row in rows:

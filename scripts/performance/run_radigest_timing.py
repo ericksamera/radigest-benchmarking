@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import shlex
 import shutil
 import subprocess
@@ -18,6 +19,7 @@ RUN_COLUMNS = [
     "dataset_id",
     "condition_id",
     "input_format",
+    "output_mode",
     "reference_path",
     "enzymes",
     "min_size",
@@ -61,7 +63,7 @@ def resolve_executable(executable: str) -> str:
     return resolved
 
 
-def count_fragments(path: Path) -> int:
+def count_fragments_tsv(path: Path) -> int:
     """Count rows in a radigest fragment TSV."""
     if not path.exists():
         return 0
@@ -72,6 +74,35 @@ def count_fragments(path: Path) -> int:
         return sum(
             1 for row in reader if any((value or "").strip() for value in row.values())
         )
+
+
+def count_fragments_json(path: Path) -> int:
+    """Read retained-fragment count from a radigest JSON summary."""
+    if not path.exists():
+        return 0
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except json.JSONDecodeError:
+        return 0
+
+    candidates = [
+        payload.get("total_fragments"),
+        payload.get("size_selection", {}).get("raw_fragments_in_window")
+        if isinstance(payload.get("size_selection"), dict)
+        else None,
+    ]
+    for value in candidates:
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                continue
+    return 0
 
 
 def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
@@ -94,6 +125,7 @@ def run_once(
     dataset_id: str,
     condition_id: str,
     input_format: str,
+    output_mode: str,
     run_index: int,
     raw_dir: Path,
 ) -> dict[str, str]:
@@ -120,11 +152,11 @@ def run_once(
         str(max_size),
         "-threads",
         str(threads),
-        "-fragments-tsv",
-        str(fragments_tsv),
-        "-json",
-        str(json_output),
     ]
+    if output_mode in {"fragments_tsv", "both"}:
+        cmd.extend(["-fragments-tsv", str(fragments_tsv)])
+    if output_mode in {"json", "both"}:
+        cmd.extend(["-json", str(json_output)])
 
     start = time.perf_counter()
     with stdout_log.open("w", encoding="utf-8") as stdout_handle, stderr_log.open(
@@ -138,14 +170,30 @@ def run_once(
             check=False,
         )
     elapsed = time.perf_counter() - start
-    retained = count_fragments(fragments_tsv)
-    status = "PASS" if proc.returncode == 0 and fragments_tsv.exists() else "FAIL"
+
+    expected_outputs = []
+    if output_mode in {"fragments_tsv", "both"}:
+        expected_outputs.append(fragments_tsv)
+    if output_mode in {"json", "both"}:
+        expected_outputs.append(json_output)
+
+    if fragments_tsv.exists():
+        retained = count_fragments_tsv(fragments_tsv)
+    elif json_output.exists():
+        retained = count_fragments_json(json_output)
+    else:
+        retained = 0
+
+    status = "PASS"
+    if proc.returncode != 0 or not all(path.exists() for path in expected_outputs):
+        status = "FAIL"
 
     return {
         "case_id": case_id,
         "dataset_id": dataset_id,
         "condition_id": condition_id,
         "input_format": input_format,
+        "output_mode": output_mode,
         "reference_path": str(reference),
         "enzymes": enzymes,
         "min_size": str(min_size),
@@ -155,8 +203,8 @@ def run_once(
         "wall_seconds": f"{elapsed:.6f}",
         "exit_code": str(proc.returncode),
         "retained_fragments": str(retained),
-        "fragments_tsv": str(fragments_tsv),
-        "json_output": str(json_output),
+        "fragments_tsv": str(fragments_tsv) if fragments_tsv.exists() else "NA",
+        "json_output": str(json_output) if json_output.exists() else "NA",
         "stdout_log": str(stdout_log),
         "stderr_log": str(stderr_log),
         "status": status,
@@ -192,6 +240,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset-id", required=True)
     parser.add_argument("--condition-id", required=True)
     parser.add_argument("--input-format", required=True)
+    parser.add_argument(
+        "--output-mode",
+        choices=["json", "fragments_tsv", "both"],
+        default="both",
+        help="radigest output artifact mode to time; input-format cases use both by default",
+    )
     parser.add_argument("--enzymes", required=True)
     parser.add_argument("--min", required=True, dest="min_size", type=nonnegative_int)
     parser.add_argument("--max", required=True, dest="max_size", type=positive_int)
@@ -224,6 +278,7 @@ def main() -> int:
             dataset_id=args.dataset_id,
             condition_id=args.condition_id,
             input_format=args.input_format,
+            output_mode=args.output_mode,
             run_index=run_index,
             raw_dir=args.raw_dir,
         )

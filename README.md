@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 5b now extends the performance port with cached `radigest-screen-pairs-cached` screening-speed timing after the Stage 5a input-format workflow. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
+Stage 5c now extends the performance port with intra-tool radigest thread-scaling timing after the Stage 5a input-format and Stage 5b cached screening-speed workflows. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
 
 ```bash
 make check
@@ -24,6 +24,7 @@ make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -66,7 +67,7 @@ results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
 
-Expected Stage 5a/5b performance outputs:
+Expected Stage 5a/5b/5c performance outputs:
 
 ```text
 results/performance/input_format/radigest_input_format_comparison.tsv
@@ -81,6 +82,12 @@ benchmark/logs/performance/screening_speed/*.log
 results/performance/screening_speed/raw/*.runs.tsv
 results/performance/screening_speed/raw/*/json/*.json
 results/performance/screening_speed/raw/*/logs/*.log
+results/performance/thread_scaling/radigest_thread_scaling_summary.tsv
+results/manuscript/tables/table_s02_radigest_thread_scaling.tsv
+benchmark/logs/performance/thread_scaling/*.log
+results/performance/thread_scaling/raw/*.runs.tsv
+results/performance/thread_scaling/raw/*/*.json
+results/performance/thread_scaling/raw/*/*.fragments.tsv
 ```
 
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
@@ -113,6 +120,7 @@ make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -129,6 +137,7 @@ Primary contracts live in:
 - `config/noncoordinate_comparator_cases.tsv` for count-only and binned-screening comparator cases.
 - `config/performance_cases.tsv` for Stage 5 input-format performance cases and run counts.
 - `config/screening_speed_cases.tsv` for Stage 5b cached screening-speed cases using `radigest-screen-pairs-cached`.
+- `config/thread_scaling_cases.tsv` for Stage 5c intra-tool radigest thread-scaling cases.
 - `config/artifacts.tsv` for manuscript claim outputs and release requirements.
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.

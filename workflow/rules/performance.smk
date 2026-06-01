@@ -1,19 +1,24 @@
 # Stage 5 performance rules.
 # Stage 5a covers radigest input-format timing. Stage 5b adds cached
-# radigest-screen-pairs-cached candidate-pair screening speed. Later Stage 5 patches should add
-# thread_scaling, pair_screen_scaling, and large_genome outputs to
-# PERFORMANCE_ALL_OUTPUTS.
+# radigest-screen-pairs-cached candidate-pair screening speed. Stage 5c adds
+# intra-tool radigest thread scaling. Later Stage 5 patches should add
+# pair_screen_scaling and large_genome outputs to PERFORMANCE_ALL_OUTPUTS.
 
 import csv
 
 PERFORMANCE_CASE_MANIFEST = "config/performance_cases.tsv"
 SCREENING_SPEED_CASE_MANIFEST = "config/screening_speed_cases.tsv"
+THREAD_SCALING_CASE_MANIFEST = "config/thread_scaling_cases.tsv"
 PERFORMANCE_INPUT_FORMAT_SUMMARY = (
     "results/performance/input_format/radigest_input_format_comparison.tsv"
 )
 PERFORMANCE_INPUT_FORMAT_TABLE = "results/manuscript/tables/table_06_input_format.tsv"
 SCREENING_SPEED_SUMMARY = "results/performance/screening_speed/screening_speed_summary.tsv"
 SCREENING_SPEED_TABLE = "results/manuscript/tables/table_05_screening_speed.tsv"
+THREAD_SCALING_SUMMARY = (
+    "results/performance/thread_scaling/radigest_thread_scaling_summary.tsv"
+)
+THREAD_SCALING_TABLE = "results/manuscript/tables/table_s02_radigest_thread_scaling.tsv"
 
 
 def _read_tsv_rows(path):
@@ -63,7 +68,27 @@ SCREENING_SPEED_OUTPUTS = [
     SCREENING_SPEED_SUMMARY,
     SCREENING_SPEED_TABLE,
 ]
-PERFORMANCE_ALL_OUTPUTS = PERFORMANCE_INPUT_FORMAT_OUTPUTS + SCREENING_SPEED_OUTPUTS
+
+THREAD_SCALING_CASE_ROWS = _read_tsv_rows(THREAD_SCALING_CASE_MANIFEST)
+THREAD_SCALING_CASE_BY_ID = {
+    row["case_id"]: row for row in THREAD_SCALING_CASE_ROWS
+}
+THREAD_SCALING_CASES = [
+    row["case_id"]
+    for row in THREAD_SCALING_CASE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() == "true"
+]
+THREAD_SCALING_RUN_OUTPUTS = [
+    f"results/performance/thread_scaling/raw/{case_id}.runs.tsv"
+    for case_id in THREAD_SCALING_CASES
+]
+THREAD_SCALING_OUTPUTS = [
+    THREAD_SCALING_SUMMARY,
+    THREAD_SCALING_TABLE,
+]
+PERFORMANCE_ALL_OUTPUTS = (
+    PERFORMANCE_INPUT_FORMAT_OUTPUTS + SCREENING_SPEED_OUTPUTS + THREAD_SCALING_OUTPUTS
+)
 
 
 def performance_case(case_id):
@@ -78,6 +103,13 @@ def screening_case(case_id):
         return SCREENING_SPEED_CASE_BY_ID[case_id]
     except KeyError as exc:
         raise ValueError(f"unknown screening_speed case_id: {case_id}") from exc
+
+
+def thread_scaling_case(case_id):
+    try:
+        return THREAD_SCALING_CASE_BY_ID[case_id]
+    except KeyError as exc:
+        raise ValueError(f"unknown thread_scaling case_id: {case_id}") from exc
 
 
 def performance_reference(wc):
@@ -128,6 +160,26 @@ def screening_int(wc, column):
     return int(screening_case(wc.case_id)[column])
 
 
+def thread_scaling_reference(wc):
+    return thread_scaling_case(wc.case_id)["reference_path"]
+
+
+def thread_scaling_value(wc, column):
+    return thread_scaling_case(wc.case_id)[column]
+
+
+def thread_scaling_int(wc, column):
+    return int(thread_scaling_case(wc.case_id)[column])
+
+
+def thread_scaling_enzymes(wc):
+    row = thread_scaling_case(wc.case_id)
+    enzyme2 = row["enzyme_2"]
+    if enzyme2 in {"", "NA", "none", "None"}:
+        return row["enzyme_1"]
+    return f"{row['enzyme_1']},{enzyme2}"
+
+
 rule performance_all:
     input:
         PERFORMANCE_ALL_OUTPUTS
@@ -141,6 +193,11 @@ rule performance_input_format_all:
 rule performance_screening_speed_all:
     input:
         SCREENING_SPEED_OUTPUTS
+
+
+rule performance_thread_scaling_all:
+    input:
+        THREAD_SCALING_OUTPUTS
 
 
 rule run_radigest_input_format_case:
@@ -320,6 +377,96 @@ rule make_screening_speed_table:
         mkdir -p results/manuscript/tables benchmark/logs/performance/screening_speed
         python3 scripts/manuscript/make_screening_speed_table.py \
           --summary {input.summary:q} \
+          --out {output:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+rule run_radigest_thread_scaling_case:
+    input:
+        ref=thread_scaling_reference,
+        cases=THREAD_SCALING_CASE_MANIFEST
+    output:
+        "results/performance/thread_scaling/raw/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/thread_scaling/{case_id}.timing.log"
+    threads:
+        lambda wc: thread_scaling_int(wc, "threads")
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        dataset=lambda wc: thread_scaling_value(wc, "dataset_id"),
+        condition=lambda wc: thread_scaling_value(wc, "condition_id"),
+        input_format=lambda wc: thread_scaling_value(wc, "input_format"),
+        output_mode=lambda wc: thread_scaling_value(wc, "output_mode"),
+        enzymes=thread_scaling_enzymes,
+        min_size=lambda wc: thread_scaling_int(wc, "min_size"),
+        max_size=lambda wc: thread_scaling_int(wc, "max_size"),
+        runs=lambda wc: thread_scaling_int(wc, "runs"),
+        raw_dir=lambda wc: f"results/performance/thread_scaling/raw/{wc.case_id}"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/thread_scaling/raw benchmark/logs/performance/thread_scaling
+        python3 scripts/performance/run_radigest_timing.py \
+          --radigest {params.radigest:q} \
+          --reference {input.ref:q} \
+          --case-id {wildcards.case_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --input-format {params.input_format:q} \
+          --output-mode {params.output_mode:q} \
+          --enzymes {params.enzymes:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --threads {threads} \
+          --runs {params.runs} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule summarize_thread_scaling:
+    input:
+        runs=THREAD_SCALING_RUN_OUTPUTS,
+        cases=THREAD_SCALING_CASE_MANIFEST
+    output:
+        THREAD_SCALING_SUMMARY
+    log:
+        "benchmark/logs/performance/thread_scaling/thread_scaling_summary.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/thread_scaling benchmark/logs/performance/thread_scaling
+        python3 scripts/performance/summarize_thread_scaling.py \
+          --cases {input.cases:q} \
+          --runs {input.runs:q} \
+          --out {output:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+
+rule make_thread_scaling_table:
+    input:
+        summary=THREAD_SCALING_SUMMARY,
+        datasets="config/datasets.tsv",
+        conditions="config/conditions.tsv"
+    output:
+        THREAD_SCALING_TABLE
+    log:
+        "benchmark/logs/performance/thread_scaling/thread_scaling_table.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/performance/thread_scaling
+        python3 scripts/manuscript/make_thread_scaling_table.py \
+          --summary {input.summary:q} \
+          --datasets {input.datasets:q} \
+          --conditions {input.conditions:q} \
           --out {output:q} \
           --require-pass \
           > {log:q} 2>&1

@@ -75,3 +75,16 @@ results/performance/screening_speed/raw/*/logs/*.log
 ```
 
 The Stage 5b claim is limited to cached radigest candidate-pair screening throughput from `radigest-screen-pairs-cached`. It does not compare coordinates against external tools and it does not make a cross-tool equivalence claim.
+
+Stage 5c thread-scaling performance outputs are:
+
+```text
+results/performance/thread_scaling/radigest_thread_scaling_summary.tsv
+results/manuscript/tables/table_s02_radigest_thread_scaling.tsv
+benchmark/logs/performance/thread_scaling/*.log
+results/performance/thread_scaling/raw/*.runs.tsv
+results/performance/thread_scaling/raw/*/*.json
+results/performance/thread_scaling/raw/*/*.fragments.tsv
+```
+
+The Stage 5c claim is limited to intra-tool radigest thread scaling on the moderate public cannabis Pink Pepper reference. JSON-summary and fragment-TSV output modes are summarized separately, and retained-fragment counts must agree within each thread-scaling comparison group before speedups are interpreted. The default reviewer tier uses 1, 2, and 4 threads so `make performance-thread-scaling THREADS=4` can run without Snakemake thread downscaling.

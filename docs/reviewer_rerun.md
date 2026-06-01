@@ -12,7 +12,7 @@ make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make audit
 ```
 
-At Stage 5b, the concrete executable pieces are:
+At Stage 5c, the concrete executable pieces are:
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
@@ -22,6 +22,7 @@ make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -39,4 +40,4 @@ SimRAD             retained-fragment count agreement only
 ddgRADer backend   binned fragment-count distribution agreement only
 ```
 
-Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Later stages will add thread scaling, pair-screen scaling, empirical recovery, and full audit products.
+Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Later stages will add pair-screen scaling, empirical recovery, and full audit products.

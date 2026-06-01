@@ -18,6 +18,7 @@ MANIFESTS = [
     "config/noncoordinate_comparator_cases.tsv",
     "config/performance_cases.tsv",
     "config/screening_speed_cases.tsv",
+    "config/thread_scaling_cases.tsv",
     "config/artifacts.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
@@ -104,6 +105,7 @@ rule manuscript_all:
         COMPARATOR_SEMANTICS_TABLE,
         PERFORMANCE_INPUT_FORMAT_TABLE,
         SCREENING_SPEED_TABLE,
+        THREAD_SCALING_TABLE,
         "results/manuscript/figures/.gitkeep"
 
 rule audit_all:

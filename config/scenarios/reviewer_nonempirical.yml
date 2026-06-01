@@ -31,12 +31,15 @@ screening_speed:
   command_template: radigest-screen-pairs-cached
 
 thread_scaling:
+  cases: config/thread_scaling_cases.tsv
+  target: performance_thread_scaling_all
   dataset: moderate_cannabis_pink-pepper_plain
   reference: data/reference/moderate_cannabis_pink-pepper.fa
   conditions: [B1, B2]
   modes: [json, fragments_tsv]
-  threads: [1, 2, 4, 8]
+  threads: [1, 2, 4]
   runs: 7
+  claim_note: Intra-tool radigest thread scaling only; output modes are interpreted separately.
 
 pair_screen_scaling:
   dataset: moderate_cannabis_pink-pepper_plain
