@@ -7,6 +7,7 @@ Before tagging a public release:
 - [ ] `make reference-data-dry-run` passes.
 - [ ] `make empirical-recovery-dry-run` passes on a machine with empirical data paths configured.
 - [ ] `make audit` reports no `FAIL` entries.
+- [ ] `make check-benchmark-categories` reports no manifest `FAIL` entries.
 - [ ] Expected release-time `WARN` entries are resolved or documented.
 - [ ] `CITATION.cff` has final DOI and release date after archival.
 - [ ] `config/datasets.tsv` has final accessions, URLs, and SHA256 checksums where redistribution is possible.

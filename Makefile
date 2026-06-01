@@ -8,6 +8,7 @@ DDGRADER_BINNED_SNAKEFILE ?= workflow/ddgrader_binned.smk
 SCREENING_SPEED_SNAKEFILE ?= workflow/screening_speed.smk
 SCALING_SNAKEFILE ?= workflow/scaling.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
+BENCHMARK_CATEGORIES ?= config/benchmark_categories.tsv
 
 RADIGEST ?= $(LOCAL_RADIGEST)
 RADIGEST_SCREEN_PAIRS ?= $(LOCAL_RADIGEST_SCREEN_PAIRS)
@@ -73,6 +74,12 @@ help:
 	@echo "  empirical-recovery       Run optional empirical TLEN recovery workflow"
 	@echo "  empirical-recovery-local Build local radigest and run empirical recovery"
 	@echo "  manuscript-tables        Build curated manuscript tables"
+	@echo "  benchmark-categories     Show claim-oriented benchmark categories"
+	@echo "  check-benchmark-categories Validate benchmark category manifest"
+	@echo "  benchmark-validation     Run lightweight validation category"
+	@echo "  benchmark-comparators    Run comparator categories"
+	@echo "  benchmark-performance    Run input-format and scaling categories"
+	@echo "  benchmark-nonempirical   Run non-empirical manuscript benchmark categories"
 	@echo "  benchmark-radigest       Run configured radigest output-mode benchmarks"
 	@echo "  screen-pairs             Run configured enzyme-pair screen"
 	@echo "  pair-screen-tables      Summarize ranked enzyme-pair screening table"
@@ -166,6 +173,10 @@ check:
 	bash -n scripts/core/capture_environment.sh
 	bash -n scripts/reference/download_reference_data.sh
 	python3 scripts/core/compile_python_tree.py scripts
+	python3 scripts/core/check_benchmark_categories.py \
+	  --categories "$(BENCHMARK_CATEGORIES)" \
+	  --makefile Makefile \
+	  --out results/processed/benchmark_category_qc.tsv
 	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(EFFECTIVE_RADIGEST)" \
@@ -206,6 +217,17 @@ check-pair-screen:
 	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
 	           radigest_rank_pairs="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	           threads=1
+
+benchmark-categories:
+	@python3 scripts/core/check_benchmark_categories.py \
+	  --categories "$(BENCHMARK_CATEGORIES)" \
+	  --list
+
+check-benchmark-categories:
+	@python3 scripts/core/check_benchmark_categories.py \
+	  --categories "$(BENCHMARK_CATEGORIES)" \
+	  --makefile Makefile \
+	  --out results/processed/benchmark_category_qc.tsv
 
 benchmark-matched-tools:
 	bash scripts/benchmarks/run_matched_tool_benchmarks.sh \
@@ -472,6 +494,9 @@ PAIR_SCREEN_STEM_PREFIX ?= cannabis
 .PHONY: benchmark-input-format benchmark-scaling radigest-thread-scaling
 .PHONY: pair-screen-scaling benchmark-screening-speed figures-nonempirical
 .PHONY: reviewer-rerun-nonempirical
+.PHONY: benchmark-categories check-benchmark-categories benchmark-validation
+.PHONY: benchmark-comparators benchmark-performance benchmark-nonempirical
+.PHONY: benchmark-empirical benchmark-manuscript-artifacts
 
 reviewer-prepare: build-radigest
 	$(MAKE) reference-data
@@ -605,6 +630,18 @@ pair-screen-scaling:
 
 benchmark-scaling: radigest-thread-scaling pair-screen-scaling
 
+benchmark-validation: validate-radigest interval-smoke
+
+benchmark-comparators: compare-cut-tools benchmark-tool-comparison
+
+benchmark-performance: benchmark-input-format benchmark-scaling
+
+benchmark-empirical: empirical-recovery
+
+benchmark-manuscript-artifacts: figures-nonempirical manuscript-tables
+
+benchmark-nonempirical: benchmark-validation benchmark-comparators benchmark-performance benchmark-manuscript-artifacts audit
+
 figures-nonempirical:
 	mkdir -p results/figures manuscript_figures
 	python3 scripts/manuscript/make_figures.py \
@@ -632,27 +669,11 @@ reviewer-rerun-nonempirical:
 	$(MAKE) reviewer-prepare \
 	  RADIGEST_REPO="$(RADIGEST_REPO)" \
 	  RADIGEST_REF="$(RADIGEST_REF)"
-	$(MAKE) compare-cut-tools \
+	$(MAKE) benchmark-nonempirical \
 	  RADIGEST="$(LOCAL_RADIGEST)" \
 	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
 	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
-	  THREADS=1
-	$(MAKE) benchmark-tool-comparison \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
-	  THREADS=1
-	$(MAKE) benchmark-input-format \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)"
-	$(MAKE) benchmark-scaling \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
 	  THREADS="$(THREADS)"
-	$(MAKE) figures-nonempirical
-	$(MAKE) manuscript-tables
-	$(MAKE) audit
 
 
 .PHONY: compare-ddgrader-binned build-cut-equivalence-table

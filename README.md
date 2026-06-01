@@ -10,3 +10,15 @@ The repository is designed to make transparent:
 4. command templates, environment metadata, and output summaries used in the manuscript.
 
 Large reference genomes and empirical sequencing files are not stored directly in Git. Download commands, accessions, checksums, and derived summaries are recorded instead.
+
+
+Benchmark categories are declared in `config/benchmark_categories.tsv` and can
+be inspected with:
+
+```bash
+make benchmark-categories
+```
+
+Use category targets such as `benchmark-validation`, `benchmark-comparators`,
+`benchmark-performance`, and `benchmark-nonempirical` when rerunning analyses by
+claim family.

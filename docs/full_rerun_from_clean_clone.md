@@ -96,6 +96,8 @@ make validate-radigest \
   THREADS=1
 
 make audit
+make benchmark-categories
+make check-benchmark-categories
 ```
 
 ## 4. Reference metadata
