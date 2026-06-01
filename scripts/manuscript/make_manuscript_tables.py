@@ -47,6 +47,32 @@ def write_tsv(path: Path, rows: list[dict[str, str]], fields: list[str]) -> None
         writer.writerows(rows)
 
 
+
+def comparator_mismatch_rows(registry: Path = Path("config/comparators.tsv")) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+
+    for row in read_tsv(registry):
+        issue = row.get("mismatch_issue", "").strip()
+        resolution = row.get("mismatch_resolution", "").strip()
+        comparison_level = row.get("comparison_level", "").strip()
+
+        if not issue or not resolution:
+            continue
+        if issue in {"NA", "TO_BE_FILLED"} or resolution in {"NA", "TO_BE_FILLED"}:
+            continue
+
+        rows.append(
+            {
+                "tool_or_analysis": row.get("display_name") or row.get("tool_id", ""),
+                "comparison_level": comparison_level.replace("_", " "),
+                "issue": issue,
+                "resolution": resolution,
+            }
+        )
+
+    return rows
+
+
 def exists_text(path: str) -> str:
     return "present" if Path(path).exists() else MISSING
 
@@ -309,77 +335,46 @@ def table_pair_screen_scaling(out_dir: Path) -> None:
 
 
 def table_mismatch_explanations(out_dir: Path) -> None:
-    rows = [
-        {
-            "tool_or_analysis": "SimRAD",
-            "comparison_level": "count-level only",
-            "issue": "SimRAD does not expose radigest-style genomic intervals.",
-            "resolution": (
-                "Report aggregate fragment/locus counts and bases separately; "
-                "do not use for coordinate-level claims."
-            ),
-        },
-        {
-            "tool_or_analysis": "Digital_RADs.py",
-            "comparison_level": "interval after normalization",
-            "issue": (
-                "Raw output is motif-bounded rather than "
-                "cut-coordinate interval output."
-            ),
-            "resolution": (
-                "Normalize Digital_RADs.py output to zero-based half-open "
-                "cut-coordinate intervals using enzyme cut offsets."
-            ),
-        },
-        {
-            "tool_or_analysis": "DDRADSEQTOOLS rsitesearch.py",
-            "comparison_level": "interval after normalization",
-            "issue": (
-                "Raw FASTA records include restriction-site residual sequence, "
-                "and locus identifiers preserve the full FASTA defline."
-            ),
-            "resolution": (
-                "Normalize header coordinates using cut offsets and canonicalize "
-                "sequence IDs to first FASTA defline token."
-            ),
-        },
-        {
-            "tool_or_analysis": "ddgRADer backend",
-            "comparison_level": "binned screening throughput",
-            "issue": (
-                "Backend reports binned fragment distributions, "
-                "not native intervals."
-            ),
-            "resolution": (
-                "Use as binned screening/speed comparator only; do not claim "
-                "coordinate equivalence."
-            ),
-        },
-        {
-            "tool_or_analysis": "radigest single-digest thread scaling",
-            "comparison_level": "radigest-only performance",
-            "issue": (
-                "Single digest jobs on Cannabis did not show consistent speedup "
-                "with additional per-digest threads."
-            ),
-            "resolution": (
-                "Report measured wall time/RSS and invariant fragment totals; "
-                "do not claim linear per-digest scaling."
-            ),
-        },
-        {
-            "tool_or_analysis": "radigest-screen-pairs job scaling",
-            "comparison_level": "radigest-only screening throughput",
-            "issue": (
-                "Job-level parallelism improves throughput, but returns diminish "
-                "at high job counts."
-            ),
-            "resolution": (
-                "Report observed speedup and parallel efficiency with Q1-Q3; "
-                "do not claim linear scaling beyond supported results."
-            ),
-        },
-    ]
+    rows = comparator_mismatch_rows()
+
+    rows.extend(
+        [
+            {
+                "tool_or_analysis": "radigest single-digest thread scaling",
+                "comparison_level": "radigest-only performance",
+                "issue": (
+                    "Single digest jobs on Cannabis did not show consistent speedup "
+                    "with additional per-digest threads."
+                ),
+                "resolution": (
+                    "Report measured wall time/RSS and invariant fragment totals; "
+                    "do not claim linear per-digest scaling."
+                ),
+            },
+            {
+                "tool_or_analysis": "radigest-screen-pairs job scaling",
+                "comparison_level": "radigest-only screening throughput",
+                "issue": (
+                    "Job-level parallelism improves throughput, but returns diminish "
+                    "at high job counts."
+                ),
+                "resolution": (
+                    "Report observed speedup and parallel efficiency with Q1-Q3; "
+                    "do not claim linear scaling beyond supported results."
+                ),
+            },
+        ]
+    )
+
+    if not rows:
+        rows = [
+            {
+                "tool_or_analysis": "comparator registry",
+                "comparison_level": "missing",
+                "issue": "Comparator registry rows were unavailable.",
+                "resolution": "Run make check-comparator-registry and verify config/comparators.tsv.",
+            }
+        ]
 
     write_tsv(
         out_dir / "table_07_mismatch_explanations.tsv",

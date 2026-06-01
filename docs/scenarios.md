@@ -68,12 +68,12 @@ make benchmark-screening-speed \
 
 ## Manifest columns
 
-| Column | Meaning |
-| --- | --- |
+| Column        | Meaning                                             |
+| ------------- | --------------------------------------------------- |
 | `scenario_id` | Scenario identifier. The default is `nonempirical`. |
-| `parameter` | Parameter name read by the Makefile. |
-| `value` | Default value for that parameter. |
-| `description` | Human-readable description of the parameter. |
+| `parameter`   | Parameter name read by the Makefile.                |
+| `value`       | Default value for that parameter.                   |
+| `description` | Human-readable description of the parameter.        |
 
 ## Relationship to the other manifests
 

@@ -83,4 +83,4 @@ that should happen only after all execution entrypoints are manifest-driven.
 
 ## Relationship to scenarios and artifact contracts
 
-Benchmark categories describe broad workflow groups. Scenario manifests under `config/scenarios/` provide the parameter defaults used to run those groups. `config/artifacts.tsv` is the stricter manuscript-facing contract layer: it maps concrete upstream result files to claims and curated tables. Use `make check-artifacts` before manuscript export.
+Benchmark categories describe broad workflow groups. Scenario manifests under `config/scenarios/` provide the parameter defaults used to run those groups. `config/comparators.tsv` records external comparator semantics and allowed claims. `config/artifacts.tsv` is the stricter manuscript-facing contract layer: it maps concrete upstream result files to claims and curated tables. Use `make check-comparator-registry` and `make check-artifacts` before manuscript export.

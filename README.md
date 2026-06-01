@@ -25,4 +25,6 @@ claim family.
 
 Artifact and claim contracts are declared in `config/artifacts.tsv` and can be checked with `make check-artifacts`.
 
+Comparator semantics are declared in `config/comparators.tsv` and can be checked with `make check-comparator-registry`.
+
 Scenario defaults are declared in `config/scenarios/nonempirical.tsv` and can be inspected with `make scenarios`.

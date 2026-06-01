@@ -40,12 +40,15 @@ run external comparator tools.
 ## 3. Matched digest-level comparator checks
 
 Comparator workflows are optional because they require external tools.
+Comparator semantics and allowed claims are declared in `config/comparators.tsv`.
 
 ```bash
+make comparator-registry
+make check-comparator-registry
 make compare-cut-tools RADIGEST=.local/bin/radigest THREADS=1
 ```
 
-Interpretation rules:
+Interpretation rules are registry-driven:
 
 - Digital_RADs.py is compared after motif-boundary normalization.
 - DDRADSEQTOOLS is compared only through `rsitesearch.py` and after coordinate

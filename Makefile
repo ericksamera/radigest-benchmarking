@@ -10,6 +10,7 @@ SCALING_SNAKEFILE ?= workflow/scaling.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
 BENCHMARK_CATEGORIES ?= config/benchmark_categories.tsv
 ARTIFACT_CONTRACTS ?= config/artifacts.tsv
+COMPARATOR_REGISTRY ?= config/comparators.tsv
 SCENARIO ?= nonempirical
 SCENARIO_TABLE ?= config/scenarios/$(SCENARIO).tsv
 SCENARIO_MAKEFILE ?= config/scenarios/$(SCENARIO).mk
@@ -83,6 +84,8 @@ help:
 	@echo "  artifact-contracts       Show manuscript artifact contracts"
 	@echo "  check-artifacts          Validate manuscript artifact contract manifest"
 	@echo "  check-manuscript-inputs  Validate upstream inputs for manuscript-table export"
+	@echo "  comparator-registry      Show comparator semantics registry"
+	@echo "  check-comparator-registry Validate comparator registry"
 	@echo "  scenarios                Show selected scenario manifest values"
 	@echo "  check-scenarios          Validate selected scenario manifest"
 	@echo "  benchmark-categories     Show claim-oriented benchmark categories"
@@ -194,6 +197,7 @@ check:
 	  --makefile Makefile \
 	  --out results/processed/benchmark_category_qc.tsv
 	python3 scripts/core/check_artifacts.py --manifest "$(ARTIFACT_CONTRACTS)" --out results/processed/artifact_contracts.tsv
+	python3 scripts/core/check_comparator_registry.py --registry "$(COMPARATOR_REGISTRY)" --out results/processed/comparator_registry_qc.tsv
 	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
 	  --config radigest="$(EFFECTIVE_RADIGEST)" \
@@ -259,6 +263,16 @@ check-manuscript-inputs:
 	python3 scripts/core/check_artifacts.py \
 	  --manifest "$(ARTIFACT_CONTRACTS)" \
 	  --out results/processed/manuscript_input_contracts.tsv
+
+comparator-registry:
+	@python3 scripts/core/check_comparator_registry.py \
+	  --registry "$(COMPARATOR_REGISTRY)" \
+	  --list
+
+check-comparator-registry:
+	python3 scripts/core/check_comparator_registry.py \
+	  --registry "$(COMPARATOR_REGISTRY)" \
+	  --out results/processed/comparator_registry_qc.tsv
 
 scenarios:
 	@python3 scripts/core/read_scenario.py \
@@ -543,7 +557,7 @@ tool-timing-table:
 .PHONY: benchmark-input-format benchmark-scaling radigest-thread-scaling
 .PHONY: pair-screen-scaling benchmark-screening-speed figures-nonempirical
 .PHONY: reviewer-rerun-nonempirical
-.PHONY: benchmark-categories check-benchmark-categories artifact-contracts check-artifacts check-manuscript-inputs manuscript-tables-strict scenarios check-scenarios benchmark-validation
+.PHONY: benchmark-categories check-benchmark-categories artifact-contracts check-artifacts check-manuscript-inputs manuscript-tables-strict comparator-registry check-comparator-registry scenarios check-scenarios benchmark-validation
 .PHONY: benchmark-comparators benchmark-performance benchmark-nonempirical
 .PHONY: benchmark-empirical benchmark-manuscript-artifacts
 
