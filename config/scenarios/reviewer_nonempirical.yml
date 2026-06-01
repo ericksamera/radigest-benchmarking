@@ -15,6 +15,8 @@ matched_digest:
   threads: 1
 
 screening_speed:
+  cases: config/screening_speed_cases.tsv
+  target: performance_screening_speed_all
   dataset: small_yeast_s288c_plain
   reference: data/reference/small_yeast_s288c.fa
   candidate_enzymes: config/candidate_enzymes.txt
@@ -26,6 +28,7 @@ screening_speed:
   runs: 5
   jobs: 2
   radigest_threads: 1
+  command_template: auto
 
 thread_scaling:
   dataset: moderate_cannabis_pink-pepper_plain

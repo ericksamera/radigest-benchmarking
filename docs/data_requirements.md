@@ -23,3 +23,12 @@ external/ddRadSeqWebTool/backend/service/DigestSequence.py
 ```
 
 Install helpers live in `scripts/comparators/`. Version metadata is written into generated comparator outputs. Empirical BAM/CRAM inputs remain optional until their public input contract is finalized.
+
+Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
+
+```text
+data/reference/small_yeast_s288c.fa
+config/candidate_enzymes.txt
+```
+
+The screening command template is declared in `config/screening_speed_cases.tsv`; the default `auto` template probes native radigest screening command forms and then reuses the first successful form for subsequent runs in the same case.

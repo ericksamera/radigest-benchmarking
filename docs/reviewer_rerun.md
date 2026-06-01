@@ -12,7 +12,7 @@ make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make audit
 ```
 
-At Stage 5a, the concrete executable pieces are:
+At Stage 5b, the concrete executable pieces are:
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
@@ -21,6 +21,7 @@ make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
+make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 ```
 
 `comparator-smoke` exercises Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer on the same tracked synthetic FASTA and condition `D1`. `comparator-small-yeast` exercises the same tools on the small public yeast reference and condition `B1`.
@@ -34,4 +35,4 @@ SimRAD             retained-fragment count agreement only
 ddgRADer backend   binned fragment-count distribution agreement only
 ```
 
-Stage 5a adds the radigest input-format performance workflow. Later stages will add screening speed, thread scaling, pair-screen scaling, empirical recovery, and full audit products.
+Stage 5a adds the radigest input-format performance workflow. Stage 5b adds native radigest screening-speed timing using `config/screening_speed_cases.tsv`. Later stages will add thread scaling, pair-screen scaling, empirical recovery, and full audit products.

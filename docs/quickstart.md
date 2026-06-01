@@ -48,3 +48,19 @@ The comparator target writes exact normalized interval comparison summaries for 
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
+
+## Performance
+
+```bash
+make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
+make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+```
+
+The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks native radigest candidate-pair screening using `config/screening_speed_cases.tsv`.
+
+Expected manuscript-facing tables are:
+
+```text
+results/manuscript/tables/table_06_input_format.tsv
+results/manuscript/tables/table_05_screening_speed.tsv
+```

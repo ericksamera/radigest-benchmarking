@@ -14,3 +14,5 @@ ddgRADer backend     binned fragment-screening behavior only
 SimRAD and ddgRADer outputs must not be described as same-fragment or coordinate-equivalence validation outputs unless a future workflow normalizes them to the same interval model.
 
 A claim is release-required only when `required_for_release` is `true`. Empirical recovery remains optional until public empirical inputs are configured.
+
+Stage 5b screening-speed outputs are native radigest performance measurements. They support a throughput claim for candidate-pair screening only; they do not support cross-tool coordinate equivalence or biological recovery claims.

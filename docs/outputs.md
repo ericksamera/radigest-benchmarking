@@ -62,3 +62,16 @@ results/performance/input_format/raw/*/*.json
 ```
 
 The Stage 5a claim is limited to radigest plain-FASTA versus gzip-FASTA input-format timing on the small public yeast reference. Fragment-count consistency is enforced before wall-time ratios are interpreted.
+
+Stage 5b screening-speed performance outputs are:
+
+```text
+results/performance/screening_speed/screening_speed_summary.tsv
+results/manuscript/tables/table_05_screening_speed.tsv
+benchmark/logs/performance/screening_speed/*.log
+results/performance/screening_speed/raw/*.runs.tsv
+results/performance/screening_speed/raw/*/*.screening.tsv
+results/performance/screening_speed/raw/*/*.json
+```
+
+The Stage 5b claim is limited to native radigest candidate-pair screening throughput. It does not compare coordinates against external tools and it does not make a cross-tool equivalence claim.
