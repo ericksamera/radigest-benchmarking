@@ -112,4 +112,4 @@ results/performance/large_genome/raw/*.runs.tsv
 results/performance/large_genome/raw/*/*.json
 ```
 
-The Stage 5e claim is limited to radigest JSON timing on the moderate public cannabis Pink Pepper reference. It is a large-reference performance check, not a cross-tool equivalence or empirical recovery claim.
+The Stage 5e claim is limited to radigest JSON timing on the large public Triticum aestivum Chinese Spring wheat reference. The moderate cannabis case remains optional as a guardrail. This is a large-reference performance check, not a cross-tool equivalence or empirical recovery claim.

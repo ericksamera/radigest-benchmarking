@@ -26,6 +26,7 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
@@ -47,8 +48,8 @@ Expected reference outputs:
 ```text
 data/reference/small_yeast_s288c.fa.gz
 data/reference/small_yeast_s288c.fa
-data/reference/moderate_cannabis_pink-pepper.fa.gz
-data/reference/moderate_cannabis_pink-pepper.fa
+data/reference/large_wheat_chinese-spring.fa.gz
+data/reference/large_wheat_chinese-spring.fa
 results/references/reference_checksums.tsv
 ```
 
@@ -130,6 +131,7 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
@@ -154,9 +156,9 @@ Primary contracts live in:
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
 
-
 Stage 5e large-reference timing can be run with:
 
 ```bash
+make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 ```

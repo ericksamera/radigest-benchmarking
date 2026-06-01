@@ -16,10 +16,39 @@ def _read_reference_rows(path):
 
 
 REFERENCE_ROWS = _read_reference_rows(REFERENCE_MANIFEST)
+REFERENCE_REQUIRED_ROWS = [
+    row
+    for row in REFERENCE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() == "true"
+]
+REFERENCE_OPTIONAL_ROWS = [
+    row
+    for row in REFERENCE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() != "true"
+]
 REFERENCE_GZIP_OUTPUTS = [row["output_gzip"] for row in REFERENCE_ROWS]
 REFERENCE_PLAIN_OUTPUTS = [row["output_plain"] for row in REFERENCE_ROWS]
 REFERENCE_FASTA_OUTPUTS = REFERENCE_GZIP_OUTPUTS + REFERENCE_PLAIN_OUTPUTS
-REFERENCE_ALL_OUTPUTS = REFERENCE_FASTA_OUTPUTS + [REFERENCE_CHECKSUMS]
+REFERENCE_REQUIRED_GZIP_OUTPUTS = [
+    row["output_gzip"] for row in REFERENCE_REQUIRED_ROWS
+]
+REFERENCE_REQUIRED_PLAIN_OUTPUTS = [
+    row["output_plain"] for row in REFERENCE_REQUIRED_ROWS
+]
+REFERENCE_REQUIRED_FASTA_OUTPUTS = (
+    REFERENCE_REQUIRED_GZIP_OUTPUTS + REFERENCE_REQUIRED_PLAIN_OUTPUTS
+)
+REFERENCE_OPTIONAL_GZIP_OUTPUTS = [
+    row["output_gzip"] for row in REFERENCE_OPTIONAL_ROWS
+]
+REFERENCE_OPTIONAL_PLAIN_OUTPUTS = [
+    row["output_plain"] for row in REFERENCE_OPTIONAL_ROWS
+]
+REFERENCE_OPTIONAL_FASTA_OUTPUTS = (
+    REFERENCE_OPTIONAL_GZIP_OUTPUTS + REFERENCE_OPTIONAL_PLAIN_OUTPUTS
+)
+REFERENCE_ALL_OUTPUTS = REFERENCE_REQUIRED_FASTA_OUTPUTS + [REFERENCE_CHECKSUMS]
+REFERENCE_OPTIONAL_ALL_OUTPUTS = REFERENCE_OPTIONAL_FASTA_OUTPUTS
 
 
 rule download_reference_gzip:
@@ -64,7 +93,7 @@ rule prepare_plain_reference:
 rule reference_checksums:
     input:
         manifest=REFERENCE_MANIFEST,
-        fastas=REFERENCE_FASTA_OUTPUTS
+        fastas=REFERENCE_REQUIRED_FASTA_OUTPUTS
     output:
         checksums=REFERENCE_CHECKSUMS
     log:
@@ -76,6 +105,12 @@ rule reference_checksums:
         mkdir -p benchmark/logs/references results/references
         python3 scripts/reference/write_reference_checksums.py \
           --manifest {input.manifest:q} \
+          --required-only \
           --out {output.checksums:q} \
           > {log:q} 2>&1
         """
+
+
+rule references_optional_all:
+    input:
+        REFERENCE_OPTIONAL_ALL_OUTPUTS

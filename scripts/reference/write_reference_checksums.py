@@ -117,11 +117,18 @@ def artifact_row(row: dict[str, str], kind: str, path_raw: str) -> dict[str, str
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=Path("config/references.tsv"))
+    parser.add_argument("--required-only", action="store_true")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
 
     try:
         rows = read_manifest(args.manifest)
+        if args.required_only:
+            rows = [
+                row
+                for row in rows
+                if row["required_for_nonempirical"].lower() == "true"
+            ]
         out_rows: list[dict[str, str]] = []
         for row in rows:
             out_rows.append(artifact_row(row, "gzip_fasta", row["output_gzip"]))

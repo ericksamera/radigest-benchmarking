@@ -13,7 +13,7 @@ SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
 SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" ddgrader_repo="$(DDGRADER_REPO)"
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 
-.PHONY: help smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help smoke comparator-smoke comparator-small-yeast references references-large comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,7 @@ help:
 	  '  make check' \
 	  '  make smoke RADIGEST=/path/to/radigest' \
 	  '  make references' \
+	  '  make references-large' \
 	  '  make install-digital-rads' \
 	  '  make install-ddradseqtools' \
 	  '  make install-simrad' \
@@ -47,6 +48,9 @@ smoke:
 
 references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
+
+references-large:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_optional_all $(SNAKEMAKE_CONFIG_ARGS)
 
 comparator-smoke:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_smoke_all $(SNAKEMAKE_CONFIG_ARGS)

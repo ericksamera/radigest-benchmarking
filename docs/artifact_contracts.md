@@ -33,4 +33,4 @@ results/performance/large_genome/large_genome_summary.tsv
 results/manuscript/tables/table_s04_large_genome.tsv
 ```
 
-The table is generated from `config/large_genome_cases.tsv` and is limited to a radigest large-reference timing claim.
+The table is generated from `config/large_genome_cases.tsv` and is limited to a radigest wheat large-reference timing claim. Optional cannabis rows remain guardrails and are not the release-required large-reference claim.

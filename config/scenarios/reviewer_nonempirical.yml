@@ -3,6 +3,8 @@ references:
   small_yeast_s288c_gzip: data/reference/small_yeast_s288c.fa.gz
   moderate_cannabis_pink-pepper_plain: data/reference/moderate_cannabis_pink-pepper.fa
   moderate_cannabis_pink-pepper_gzip: data/reference/moderate_cannabis_pink-pepper.fa.gz
+  large_wheat_chinese-spring_plain: data/reference/large_wheat_chinese-spring.fa
+  large_wheat_chinese-spring_gzip: data/reference/large_wheat_chinese-spring.fa.gz
 
 matched_digest:
   dataset: small_yeast_s288c_plain
@@ -44,8 +46,8 @@ thread_scaling:
 large_genome:
   cases: config/large_genome_cases.tsv
   target: performance_large_genome_all
-  dataset: moderate_cannabis_pink-pepper_plain
-  reference: data/reference/moderate_cannabis_pink-pepper.fa
+  dataset: large_wheat_chinese-spring_plain
+  reference: data/reference/large_wheat_chinese-spring.fa
   condition: B2
   enzymes: [EcoRI, MseI]
   min_size: 300
@@ -53,7 +55,7 @@ large_genome:
   output_mode: json
   threads: 4
   runs: 3
-  claim_note: Large-reference radigest timing only; no cross-tool equivalence or empirical recovery claim.
+  claim_note: True large-reference wheat timing only; no cross-tool equivalence or empirical recovery claim. The wheat reference is optional for make references and is fetched only when large-genome targets are requested.
 
 pair_screen_scaling:
   cases: config/pair_screen_scaling_cases.tsv
