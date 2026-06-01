@@ -29,3 +29,15 @@ benchmark/logs/references/*.log
 results/references/metadata/*
 data/reference/ncbi_packages/*
 ```
+
+Stage 4 comparator outputs are:
+
+```text
+results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv
+results/comparators/ddradseqtools/small_yeast_s288c_B1.interval_compare.summary.tsv
+results/comparators/cut_equivalence_summary.tsv
+results/manuscript/tables/table_03_interval_comparisons.tsv
+benchmark/logs/comparators/**/*.log
+```
+
+Raw comparator output, normalized interval TSVs, detail comparison TSVs, and logs are generated artifacts and are not tracked.

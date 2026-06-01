@@ -42,3 +42,17 @@ pair_screen_scaling:
   jobs: [1, 2, 4, 8]
   runs: 3
   radigest_threads: 1
+
+comparators:
+  digital_rads:
+    case: digital_rads_smoke_single__D1
+    dataset: digital_rads_smoke_single
+    reference: data/synthetic/digital_rads_ecori_msei_double.fa
+    condition: D1
+    required_path: external/Digital_RADs/Digital_RADs.py
+  ddradseqtools:
+    case: small_yeast_s288c_B1
+    dataset: small_yeast_s288c_plain
+    reference: data/reference/small_yeast_s288c.fa
+    condition: B1
+    required_path: external/ddRADseqTools/Package/rsitesearch.py

@@ -6,7 +6,7 @@ SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
 SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)"
 
-.PHONY: help smoke reviewer-nonempirical reviewer-empirical reviewer-all references manuscript audit check check-manifests
+.PHONY: help smoke reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests
 
 help:
 	@printf '%s\n' \
@@ -14,6 +14,7 @@ help:
 	  '  make check' \
 	  '  make smoke RADIGEST=/path/to/radigest' \
 	  '  make references' \
+	  '  make comparators RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
 	  '  make reviewer-all THREADS=4' \
@@ -25,6 +26,9 @@ smoke:
 
 references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
+
+comparators:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)
 
 reviewer-nonempirical:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all $(SNAKEMAKE_CONFIG_ARGS)

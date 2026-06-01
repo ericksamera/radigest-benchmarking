@@ -77,6 +77,16 @@ TSV_SPECS = {
         "allowed_claim",
         "required_paths",
     ],
+    "config/comparator_cases.tsv": [
+        "case_id",
+        "tool_id",
+        "dataset_id",
+        "condition_id",
+        "reference_path",
+        "comparison_mode",
+        "required_for_nonempirical",
+        "notes",
+    ],
     "config/artifacts.tsv": [
         "claim_id",
         "category",
@@ -104,11 +114,20 @@ SCENARIO_SPECS = {
 EXTRA_REQUIRED_FILES = [
     "config/candidate_enzymes.txt",
     "data/synthetic/synthetic_validation.fa",
+    "data/synthetic/digital_rads_ecori_msei_double.fa",
     "scripts/validation/validate_synthetic.py",
     "scripts/manuscript/make_synthetic_validation_table.py",
     "scripts/reference/fetch_ncbi_reference.py",
     "scripts/reference/prepare_plain_reference.py",
     "scripts/reference/write_reference_checksums.py",
+    "scripts/validation/normalize_radigest_tsv.py",
+    "scripts/validation/compare_interval_sets.py",
+    "scripts/comparators/run_digital_rads.sh",
+    "scripts/comparators/normalize_digital_rads.py",
+    "scripts/comparators/run_ddradseqtools_rsitesearch.sh",
+    "scripts/comparators/normalize_ddradseqtools_fragments.py",
+    "scripts/comparators/summarize_ddradseqtools_fragments.py",
+    "scripts/comparators/build_cut_equivalence_table.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
@@ -123,6 +142,7 @@ BOOL_COLUMNS = {
     "config/datasets.tsv": ["required_for_smoke"],
     "config/artifacts.tsv": ["required_for_release"],
     "config/references.tsv": ["required_for_nonempirical"],
+    "config/comparator_cases.tsv": ["required_for_nonempirical"],
 }
 
 DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
@@ -281,6 +301,23 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
             if plain_path != expected_plain:
                 fail(
                     f"{path}: reference {reference} output_plain must be {expected_plain}"
+                )
+
+    if path == "config/comparator_cases.tsv":
+        valid_modes = {"exact", "length-only"}
+        valid_tools = {"digital_rads", "ddradseqtools", "simrad", "ddgrader"}
+        for row in rows:
+            case = row["case_id"]
+            tool = row["tool_id"]
+            if tool not in valid_tools:
+                fail(f"{path}: case {case} has unknown tool_id {tool!r}")
+            mode = row["comparison_mode"]
+            if mode not in valid_modes:
+                fail(f"{path}: case {case} has invalid comparison_mode {mode!r}")
+            ref_path = row["reference_path"]
+            if ref_path == "NA" or ref_path.startswith("/"):
+                fail(
+                    f"{path}: case {case} reference_path must be a relative repository path"
                 )
 
     if path == "config/artifacts.tsv":

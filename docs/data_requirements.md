@@ -6,3 +6,13 @@ Reference FASTA files are produced by the Stage 3 references workflow from `conf
 - `moderate_cannabis_pink-pepper` -> `data/reference/moderate_cannabis_pink-pepper.fa.gz` and `data/reference/moderate_cannabis_pink-pepper.fa`
 
 Reference IDs use underscores to delimit benchmark scale, organism or commodity, and source label. Hyphens preserve multi-word source labels, as in `moderate_cannabis_pink-pepper`. The workflow records SHA256 checksums and basic FASTA statistics in `results/references/reference_checksums.tsv`. Empirical BAM/CRAM inputs remain optional until their public input contract is finalized.
+
+Stage 4 comparator runs also require external, ignored tool checkouts:
+
+```text
+external/Digital_RADs/Digital_RADs.py
+external/ddRADseqTools/Package/rsitesearch.py
+external/ddRADseqTools/Package/restrictionsites.txt
+```
+
+These are obtained with the install helper scripts in `scripts/comparators/`. They are not committed; version metadata is written into generated comparator outputs.

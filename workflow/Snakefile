@@ -14,6 +14,7 @@ MANIFESTS = [
     "config/enzymes.tsv",
     "config/conditions.tsv",
     "config/comparators.tsv",
+    "config/comparator_cases.tsv",
     "config/artifacts.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
@@ -42,6 +43,7 @@ SCAFFOLD_PLACEHOLDERS = [
     "benchmark/memory/.gitkeep",
     "data/reference/.gitkeep",
     "data/synthetic/synthetic_validation.fa",
+    "data/synthetic/digital_rads_ecori_msei_double.fa",
 ]
 
 rule all:
@@ -72,7 +74,7 @@ rule reviewer_nonempirical_all:
         "config/scenarios/reviewer_nonempirical.yml",
         SYNTHETIC_VALIDATION_OUTPUTS,
         REFERENCE_ALL_OUTPUTS,
-        "results/comparators/.gitkeep",
+        COMPARATOR_ALL_OUTPUTS,
         "results/performance/.gitkeep"
 
 rule reviewer_empirical_all:
@@ -87,7 +89,7 @@ rule reviewer_all:
         "config/scenarios/reviewer_all.yml",
         SYNTHETIC_VALIDATION_OUTPUTS,
         REFERENCE_ALL_OUTPUTS,
-        "results/comparators/.gitkeep",
+        COMPARATOR_ALL_OUTPUTS,
         "results/performance/.gitkeep",
         "results/empirical/.gitkeep"
 
@@ -95,6 +97,7 @@ rule manuscript_all:
     input:
         MANIFESTS,
         SYNTHETIC_VALIDATION_TABLE,
+        COMPARATOR_INTERVAL_TABLE,
         "results/manuscript/figures/.gitkeep"
 
 rule audit_all:
