@@ -1,12 +1,12 @@
 references:
-  yeast_plain: data/reference/yeast.fa
-  yeast_gzip: data/reference/yeast.fa.gz
-  moderate_plain: data/reference/moderate.fa
-  moderate_gzip: data/reference/moderate.fa.gz
+  small_yeast_s288c_plain: data/reference/small_yeast_s288c.fa
+  small_yeast_s288c_gzip: data/reference/small_yeast_s288c.fa.gz
+  moderate_cannabis_pink_pepper_plain: data/reference/moderate_cannabis_pink_pepper.fa
+  moderate_cannabis_pink_pepper_gzip: data/reference/moderate_cannabis_pink_pepper.fa.gz
 
 matched_digest:
-  dataset: yeast_small_plain
-  reference: data/reference/yeast.fa
+  dataset: small_yeast_s288c_plain
+  reference: data/reference/small_yeast_s288c.fa
   condition: B1
   enzymes: [EcoRI, MseI]
   min_size: 100
@@ -15,8 +15,8 @@ matched_digest:
   threads: 1
 
 screening_speed:
-  dataset: yeast_small_plain
-  reference: data/reference/yeast.fa
+  dataset: small_yeast_s288c_plain
+  reference: data/reference/small_yeast_s288c.fa
   candidate_enzymes: config/candidate_enzymes.txt
   min_size: 300
   max_size: 600
@@ -28,16 +28,16 @@ screening_speed:
   radigest_threads: 1
 
 thread_scaling:
-  dataset: cannabis_pink_pepper_plain
-  reference: data/reference/moderate.fa
+  dataset: moderate_cannabis_pink_pepper_plain
+  reference: data/reference/moderate_cannabis_pink_pepper.fa
   conditions: [B1, B2]
   modes: [json, fragments_tsv]
   threads: [1, 2, 4, 8]
   runs: 7
 
 pair_screen_scaling:
-  dataset: cannabis_pink_pepper_plain
-  reference: data/reference/moderate.fa
+  dataset: moderate_cannabis_pink_pepper_plain
+  reference: data/reference/moderate_cannabis_pink_pepper.fa
   candidate_enzymes: config/candidate_enzymes.txt
   jobs: [1, 2, 4, 8]
   runs: 3

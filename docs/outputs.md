@@ -20,11 +20,12 @@ The raw per-case files and benchmark logs are generated artifacts and are not tr
 Stage 3 reference outputs are:
 
 ```text
-data/reference/yeast.fa.gz
-data/reference/yeast.fa
-data/reference/moderate.fa.gz
-data/reference/moderate.fa
+data/reference/small_yeast_s288c.fa.gz
+data/reference/small_yeast_s288c.fa
+data/reference/moderate_cannabis_pink_pepper.fa.gz
+data/reference/moderate_cannabis_pink_pepper.fa
 results/references/reference_checksums.tsv
 benchmark/logs/references/*.log
 results/references/metadata/*
+data/reference/ncbi_packages/*
 ```

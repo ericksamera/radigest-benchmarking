@@ -23,6 +23,8 @@ REFERENCE_ALL_OUTPUTS = REFERENCE_FASTA_OUTPUTS + [REFERENCE_CHECKSUMS]
 
 
 rule download_reference_gzip:
+    input:
+        manifest=REFERENCE_MANIFEST
     output:
         gzip="data/reference/{reference_id}.fa.gz"
     log:
@@ -33,7 +35,7 @@ rule download_reference_gzip:
         r"""
         mkdir -p benchmark/logs/references data/reference
         python3 scripts/reference/fetch_ncbi_reference.py \
-          --manifest {REFERENCE_MANIFEST:q} \
+          --manifest {input.manifest:q} \
           --reference-id {wildcards.reference_id:q} \
           --output {output.gzip:q} \
           > {log:q} 2>&1
@@ -61,7 +63,8 @@ rule prepare_plain_reference:
 
 rule reference_checksums:
     input:
-        REFERENCE_FASTA_OUTPUTS
+        manifest=REFERENCE_MANIFEST,
+        fastas=REFERENCE_FASTA_OUTPUTS
     output:
         checksums=REFERENCE_CHECKSUMS
     log:
@@ -72,7 +75,7 @@ rule reference_checksums:
         r"""
         mkdir -p benchmark/logs/references results/references
         python3 scripts/reference/write_reference_checksums.py \
-          --manifest {REFERENCE_MANIFEST:q} \
+          --manifest {input.manifest:q} \
           --out {output.checksums:q} \
           > {log:q} 2>&1
         """
