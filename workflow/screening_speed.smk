@@ -9,6 +9,7 @@ SCORE_MIN = str(config.get("score_min", 1))
 SCORE_MAX = str(config.get("score_max", 2000))
 SIZE_MODEL = config.get("size_model", "hard")
 RUNS = str(config.get("runs", 5))
+RADIGEST = config.get("radigest", ".local/bin/radigest")
 RADIGEST_SCREEN_PAIRS = config.get(
     "radigest_screen_pairs",
     ".local/bin/radigest-screen-pairs",
@@ -45,6 +46,7 @@ rule screening_speed:
           --size-model {SIZE_MODEL:q} \
           --runs {RUNS:q} \
           --radigest-screen-pairs {RADIGEST_SCREEN_PAIRS:q} \
+          --radigest {RADIGEST:q} \
           --ddgrader-repo {DDGRADER_REPO:q} \
           --jobs {JOBS:q} \
           --radigest-threads {RADIGEST_THREADS:q}

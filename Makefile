@@ -210,7 +210,7 @@ benchmark-matched-tools:
 	  --max 300 \
 	  --runs 5 \
 	  --threads $(THREADS) \
-	  --radigest "$(RADIGEST)" \
+	  --radigest "$(EFFECTIVE_RADIGEST)" \
 	  --digital-rads external/Digital_RADs/Digital_RADs.py \
 	  --skip-digital-rads \
 	  --skip-simrad
@@ -225,7 +225,7 @@ benchmark-matched-tools-with-digital:
 	  --max 300 \
 	  --runs 5 \
 	  --threads $(THREADS) \
-	  --radigest "$(RADIGEST)" \
+	  --radigest "$(EFFECTIVE_RADIGEST)" \
 	  --digital-rads external/Digital_RADs/Digital_RADs.py \
 	  --skip-simrad
 
@@ -518,21 +518,21 @@ benchmark-tool-comparison: benchmark-digest-tool-comparison benchmark-screening-
 benchmark-input-format:
 	$(MAKE) benchmark-radigest \
 	  WORKFLOW_CONFIG=workflow/config.yeast_input_formats.yml \
-	  RADIGEST="$(RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(RADIGEST_RANK_PAIRS)" \
+	  RADIGEST="$(EFFECTIVE_RADIGEST)" \
+	  RADIGEST_SCREEN_PAIRS="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	  RADIGEST_RANK_PAIRS="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
 	$(MAKE) benchmark-tables \
 	  WORKFLOW_CONFIG=workflow/config.yeast_input_formats.yml \
-	  RADIGEST="$(RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(RADIGEST_RANK_PAIRS)" \
+	  RADIGEST="$(EFFECTIVE_RADIGEST)" \
+	  RADIGEST_SCREEN_PAIRS="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	  RADIGEST_RANK_PAIRS="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
 	$(MAKE) input-format-table \
 	  WORKFLOW_CONFIG=workflow/config.yeast_input_formats.yml \
-	  RADIGEST="$(RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(RADIGEST_RANK_PAIRS)" \
+	  RADIGEST="$(EFFECTIVE_RADIGEST)" \
+	  RADIGEST_SCREEN_PAIRS="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
+	  RADIGEST_RANK_PAIRS="$(EFFECTIVE_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
 
 radigest-thread-scaling:
@@ -547,7 +547,7 @@ radigest-thread-scaling:
 	  --threads-list $(SCALING_THREADS_LIST) \
 	  --modes json,fragments_tsv \
 	  --runs $(THREAD_SCALING_RUNS) \
-	  --radigest "$(RADIGEST)"
+	  --radigest "$(EFFECTIVE_RADIGEST)"
 	bash scripts/run_radigest_thread_scaling.sh \
 	  --reference "$(MODERATE_PLAIN_REF)" \
 	  --dataset cannabis_pink_pepper_plain \
@@ -558,7 +558,7 @@ radigest-thread-scaling:
 	  --threads-list $(SCALING_THREADS_LIST) \
 	  --modes json,fragments_tsv \
 	  --runs $(THREAD_SCALING_RUNS) \
-	  --radigest "$(RADIGEST)"
+	  --radigest "$(EFFECTIVE_RADIGEST)"
 	python3 scripts/summarize_radigest_thread_scaling.py \
 	  --root results/raw/radigest_thread_scaling \
 	  --time-dir benchmark/memory/radigest_thread_scaling \
@@ -571,6 +571,11 @@ pair-screen-scaling:
 	  benchmark/memory/pair_screen_scaling \
 	  benchmark/logs/pair_screen_scaling \
 	  results/tables
+	screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)"; \
+	radigest="$(EFFECTIVE_RADIGEST)"; \
+	screen_pairs="$$(realpath "$${screen_pairs}")"; \
+	radigest="$$(realpath "$${radigest}")"; \
+	export PATH="$$(dirname "$${screen_pairs}"):$$(dirname "$${radigest}"):$$PATH"; \
 	for jobs in $(PAIR_SCREEN_JOBS); do \
 	  for run in $$(seq 1 $(PAIR_SCREEN_RUNS)); do \
 	    stem="cannabis_jobs$${jobs}_run$${run}"; \
@@ -580,7 +585,8 @@ pair-screen-scaling:
 	    echo "[RUN] $${stem}" >&2; \
 	    /usr/bin/time -v \
 	      -o "benchmark/memory/pair_screen_scaling/$${stem}.time" \
-	      "$(RADIGEST_SCREEN_PAIRS)" \
+	      "$${screen_pairs}" \
+	        --radigest "$${radigest}" \
 	        --fasta "$(MODERATE_PLAIN_REF)" \
 	        --enzymes config/candidate_enzymes.txt \
 	        --min 300 \

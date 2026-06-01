@@ -12,6 +12,7 @@ SIZE_MODEL="hard"
 RUNS="5"
 
 RADIGEST_SCREEN_PAIRS="radigest-screen-pairs"
+RADIGEST="radigest"
 DDGRADER_REPO="external/ddRadSeqWebTool"
 
 JOBS="2"
@@ -39,6 +40,7 @@ Options:
   --size-model MODEL            radigest size model
   --runs N                      Replicates
   --radigest-screen-pairs PATH  radigest-screen-pairs executable
+  --radigest PATH               radigest executable used by radigest-screen-pairs
   --ddgrader-repo PATH          ddgRADer/ddRadSeqWebTool checkout
   --jobs N                      radigest-screen-pairs jobs
   --radigest-threads N          radigest threads per pair
@@ -62,6 +64,7 @@ while [[ $# -gt 0 ]]; do
     --size-model) SIZE_MODEL="$2"; shift 2 ;;
     --runs) RUNS="$2"; shift 2 ;;
     --radigest-screen-pairs) RADIGEST_SCREEN_PAIRS="$2"; shift 2 ;;
+    --radigest) RADIGEST="$2"; shift 2 ;;
     --ddgrader-repo) DDGRADER_REPO="$2"; shift 2 ;;
     --jobs) JOBS="$2"; shift 2 ;;
     --radigest-threads) RADIGEST_THREADS="$2"; shift 2 ;;
@@ -84,6 +87,24 @@ if ! command -v "$RADIGEST_SCREEN_PAIRS" >/dev/null 2>&1 && [[ ! -x "$RADIGEST_S
   echo "error: radigest-screen-pairs not found: $RADIGEST_SCREEN_PAIRS" >&2
   exit 2
 fi
+
+if ! command -v "$RADIGEST" >/dev/null 2>&1 && [[ ! -x "$RADIGEST" ]]; then
+  echo "error: radigest not found: $RADIGEST" >&2
+  exit 2
+fi
+
+# If local executables are provided by path, resolve them and expose their
+# directory. radigest-screen-pairs internally spawns radigest worker commands.
+if [[ -x "$RADIGEST_SCREEN_PAIRS" ]]; then
+  RADIGEST_SCREEN_PAIRS="$(realpath "$RADIGEST_SCREEN_PAIRS")"
+  export PATH="$(dirname "$RADIGEST_SCREEN_PAIRS"):$PATH"
+fi
+
+if [[ -x "$RADIGEST" ]]; then
+  RADIGEST="$(realpath "$RADIGEST")"
+  export PATH="$(dirname "$RADIGEST"):$PATH"
+fi
+
 
 # Make the local radigest tool directory visible to radigest-screen-pairs.
 # This matters inside Snakemake-managed Conda environments, where PATH does not

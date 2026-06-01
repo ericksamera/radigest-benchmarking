@@ -151,12 +151,10 @@ def main() -> int:
 
     ddgrader = ddgrader_row(
         summary=Path(
-            "results/processed/comparisons/ddgrader/"
-            "yeast_B1.binned.summary.tsv"
+            "results/processed/comparisons/ddgrader/" "yeast_B1.binned.summary.tsv"
         ),
         detail=Path(
-            "results/processed/comparisons/ddgrader/"
-            "yeast_B1.binned.detail.tsv"
+            "results/processed/comparisons/ddgrader/" "yeast_B1.binned.detail.tsv"
         ),
     )
     if ddgrader:
