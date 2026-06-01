@@ -1,21 +1,27 @@
 # Comparator registry
 
-Comparator semantics are declared in `config/comparators.tsv`.
+Comparator semantics are declared in `config/comparators.tsv`. Runnable interval-equivalence cases are declared in `config/comparator_cases.tsv`. Runnable lower-resolution cases are declared in `config/noncoordinate_comparator_cases.tsv`.
 
-Comparator run cases are declared in `config/comparator_cases.tsv`. Stage 4 ports exact interval-equivalence comparators only:
+The comparator claim boundary is:
 
 ```text
-digital_rads_smoke_single__D1 -> Digital_RADs.py normalized interval comparison
-small_yeast_s288c_B1          -> DDRADSEQTOOLS rsitesearch.py normalized interval comparison
+tool                    comparison_level       allowed_claim
+Digital_RADs.py          normalized_interval    coordinate_equivalence
+DDRADSEQTOOLS            normalized_interval    coordinate_equivalence
+SimRAD                   count_only             count_level_digest
+ddgRADer backend         binned_screening        screening_throughput
 ```
 
-External paths listed in `config/comparators.tsv` are checked only when `make comparators` or a reviewer target that depends on `comparators_all` is executed. `make check` remains a manifest and smoke dry-run check and does not require external comparator repositories.
+Digital_RADs.py and DDRADSEQTOOLS are normalized to zero-based half-open interval sets before comparison. These are the only Stage 4 comparators that support coordinate-equivalence claims.
 
-Install or update the two Stage 4 external checkouts with:
+SimRAD validates aggregate retained-fragment and retained-base agreement only. ddgRADer validates binned fragment-screening behavior only. Neither supports same-fragment or coordinate-equivalence claims in this repository.
+
+Install or update external checkouts with:
 
 ```bash
-bash scripts/comparators/install_digital_rads.sh
-bash scripts/comparators/install_ddradseqtools.sh
+make install-digital-rads
+make install-ddradseqtools
+make install-ddgrader
 ```
 
 The required executable paths after installation are:
@@ -24,6 +30,17 @@ The required executable paths after installation are:
 external/Digital_RADs/Digital_RADs.py
 external/ddRADseqTools/Package/rsitesearch.py
 external/ddRADseqTools/Package/restrictionsites.txt
+external/ddRadSeqWebTool/backend/service/DigestSequence.py
 ```
 
-Digital_RADs.py reports motif-bounded markers; the Stage 4 normalizer converts them to cut-to-cut zero-based half-open intervals before comparison. DDRADSEQTOOLS `rsitesearch.py` emits fragment FASTA headers; the Stage 4 normalizer converts those coordinates with enzyme cut offsets and first-token sequence identifiers.
+SimRAD is an R package, not an external checkout. Snakemake installs it into `workflow/envs/simrad.yml` via `workflow/envs/simrad.post-deploy.sh`. For manual testing in an active R environment, run:
+
+```bash
+make install-simrad
+```
+
+The manuscript-facing semantics table is:
+
+```text
+results/manuscript/tables/table_03_comparator_semantics.tsv
+```

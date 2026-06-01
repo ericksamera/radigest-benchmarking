@@ -1,12 +1,13 @@
 THREADS ?= 4
 RADIGEST ?= radigest
+DDGRADER_REPO ?= external/ddRadSeqWebTool
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
-SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)"
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" ddgrader_repo="$(DDGRADER_REPO)"
 
-.PHONY: help smoke reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests
+.PHONY: help smoke reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -14,6 +15,10 @@ help:
 	  '  make check' \
 	  '  make smoke RADIGEST=/path/to/radigest' \
 	  '  make references' \
+	  '  make install-digital-rads' \
+	  '  make install-ddradseqtools' \
+	  '  make install-simrad' \
+	  '  make install-ddgrader' \
 	  '  make comparators RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
@@ -29,6 +34,18 @@ references:
 
 comparators:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)
+
+install-digital-rads:
+	bash scripts/comparators/install_digital_rads.sh
+
+install-ddradseqtools:
+	bash scripts/comparators/install_ddradseqtools.sh
+
+install-simrad:
+	Rscript scripts/comparators/install_simrad_archive.R
+
+install-ddgrader:
+	bash scripts/comparators/install_ddgrader.sh
 
 reviewer-nonempirical:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -47,6 +64,7 @@ audit:
 
 check-manifests:
 	python3 scripts/core/check_manifests.py
+	python3 scripts/core/check_noncoordinate_comparators.py
 
 check: check-manifests
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)

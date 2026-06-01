@@ -7,9 +7,11 @@ import csv
 from pathlib import Path
 
 COMPARATOR_CASE_MANIFEST = "config/comparator_cases.tsv"
+NONCOORDINATE_COMPARATOR_CASE_MANIFEST = "config/noncoordinate_comparator_cases.tsv"
 COMPARATOR_REGISTRY = "config/comparators.tsv"
 COMPARATOR_CUT_EQUIVALENCE_SUMMARY = "results/comparators/cut_equivalence_summary.tsv"
 COMPARATOR_INTERVAL_TABLE = "results/manuscript/tables/table_03_interval_comparisons.tsv"
+COMPARATOR_SEMANTICS_TABLE = "results/manuscript/tables/table_03_comparator_semantics.tsv"
 
 
 def _read_rows(path):
@@ -27,6 +29,8 @@ def _read_rows(path):
 
 COMPARATOR_CASE_ROWS = _read_rows(COMPARATOR_CASE_MANIFEST)
 COMPARATOR_CASE_BY_ID = {row["case_id"]: row for row in COMPARATOR_CASE_ROWS}
+NONCOORDINATE_COMPARATOR_CASE_ROWS = _read_rows(NONCOORDINATE_COMPARATOR_CASE_MANIFEST)
+NONCOORDINATE_CASE_BY_ID = {row["case_id"]: row for row in NONCOORDINATE_COMPARATOR_CASE_ROWS}
 COMPARATOR_ROWS = _read_rows(COMPARATOR_REGISTRY)
 COMPARATOR_BY_TOOL = {row["tool_id"]: row for row in COMPARATOR_ROWS}
 CONDITION_ROWS_FOR_COMPARATORS = _read_rows("config/conditions.tsv")
@@ -55,10 +59,31 @@ DDRADSEQTOOLS_SUMMARIES = [
     f"results/comparators/ddradseqtools/{case_id}.interval_compare.summary.tsv"
     for case_id in DDRADSEQTOOLS_CASES
 ]
+SIMRAD_CASES = [
+    row["case_id"]
+    for row in NONCOORDINATE_COMPARATOR_CASE_ROWS
+    if row["tool_id"] == "simrad"
+    and row.get("required_for_nonempirical", "false").lower() == "true"
+]
+DDGRADER_CASES = [
+    row["case_id"]
+    for row in NONCOORDINATE_COMPARATOR_CASE_ROWS
+    if row["tool_id"] == "ddgrader"
+    and row.get("required_for_nonempirical", "false").lower() == "true"
+]
+SIMRAD_COUNT_SUMMARIES = [NONCOORDINATE_CASE_BY_ID[case_id]["output_path"] for case_id in SIMRAD_CASES]
+DDGRADER_BINNED_SUMMARIES = [NONCOORDINATE_CASE_BY_ID[case_id]["output_path"] for case_id in DDGRADER_CASES]
+DDGRADER_BINNED_DETAILS = [
+    f"results/comparators/ddgrader/{case_id}_detail.tsv" for case_id in DDGRADER_CASES
+]
 COMPARATOR_INTERVAL_OUTPUTS = DIGITAL_RADS_SUMMARIES + DDRADSEQTOOLS_SUMMARIES
-COMPARATOR_ALL_OUTPUTS = COMPARATOR_INTERVAL_OUTPUTS + [
+COMPARATOR_NONCOORDINATE_OUTPUTS = (
+    SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES + DDGRADER_BINNED_DETAILS
+)
+COMPARATOR_ALL_OUTPUTS = COMPARATOR_INTERVAL_OUTPUTS + COMPARATOR_NONCOORDINATE_OUTPUTS + [
     COMPARATOR_CUT_EQUIVALENCE_SUMMARY,
     COMPARATOR_INTERVAL_TABLE,
+    COMPARATOR_SEMANTICS_TABLE,
 ]
 
 
@@ -67,6 +92,13 @@ def comparator_case(case_id):
         return COMPARATOR_CASE_BY_ID[case_id]
     except KeyError as exc:
         raise ValueError(f"unknown comparator case_id: {case_id}") from exc
+
+
+def noncoordinate_case(case_id):
+    try:
+        return NONCOORDINATE_CASE_BY_ID[case_id]
+    except KeyError as exc:
+        raise ValueError(f"unknown non-coordinate comparator case_id: {case_id}") from exc
 
 
 def condition_for_case(case_id):
@@ -133,6 +165,50 @@ def ddradseqtools_tool_max_size(wc):
 def ddradseqtools_repo(_wc):
     rsitesearch = Path(comparator_required_path("ddradseqtools"))
     return str(rsitesearch.parents[1])
+
+
+def noncoordinate_reference(wc):
+    return noncoordinate_case(wc.case_id)["reference_path"]
+
+
+def noncoordinate_value(wc, column):
+    return noncoordinate_case(wc.case_id)[column]
+
+
+def noncoordinate_enzymes_csv(wc):
+    row = noncoordinate_case(wc.case_id)
+    enzyme2 = row["enzyme_2"]
+    if enzyme2 in {"", "NA", "none", "None"}:
+        return row["enzyme_1"]
+    return f"{row['enzyme_1']},{enzyme2}"
+
+
+def noncoordinate_enzymes_label(wc):
+    row = noncoordinate_case(wc.case_id)
+    enzyme2 = row["enzyme_2"]
+    if enzyme2 in {"", "NA", "none", "None"}:
+        return row["enzyme_1"]
+    return f"{row['enzyme_1']}+{enzyme2}"
+
+
+def noncoordinate_min_size(wc):
+    return int(noncoordinate_case(wc.case_id)["min_size"])
+
+
+def noncoordinate_max_size(wc):
+    return int(noncoordinate_case(wc.case_id)["max_size"])
+
+
+def noncoordinate_radigest_min_size(wc):
+    return int(noncoordinate_case(wc.case_id)["radigest_min_size"])
+
+
+def noncoordinate_radigest_max_size(wc):
+    return int(noncoordinate_case(wc.case_id)["radigest_max_size"])
+
+
+def ddgrader_repo(_wc):
+    return str(config.get("ddgrader_repo", "external/ddRadSeqWebTool"))
 
 
 rule comparators_all:
@@ -449,5 +525,236 @@ rule build_comparator_interval_table:
         python3 scripts/comparators/build_cut_equivalence_table.py \
           --out {output.summary:q} \
           --manuscript-table {output.manuscript_table:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule radigest_for_simrad_count:
+    input:
+        ref=noncoordinate_reference,
+        cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST
+    output:
+        json="results/comparators/simrad/raw/{case_id}.radigest.json",
+        tsv="results/comparators/simrad/raw/{case_id}.radigest.fragments.tsv"
+    log:
+        stdout="benchmark/logs/comparators/simrad/{case_id}.radigest.stdout.log",
+        stderr="benchmark/logs/comparators/simrad/{case_id}.radigest.stderr.log"
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        enzymes=noncoordinate_enzymes_csv,
+        min_size=noncoordinate_min_size,
+        max_size=noncoordinate_max_size,
+        threads=1
+    shell:
+        r"""
+        mkdir -p results/comparators/simrad/raw benchmark/logs/comparators/simrad
+        {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          -fragments-tsv {output.tsv:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule run_simrad_count:
+    input:
+        ref=noncoordinate_reference,
+        cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
+        enzymes="config/enzymes.tsv"
+    output:
+        summary="results/comparators/simrad/raw/{case_id}.simrad.tsv",
+        version="results/comparators/simrad/raw/{case_id}.simrad.version.txt"
+    log:
+        "benchmark/logs/comparators/simrad/{case_id}.simrad.log"
+    params:
+        enzyme1=lambda wc: noncoordinate_value(wc, "enzyme_1"),
+        enzyme2=lambda wc: noncoordinate_value(wc, "enzyme_2"),
+        min_size=noncoordinate_min_size,
+        max_size=noncoordinate_max_size
+    conda:
+        "../envs/simrad.yml"
+    shell:
+        r"""
+        mkdir -p results/comparators/simrad/raw benchmark/logs/comparators/simrad
+        Rscript scripts/comparators/run_simrad_ddrad.R \
+          --reference {input.ref:q} \
+          --enzyme1 {params.enzyme1:q} \
+          --enzyme2 {params.enzyme2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --enzymes-tsv {input.enzymes:q} \
+          --out {output.summary:q} \
+          --version-log {output.version:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule compare_radigest_simrad_count:
+    input:
+        radigest_json="results/comparators/simrad/raw/{case_id}.radigest.json",
+        radigest_tsv="results/comparators/simrad/raw/{case_id}.radigest.fragments.tsv",
+        simrad="results/comparators/simrad/raw/{case_id}.simrad.tsv"
+    output:
+        "results/comparators/simrad/{case_id}.tsv"
+    log:
+        "benchmark/logs/comparators/simrad/{case_id}.compare.log"
+    params:
+        dataset=lambda wc: noncoordinate_value(wc, "dataset_id"),
+        condition=lambda wc: noncoordinate_value(wc, "condition_id")
+    shell:
+        r"""
+        mkdir -p results/comparators/simrad benchmark/logs/comparators/simrad
+        python3 scripts/comparators/compare_radigest_simrad_counts.py \
+          --radigest-json {input.radigest_json:q} \
+          --radigest-fragments {input.radigest_tsv:q} \
+          --simrad-tsv {input.simrad:q} \
+          --dataset {params.dataset:q} \
+          --condition {params.condition:q} \
+          --out {output:q} \
+          --fail-on-difference \
+          > {log:q} 2>&1
+        """
+
+
+rule radigest_for_ddgrader_binned:
+    input:
+        ref=noncoordinate_reference,
+        cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST
+    output:
+        json="results/comparators/ddgrader/raw/{case_id}.radigest.json",
+        tsv="results/comparators/ddgrader/raw/{case_id}.radigest.fragments.tsv"
+    log:
+        stdout="benchmark/logs/comparators/ddgrader/{case_id}.radigest.stdout.log",
+        stderr="benchmark/logs/comparators/ddgrader/{case_id}.radigest.stderr.log"
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        enzymes=noncoordinate_enzymes_csv,
+        min_size=noncoordinate_radigest_min_size,
+        max_size=noncoordinate_radigest_max_size,
+        threads=1
+    shell:
+        r"""
+        mkdir -p results/comparators/ddgrader/raw benchmark/logs/comparators/ddgrader
+        {params.radigest:q} \
+          -fasta {input.ref:q} \
+          -enzymes {params.enzymes:q} \
+          -min {params.min_size} \
+          -max {params.max_size} \
+          -threads {params.threads} \
+          -fragments-tsv {output.tsv:q} \
+          -json {output.json:q} \
+          > {log.stdout:q} 2> {log.stderr:q}
+        """
+
+
+rule bin_radigest_for_ddgrader:
+    input:
+        "results/comparators/ddgrader/raw/{case_id}.radigest.fragments.tsv"
+    output:
+        bins="results/comparators/ddgrader/raw/{case_id}.radigest.bins.tsv",
+        summary="results/comparators/ddgrader/raw/{case_id}.radigest.binned_summary.tsv"
+    log:
+        "benchmark/logs/comparators/ddgrader/{case_id}.bin_radigest.log"
+    params:
+        enzyme_pair=noncoordinate_enzymes_label,
+        min_size=noncoordinate_min_size,
+        max_size=noncoordinate_max_size
+    shell:
+        r"""
+        mkdir -p results/comparators/ddgrader/raw benchmark/logs/comparators/ddgrader
+        python3 scripts/comparators/bin_radigest_fragments.py \
+          --input {input:q} \
+          --enzyme-pair {params.enzyme_pair:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --out-bins {output.bins:q} \
+          --out-summary {output.summary:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule run_ddgrader_backend_binned:
+    input:
+        ref=noncoordinate_reference,
+        digest_sequence=lambda wc: str(Path(ddgrader_repo(wc)) / "backend" / "service" / "DigestSequence.py"),
+        cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST
+    output:
+        raw_csv="results/comparators/ddgrader/raw/{case_id}.ddgrader.raw.csv",
+        bins="results/comparators/ddgrader/raw/{case_id}.ddgrader.bins.tsv",
+        summary="results/comparators/ddgrader/raw/{case_id}.ddgrader.summary.tsv",
+        version="results/comparators/ddgrader/raw/{case_id}.ddgrader.version.txt"
+    log:
+        "benchmark/logs/comparators/ddgrader/{case_id}.ddgrader.log"
+    params:
+        repo=ddgrader_repo,
+        enzyme_pair=noncoordinate_enzymes_csv,
+        min_size=noncoordinate_min_size,
+        max_size=noncoordinate_max_size
+    conda:
+        "../envs/ddgrader.yml"
+    shell:
+        r"""
+        mkdir -p results/comparators/ddgrader/raw benchmark/logs/comparators/ddgrader
+        python3 scripts/comparators/run_ddgrader_backend.py \
+          --repo {params.repo:q} \
+          --reference {input.ref:q} \
+          --enzyme-pairs {params.enzyme_pair:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --out-raw-csv {output.raw_csv:q} \
+          --out-bins {output.bins:q} \
+          --out-summary {output.summary:q} \
+          --version-log {output.version:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule compare_ddgrader_binned:
+    input:
+        radigest="results/comparators/ddgrader/raw/{case_id}.radigest.bins.tsv",
+        ddgrader="results/comparators/ddgrader/raw/{case_id}.ddgrader.bins.tsv"
+    output:
+        detail="results/comparators/ddgrader/{case_id}_detail.tsv",
+        summary="results/comparators/ddgrader/{case_id}_summary.tsv"
+    log:
+        "benchmark/logs/comparators/ddgrader/{case_id}.compare.log"
+    shell:
+        r"""
+        mkdir -p results/comparators/ddgrader benchmark/logs/comparators/ddgrader
+        python3 scripts/comparators/compare_binned_fragment_tables.py \
+          --first {input.radigest:q} \
+          --second {input.ddgrader:q} \
+          --first-name radigest_binned \
+          --second-name ddgRADer_backend \
+          --out-detail {output.detail:q} \
+          --out-summary {output.summary:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule build_comparator_semantics_table:
+    input:
+        interval_summaries=COMPARATOR_INTERVAL_OUTPUTS,
+        noncoordinate_summaries=SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES,
+        cases=COMPARATOR_CASE_MANIFEST,
+        noncoordinate_cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
+        registry=COMPARATOR_REGISTRY
+    output:
+        table=COMPARATOR_SEMANTICS_TABLE
+    log:
+        "benchmark/logs/comparators/comparator_semantics_table.log"
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/comparators
+        python3 scripts/manuscript/make_comparator_semantics_table.py \
+          --comparator-cases {input.cases:q} \
+          --noncoordinate-cases {input.noncoordinate_cases:q} \
+          --comparators {input.registry:q} \
+          --out {output.table:q} \
+          --require-present \
           > {log:q} 2>&1
         """

@@ -26,13 +26,14 @@ make references THREADS=4
 
 This downloads the public references declared in `config/references.tsv`, writes gzipped and plain FASTA files under `data/reference/`, and records checksums in `results/references/reference_checksums.tsv`.
 
-## Exact interval comparators
+## Comparators
 
-Install or update the external comparator checkouts first:
+Install or update external comparator checkouts first:
 
 ```bash
-bash scripts/comparators/install_digital_rads.sh
-bash scripts/comparators/install_ddradseqtools.sh
+make install-digital-rads
+make install-ddradseqtools
+make install-ddgrader
 ```
 
 Then run:
@@ -41,4 +42,9 @@ Then run:
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 ```
 
-The comparator target writes exact normalized interval comparison summaries for Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py`, plus the manuscript-facing interval-comparison table.
+The comparator target writes exact normalized interval comparison summaries for Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py`, a SimRAD count-level sanity comparison, a ddgRADer binned-screening comparison, and two manuscript-facing tables:
+
+```text
+results/manuscript/tables/table_03_interval_comparisons.tsv
+results/manuscript/tables/table_03_comparator_semantics.tsv
+```

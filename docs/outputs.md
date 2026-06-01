@@ -15,8 +15,6 @@ results/validation/raw/synthetic/*.json
 results/validation/raw/synthetic/*.log
 ```
 
-The raw per-case files and benchmark logs are generated artifacts and are not tracked.
-
 Stage 3 reference outputs are:
 
 ```text
@@ -30,14 +28,18 @@ results/references/metadata/*
 data/reference/ncbi_packages/*
 ```
 
-Stage 4 comparator outputs are:
+Stage 4/4b comparator outputs are:
 
 ```text
 results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv
 results/comparators/ddradseqtools/small_yeast_s288c_B1.interval_compare.summary.tsv
+results/comparators/simrad/simrad_count_comparison.tsv
+results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
+results/comparators/ddgrader/ddgrader_binned_screening_detail.tsv
 results/comparators/cut_equivalence_summary.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
+results/manuscript/tables/table_03_comparator_semantics.tsv
 benchmark/logs/comparators/**/*.log
 ```
 
-Raw comparator output, normalized interval TSVs, detail comparison TSVs, and logs are generated artifacts and are not tracked.
+Raw comparator output, normalized interval TSVs, binned-count TSVs, detail comparison TSVs, version logs, and benchmark logs are generated artifacts and are not tracked.

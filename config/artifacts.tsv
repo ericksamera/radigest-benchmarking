@@ -7,4 +7,6 @@ C05	performance	results/performance/screening_speed/screening_speed_summary.tsv	
 C06	performance	results/performance/input_format/radigest_input_format_comparison.tsv	results/manuscript/tables/table_06_input_format.tsv	performance_all	true	Input format comparison.
 C07	performance	results/performance/thread_scaling/radigest_thread_scaling_summary.tsv	results/manuscript/tables/table_s02_radigest_thread_scaling.tsv	performance_all	true	Thread scaling.
 C08	performance	results/performance/pair_screen_scaling/pair_screen_scaling_summary.tsv	results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv	performance_all	true	Pair-screen job scaling.
+C09	comparators	results/comparators/simrad/simrad_count_comparison.tsv	results/manuscript/tables/table_03_comparator_semantics.tsv	comparators_all	true	SimRAD aggregate count-only digest sanity check; does not support coordinate equivalence.
+C10	comparators	results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv	results/manuscript/tables/table_03_comparator_semantics.tsv	comparators_all	true	ddgRADer backend binned screening comparison; does not support coordinate equivalence.
 C11	empirical	results/empirical/sockeye_ddrad/empirical_recovery_summary.tsv	results/manuscript/tables/table_08_empirical_recovery.tsv	empirical_all	false	Optional until empirical inputs are public.

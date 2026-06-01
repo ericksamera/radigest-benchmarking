@@ -1,5 +1,16 @@
 # Claims and limits
 
-Manuscript claims are governed by `config/artifacts.tsv`.
+Manuscript claims are governed by `config/artifacts.tsv` and comparator semantics are governed by `config/comparators.tsv`.
+
+Stage 4 comparator claim limits are explicit:
+
+```text
+Digital_RADs.py      coordinate-equivalence after interval normalization
+DDRADSEQTOOLS        coordinate-equivalence after interval normalization
+SimRAD               aggregate count-level digest sanity only
+ddgRADer backend     binned fragment-screening behavior only
+```
+
+SimRAD and ddgRADer outputs must not be described as same-fragment or coordinate-equivalence validation outputs unless a future workflow normalizes them to the same interval model.
 
 A claim is release-required only when `required_for_release` is `true`. Empirical recovery remains optional until public empirical inputs are configured.

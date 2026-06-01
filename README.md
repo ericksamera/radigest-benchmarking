@@ -10,16 +10,19 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 4 adds exact interval-equivalence comparator workflows. The smoke target still exercises synthetic validation, `make references` downloads the public references, and `make comparators` runs Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` interval comparisons.
+Stage 4 now includes comparator workflows with explicit claim boundaries. Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` are normalized to interval sets and support coordinate-equivalence checks. Stage 4b adds non-coordinate comparator checks: SimRAD is count-level only, and ddgRADer is binned-screening only.
 
 ```bash
 make check
 make smoke RADIGEST=/path/to/radigest
 make references THREADS=4
-bash scripts/comparators/install_digital_rads.sh
-bash scripts/comparators/install_ddradseqtools.sh
+make install-digital-rads
+make install-ddradseqtools
+make install-ddgrader
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 ```
+
+SimRAD is installed into the Snakemake conda environment through `workflow/envs/simrad.post-deploy.sh`. `make install-simrad` is available for a manual active R environment.
 
 Expected smoke outputs:
 
@@ -43,8 +46,11 @@ Expected comparator outputs:
 ```text
 results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv
 results/comparators/ddradseqtools/small_yeast_s288c_B1.interval_compare.summary.tsv
+results/comparators/simrad/simrad_count_comparison.tsv
+results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
 results/comparators/cut_equivalence_summary.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
+results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
 
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
@@ -67,7 +73,8 @@ Primary contracts live in:
 
 - `config/scenarios/*.yml` for runnable reviewer scenarios.
 - `config/comparators.tsv` for comparator semantics and required external paths.
-- `config/comparator_cases.tsv` for runnable comparator cases.
+- `config/comparator_cases.tsv` for normalized interval-equivalence comparator cases.
+- `config/noncoordinate_comparator_cases.tsv` for count-only and binned-screening comparator cases.
 - `config/artifacts.tsv` for manuscript claim outputs and release requirements.
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
