@@ -14,7 +14,28 @@ ddgRADer backend         binned_screening        screening_throughput
 
 Digital_RADs.py and DDRADSEQTOOLS are normalized to zero-based half-open interval sets before comparison. These are the only Stage 4 comparators that support coordinate-equivalence claims.
 
-SimRAD validates aggregate retained-fragment and retained-base agreement only. ddgRADer validates binned fragment-screening behavior only. Neither supports same-fragment or coordinate-equivalence claims in this repository.
+SimRAD validates aggregate retained-fragment count agreement only. Retained-base totals, if reported, are trace metadata and are not enforced. ddgRADer validates binned fragment-screening behavior only. Neither supports same-fragment or coordinate-equivalence claims in this repository.
+
+Stage 4c adds two comparator coverage targets:
+
+```bash
+make comparator-smoke RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
+```
+
+The smoke matrix uses the same tracked FASTA, enzyme pair, and size window for all comparator tools, but each tool keeps its own claim boundary:
+
+```text
+matrix              dataset                  condition  assertion
+comparator_smoke    comparator_smoke_single  D1         interval/count/bin depending on tool
+small_yeast         small_yeast_s288c_plain  B1         interval/count/bin depending on tool
+```
+
+The coverage matrix is written to:
+
+```text
+results/comparators/comparator_case_matrix.tsv
+```
 
 Install or update external checkouts with:
 
@@ -39,8 +60,9 @@ SimRAD is an R package, not an external checkout. Snakemake installs it into `wo
 make install-simrad
 ```
 
-The manuscript-facing semantics table is:
+The manuscript-facing comparator tables are:
 
 ```text
+results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```

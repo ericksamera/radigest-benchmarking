@@ -44,8 +44,7 @@ SCAFFOLD_PLACEHOLDERS = [
     "benchmark/memory/.gitkeep",
     "data/reference/.gitkeep",
     "data/synthetic/synthetic_validation.fa",
-    "data/synthetic/digital_rads_ecori_msei_double.fa",
-    "data/synthetic/simrad_ecori_msei_double.fa",
+    "data/synthetic/comparator_ecori_msei_smoke.fa",
 ]
 
 rule all:

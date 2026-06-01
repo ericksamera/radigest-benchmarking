@@ -1,7 +1,6 @@
-# Comparator interval-equivalence rules for Stage 4.
-# These rules are registry-driven from config/comparators.tsv and
-# config/comparator_cases.tsv. They port only exact interval comparators:
-# Digital_RADs.py and DDRADSEQTOOLS rsitesearch.py.
+# Comparator rules for Stage 4.
+# Interval comparators support normalized coordinate-equivalence checks.
+# Non-coordinate comparators support lower-resolution claim-specific checks.
 
 import csv
 from pathlib import Path
@@ -12,6 +11,9 @@ COMPARATOR_REGISTRY = "config/comparators.tsv"
 COMPARATOR_CUT_EQUIVALENCE_SUMMARY = "results/comparators/cut_equivalence_summary.tsv"
 COMPARATOR_INTERVAL_TABLE = "results/manuscript/tables/table_03_interval_comparisons.tsv"
 COMPARATOR_SEMANTICS_TABLE = "results/manuscript/tables/table_03_comparator_semantics.tsv"
+COMPARATOR_CASE_MATRIX = "results/comparators/comparator_case_matrix.tsv"
+COMPARATOR_SMOKE_DATASET = "comparator_smoke_single"
+COMPARATOR_SMALL_YEAST_DATASET = "small_yeast_s288c_plain"
 
 
 def _read_rows(path):
@@ -38,52 +40,106 @@ CONDITION_BY_ID_FOR_COMPARATORS = {
     row["condition_id"]: row for row in CONDITION_ROWS_FOR_COMPARATORS
 }
 
+def _is_required(row):
+    return row.get("required_for_nonempirical", "false").lower() == "true"
+
+
+def _interval_summary_for_case(row):
+    case_id = row["case_id"]
+    tool_id = row["tool_id"]
+    if tool_id == "digital_rads":
+        return f"results/comparators/digital_rads/{case_id}.summary.tsv"
+    if tool_id == "ddradseqtools":
+        return (
+            f"results/comparators/ddradseqtools/"
+            f"{case_id}.interval_compare.summary.tsv"
+        )
+    raise ValueError(f"unsupported interval comparator tool_id={tool_id!r}")
+
+
+def _noncoordinate_summary_for_case(row):
+    return row["output_path"]
+
+
+def _noncoordinate_detail_for_case(row):
+    if row["tool_id"] == "ddgrader":
+        return f"results/comparators/ddgrader/{row['case_id']}_detail.tsv"
+    return None
+
+
+def _case_outputs_for_dataset(dataset_id):
+    interval_outputs = [
+        _interval_summary_for_case(row)
+        for row in COMPARATOR_CASE_ROWS
+        if _is_required(row) and row["dataset_id"] == dataset_id
+    ]
+    noncoordinate_outputs = []
+    for row in NONCOORDINATE_COMPARATOR_CASE_ROWS:
+        if not _is_required(row) or row["dataset_id"] != dataset_id:
+            continue
+        noncoordinate_outputs.append(_noncoordinate_summary_for_case(row))
+        detail = _noncoordinate_detail_for_case(row)
+        if detail is not None:
+            noncoordinate_outputs.append(detail)
+    return interval_outputs + noncoordinate_outputs
+
+
 DIGITAL_RADS_CASES = [
     row["case_id"]
     for row in COMPARATOR_CASE_ROWS
-    if row["tool_id"] == "digital_rads"
-    and row.get("required_for_nonempirical", "false").lower() == "true"
+    if row["tool_id"] == "digital_rads" and _is_required(row)
 ]
 DDRADSEQTOOLS_CASES = [
     row["case_id"]
     for row in COMPARATOR_CASE_ROWS
-    if row["tool_id"] == "ddradseqtools"
-    and row.get("required_for_nonempirical", "false").lower() == "true"
+    if row["tool_id"] == "ddradseqtools" and _is_required(row)
 ]
 
 DIGITAL_RADS_SUMMARIES = [
-    f"results/comparators/digital_rads/{case_id}.summary.tsv"
+    _interval_summary_for_case(COMPARATOR_CASE_BY_ID[case_id])
     for case_id in DIGITAL_RADS_CASES
 ]
 DDRADSEQTOOLS_SUMMARIES = [
-    f"results/comparators/ddradseqtools/{case_id}.interval_compare.summary.tsv"
+    _interval_summary_for_case(COMPARATOR_CASE_BY_ID[case_id])
     for case_id in DDRADSEQTOOLS_CASES
 ]
 SIMRAD_CASES = [
     row["case_id"]
     for row in NONCOORDINATE_COMPARATOR_CASE_ROWS
-    if row["tool_id"] == "simrad"
-    and row.get("required_for_nonempirical", "false").lower() == "true"
+    if row["tool_id"] == "simrad" and _is_required(row)
 ]
 DDGRADER_CASES = [
     row["case_id"]
     for row in NONCOORDINATE_COMPARATOR_CASE_ROWS
-    if row["tool_id"] == "ddgrader"
-    and row.get("required_for_nonempirical", "false").lower() == "true"
+    if row["tool_id"] == "ddgrader" and _is_required(row)
 ]
-SIMRAD_COUNT_SUMMARIES = [NONCOORDINATE_CASE_BY_ID[case_id]["output_path"] for case_id in SIMRAD_CASES]
-DDGRADER_BINNED_SUMMARIES = [NONCOORDINATE_CASE_BY_ID[case_id]["output_path"] for case_id in DDGRADER_CASES]
+SIMRAD_COUNT_SUMMARIES = [
+    _noncoordinate_summary_for_case(NONCOORDINATE_CASE_BY_ID[case_id])
+    for case_id in SIMRAD_CASES
+]
+DDGRADER_BINNED_SUMMARIES = [
+    _noncoordinate_summary_for_case(NONCOORDINATE_CASE_BY_ID[case_id])
+    for case_id in DDGRADER_CASES
+]
 DDGRADER_BINNED_DETAILS = [
-    f"results/comparators/ddgrader/{case_id}_detail.tsv" for case_id in DDGRADER_CASES
+    detail
+    for detail in (
+        _noncoordinate_detail_for_case(NONCOORDINATE_CASE_BY_ID[case_id])
+        for case_id in DDGRADER_CASES
+    )
+    if detail is not None
 ]
 COMPARATOR_INTERVAL_OUTPUTS = DIGITAL_RADS_SUMMARIES + DDRADSEQTOOLS_SUMMARIES
 COMPARATOR_NONCOORDINATE_OUTPUTS = (
     SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES + DDGRADER_BINNED_DETAILS
 )
+COMPARATOR_SMOKE_OUTPUTS = _case_outputs_for_dataset(COMPARATOR_SMOKE_DATASET)
+COMPARATOR_SMALL_YEAST_OUTPUTS = _case_outputs_for_dataset(COMPARATOR_SMALL_YEAST_DATASET)
 COMPARATOR_ALL_OUTPUTS = COMPARATOR_INTERVAL_OUTPUTS + COMPARATOR_NONCOORDINATE_OUTPUTS + [
     COMPARATOR_CUT_EQUIVALENCE_SUMMARY,
     COMPARATOR_INTERVAL_TABLE,
     COMPARATOR_SEMANTICS_TABLE,
+    COMPARATOR_CASE_MATRIX,
 ]
 
 
@@ -214,6 +270,16 @@ def ddgrader_repo(_wc):
 rule comparators_all:
     input:
         COMPARATOR_ALL_OUTPUTS
+
+
+rule comparator_smoke_all:
+    input:
+        COMPARATOR_SMOKE_OUTPUTS
+
+
+rule comparator_small_yeast_all:
+    input:
+        COMPARATOR_SMALL_YEAST_OUTPUTS
 
 
 rule radigest_for_digital_rads:
@@ -513,7 +579,9 @@ rule compare_radigest_ddradseqtools_intervals:
 
 rule build_comparator_interval_table:
     input:
-        COMPARATOR_INTERVAL_OUTPUTS
+        summaries=COMPARATOR_INTERVAL_OUTPUTS,
+        cases=COMPARATOR_CASE_MANIFEST,
+        registry=COMPARATOR_REGISTRY
     output:
         summary=COMPARATOR_CUT_EQUIVALENCE_SUMMARY,
         manuscript_table=COMPARATOR_INTERVAL_TABLE
@@ -523,8 +591,11 @@ rule build_comparator_interval_table:
         r"""
         mkdir -p results/comparators results/manuscript/tables benchmark/logs/comparators
         python3 scripts/comparators/build_cut_equivalence_table.py \
+          --cases {input.cases:q} \
+          --comparators {input.registry:q} \
           --out {output.summary:q} \
           --manuscript-table {output.manuscript_table:q} \
+          --require-pass \
           > {log:q} 2>&1
         """
 
@@ -615,6 +686,7 @@ rule compare_radigest_simrad_count:
           --dataset {params.dataset:q} \
           --condition {params.condition:q} \
           --out {output:q} \
+          --fail-on-difference \
           > {log:q} 2>&1
         """
 
@@ -754,6 +826,30 @@ rule build_comparator_semantics_table:
           --noncoordinate-cases {input.noncoordinate_cases:q} \
           --comparators {input.registry:q} \
           --out {output.table:q} \
+          --require-present \
+          > {log:q} 2>&1
+        """
+
+
+rule build_comparator_case_matrix:
+    input:
+        interval_summaries=COMPARATOR_INTERVAL_OUTPUTS,
+        noncoordinate_summaries=SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES,
+        cases=COMPARATOR_CASE_MANIFEST,
+        noncoordinate_cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
+        registry=COMPARATOR_REGISTRY
+    output:
+        COMPARATOR_CASE_MATRIX
+    log:
+        "benchmark/logs/comparators/comparator_case_matrix.log"
+    shell:
+        r"""
+        mkdir -p results/comparators benchmark/logs/comparators
+        python3 scripts/comparators/build_comparator_case_matrix.py \
+          --comparator-cases {input.cases:q} \
+          --noncoordinate-cases {input.noncoordinate_cases:q} \
+          --comparators {input.registry:q} \
+          --out {output:q} \
           --require-present \
           > {log:q} 2>&1
         """

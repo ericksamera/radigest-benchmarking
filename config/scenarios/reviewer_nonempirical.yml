@@ -46,31 +46,37 @@ pair_screen_scaling:
 comparators:
   interval_cases: config/comparator_cases.tsv
   noncoordinate_cases: config/noncoordinate_comparator_cases.tsv
-  digital_rads:
-    case: digital_rads_smoke_single__D1
-    dataset: digital_rads_smoke_single
-    reference: data/synthetic/digital_rads_ecori_msei_double.fa
+  comparator_smoke:
+    target: comparator_smoke_all
+    dataset: comparator_smoke_single
+    reference: data/synthetic/comparator_ecori_msei_smoke.fa
     condition: D1
+    tools: [digital_rads, ddradseqtools, simrad, ddgrader]
+    claim_note: Shared synthetic smoke checks exercise all comparator adapters, but claim resolution remains tool-specific.
+  small_yeast_matrix:
+    target: comparator_small_yeast_all
+    dataset: small_yeast_s288c_plain
+    reference: data/reference/small_yeast_s288c.fa
+    condition: B1
+    tools: [digital_rads, ddradseqtools, simrad, ddgrader]
+    claim_note: Public yeast checks use radigest as the anchor. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+  digital_rads:
+    smoke_case: digital_rads_smoke_single__D1
+    small_yeast_case: digital_rads_small_yeast_s288c_B1
     required_path: external/Digital_RADs/Digital_RADs.py
     claim_allowed: coordinate_equivalence
   ddradseqtools:
-    case: small_yeast_s288c_B1
-    dataset: small_yeast_s288c_plain
-    reference: data/reference/small_yeast_s288c.fa
-    condition: B1
+    smoke_case: ddradseqtools_smoke_single__D1
+    small_yeast_case: small_yeast_s288c_B1
     required_path: external/ddRADseqTools/Package/rsitesearch.py
     claim_allowed: coordinate_equivalence
   simrad:
-    case: simrad_count_comparison
-    dataset: simrad_smoke_single
-    reference: data/synthetic/simrad_ecori_msei_double.fa
-    condition: D1
+    smoke_case: simrad_count_comparison
+    small_yeast_case: simrad_small_yeast_s288c_B1
     required_path: NA
     claim_allowed: count_level_digest
   ddgrader:
-    case: ddgrader_binned_screening
-    dataset: small_yeast_s288c_plain
-    reference: data/reference/small_yeast_s288c.fa
-    condition: B1
+    smoke_case: ddgrader_binned_smoke
+    small_yeast_case: ddgrader_binned_screening
     required_path: external/ddRadSeqWebTool/backend/service/DigestSequence.py
     claim_allowed: screening_throughput

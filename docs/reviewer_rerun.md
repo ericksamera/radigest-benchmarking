@@ -12,14 +12,25 @@ make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make audit
 ```
 
-At Stage 4b, the concrete executable pieces are:
+At Stage 4c, the concrete executable pieces are:
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
 make references THREADS=4
+make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 ```
 
-Stage 4b adds explicit lower-resolution comparator checks for SimRAD and ddgRADer. SimRAD is count-level only; ddgRADer is binned-screening only. Coordinate-equivalence claims remain limited to Digital_RADs.py and DDRADSEQTOOLS normalized interval outputs.
+`comparator-smoke` exercises Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer on the same tracked synthetic FASTA and condition `D1`. `comparator-small-yeast` exercises the same tools on the small public yeast reference and condition `B1`.
+
+The assertion is still tool-specific:
+
+```text
+Digital_RADs.py    coordinate-equivalence evidence through normalized intervals
+DDRADSEQTOOLS      coordinate-equivalence evidence through normalized intervals
+SimRAD             retained-fragment count agreement only
+ddgRADer backend   binned fragment-count distribution agreement only
+```
 
 Later stages will add performance workflows, empirical recovery, and full audit products.

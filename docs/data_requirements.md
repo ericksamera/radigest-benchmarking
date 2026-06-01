@@ -7,11 +7,10 @@ Reference FASTA files are produced by the Stage 3 references workflow from `conf
 
 Reference IDs use underscores to delimit benchmark scale, organism or commodity, and source label. Hyphens preserve multi-word source labels, as in `moderate_cannabis_pink-pepper`. The workflow records SHA256 checksums and basic FASTA statistics in `results/references/reference_checksums.tsv`.
 
-Stage 4 comparator runs also require tracked synthetic FASTA files:
+Stage 4 comparator runs also require a tracked synthetic FASTA for the shared comparator smoke matrix:
 
 ```text
-data/synthetic/digital_rads_ecori_msei_double.fa
-data/synthetic/simrad_ecori_msei_double.fa
+data/synthetic/comparator_ecori_msei_smoke.fa
 ```
 
 External comparator checkouts are ignored and are installed under `external/`:

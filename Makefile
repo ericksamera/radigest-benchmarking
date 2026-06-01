@@ -7,7 +7,7 @@ SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
 SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" ddgrader_repo="$(DDGRADER_REPO)"
 
-.PHONY: help smoke reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help smoke comparator-smoke comparator-small-yeast reviewer-nonempirical reviewer-empirical reviewer-all references comparators manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -19,6 +19,8 @@ help:
 	  '  make install-ddradseqtools' \
 	  '  make install-simrad' \
 	  '  make install-ddgrader' \
+	  '  make comparator-smoke RADIGEST=/path/to/radigest' \
+	  '  make comparator-small-yeast RADIGEST=/path/to/radigest' \
 	  '  make comparators RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
@@ -31,6 +33,12 @@ smoke:
 
 references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
+
+comparator-smoke:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_smoke_all $(SNAKEMAKE_CONFIG_ARGS)
+
+comparator-small-yeast:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_small_yeast_all $(SNAKEMAKE_CONFIG_ARGS)
 
 comparators:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)

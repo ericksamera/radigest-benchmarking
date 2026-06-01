@@ -28,14 +28,20 @@ results/references/metadata/*
 data/reference/ncbi_packages/*
 ```
 
-Stage 4/4b comparator outputs are:
+Stage 4/4b/4c comparator outputs are:
 
 ```text
 results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv
+results/comparators/ddradseqtools/ddradseqtools_smoke_single__D1.interval_compare.summary.tsv
+results/comparators/digital_rads/digital_rads_small_yeast_s288c_B1.summary.tsv
 results/comparators/ddradseqtools/small_yeast_s288c_B1.interval_compare.summary.tsv
 results/comparators/simrad/simrad_count_comparison.tsv
+results/comparators/simrad/simrad_small_yeast_s288c_B1.tsv
+results/comparators/ddgrader/ddgrader_binned_smoke_summary.tsv
+results/comparators/ddgrader/ddgrader_binned_smoke_detail.tsv
 results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
 results/comparators/ddgrader/ddgrader_binned_screening_detail.tsv
+results/comparators/comparator_case_matrix.tsv
 results/comparators/cut_equivalence_summary.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv

@@ -114,7 +114,7 @@ SCENARIO_SPECS = {
 EXTRA_REQUIRED_FILES = [
     "config/candidate_enzymes.txt",
     "data/synthetic/synthetic_validation.fa",
-    "data/synthetic/digital_rads_ecori_msei_double.fa",
+    "data/synthetic/comparator_ecori_msei_smoke.fa",
     "scripts/validation/validate_synthetic.py",
     "scripts/manuscript/make_synthetic_validation_table.py",
     "scripts/reference/fetch_ncbi_reference.py",
@@ -128,6 +128,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/comparators/normalize_ddradseqtools_fragments.py",
     "scripts/comparators/summarize_ddradseqtools_fragments.py",
     "scripts/comparators/build_cut_equivalence_table.py",
+    "scripts/comparators/build_comparator_case_matrix.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
