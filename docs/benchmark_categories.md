@@ -47,12 +47,12 @@ from Git.
 
 ## Claim-oriented entrypoints
 
-| Category | Main target | Scope |
-| --- | --- | --- |
-| Validation | `make benchmark-validation` | Synthetic digest correctness and interval smoke checks |
-| Comparators | `make benchmark-comparators` | Matched external-tool comparisons and timing interpretation |
-| Performance | `make benchmark-performance` | Input-format controls and scaling benchmarks |
-| Empirical recovery | `make benchmark-empirical` | BAM/TLEN-derived recovery modelling |
+| Category                       | Main target                   | Scope                                                            |
+| ------------------------------ | ----------------------------- | ---------------------------------------------------------------- |
+| Validation                     | `make benchmark-validation`   | Synthetic digest correctness and interval smoke checks           |
+| Comparators                    | `make benchmark-comparators`  | Matched external-tool comparisons and timing interpretation      |
+| Performance                    | `make benchmark-performance`  | Input-format controls and scaling benchmarks                     |
+| Empirical recovery             | `make benchmark-empirical`    | BAM/TLEN-derived recovery modelling                              |
 | Non-empirical manuscript rerun | `make benchmark-nonempirical` | Validation, comparators, performance, figures, tables, and audit |
 
 `benchmark-nonempirical` assumes references and external comparator checkouts

@@ -161,7 +161,9 @@ def check_workflow_entrypoints(category: dict[str, str]) -> list[dict[str, str]]
                 "check": "workflow_entrypoint",
                 "item": entrypoint,
                 "status": status,
-                "details": "" if status == "PASS" else "target string not found in workflow",
+                "details": (
+                    "" if status == "PASS" else "target string not found in workflow"
+                ),
             }
         )
 
@@ -248,7 +250,11 @@ def validate_categories(
                 "check": "category_id",
                 "item": category_id,
                 "status": "FAIL" if duplicate or not category_id else "PASS",
-                "details": "duplicate or empty category_id" if duplicate or not category_id else "",
+                "details": (
+                    "duplicate or empty category_id"
+                    if duplicate or not category_id
+                    else ""
+                ),
             }
         )
         rows.extend(check_make_targets(category, targets))

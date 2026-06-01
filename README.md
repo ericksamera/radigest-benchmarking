@@ -11,7 +11,6 @@ The repository is designed to make transparent:
 
 Large reference genomes and empirical sequencing files are not stored directly in Git. Download commands, accessions, checksums, and derived summaries are recorded instead.
 
-
 Benchmark categories are declared in `config/benchmark_categories.tsv` and can
 be inspected with:
 
