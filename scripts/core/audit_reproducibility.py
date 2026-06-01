@@ -27,12 +27,12 @@ REQUIRED_FILES = [
     "workflow/empirical_recovery.smk",
     "docs/reproduce_results.md",
     "docs/transparency_checklist.md",
-    "scripts/ensure_radigest.sh",
-    "scripts/validate_synthetic.py",
-    "scripts/extract_bam_recovery_inputs.sh",
-    "scripts/summarize_empirical_recovery.py",
-    "scripts/downsample_tlens_per_sample.py",
-    "scripts/make_manuscript_tables.py",
+    "scripts/core/ensure_radigest.sh",
+    "scripts/validation/validate_synthetic.py",
+    "scripts/empirical/extract_bam_recovery_inputs.sh",
+    "scripts/empirical/summarize_empirical_recovery.py",
+    "scripts/empirical/downsample_tlens_per_sample.py",
+    "scripts/manuscript/make_manuscript_tables.py",
 ]
 
 MANUSCRIPT_TABLES = [

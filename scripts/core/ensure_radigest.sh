@@ -11,7 +11,7 @@ FORCE="false"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/ensure_radigest.sh \
+  scripts/core/ensure_radigest.sh \
     --source ../radigest \
     --ref HEAD \
     --out-dir .local/radigest \
@@ -21,9 +21,9 @@ Builds radigest from a local checkout or Git URL without storing radigest
 source code in this benchmarking repository.
 
 Examples:
-  scripts/ensure_radigest.sh --source ../radigest --ref HEAD
-  scripts/ensure_radigest.sh --source https://github.com/ericksamera/radigest.git --ref v0.2.0
-  scripts/ensure_radigest.sh --source ../radigest --ref main --force
+  scripts/core/ensure_radigest.sh --source ../radigest --ref HEAD
+  scripts/core/ensure_radigest.sh --source https://github.com/ericksamera/radigest.git --ref v0.2.0
+  scripts/core/ensure_radigest.sh --source ../radigest --ref main --force
 
 Outputs:
   .local/bin/radigest

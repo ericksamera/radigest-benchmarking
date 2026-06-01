@@ -148,7 +148,7 @@ rule extract_tlens:
 
           /usr/bin/time -v \
             -o "benchmark/memory/empirical_recovery/{wildcards.dataset}.${sample}.extract_tlens.time" \
-            scripts/extract_bam_recovery_inputs.sh \
+            scripts/empirical/extract_bam_recovery_inputs.sh \
               --bam "$bam" \
               --out-prefix "results/raw/empirical_recovery/{wildcards.dataset}/${sample}" \
               --mapq {params.mapq} \
@@ -241,7 +241,7 @@ rule weighted_digest:
     shell:
         r"""
         MODEL_ARGS="$(
-          python3 scripts/model_args_from_fit.py \
+          python3 scripts/empirical/model_args_from_fit.py \
             --fit {input.fit:q} \
             --rank 1
         )"
@@ -280,7 +280,7 @@ rule summarize_empirical_recovery:
         score_max=score_max
     shell:
         r"""
-        python3 scripts/summarize_empirical_recovery.py \
+        python3 scripts/empirical/summarize_empirical_recovery.py \
           --dataset {wildcards.dataset:q} \
           --species {params.species:q} \
           --enzyme-pair {params.enzyme_pair:q} \
@@ -305,7 +305,7 @@ rule downsample_tlens:
         summary="results/tables/{dataset}.downsampled_100k_per_sample.summary.tsv"
     shell:
         r"""
-        python3 scripts/downsample_tlens_per_sample.py \
+        python3 scripts/empirical/downsample_tlens_per_sample.py \
           --input-glob "results/raw/empirical_recovery/{wildcards.dataset}/*.tlens.tsv" \
           --max-per-sample {DOWNSAMPLE_PER_SAMPLE} \
           --seed {DOWNSAMPLE_SEED} \

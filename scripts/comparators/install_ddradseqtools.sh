@@ -7,7 +7,7 @@ REPO="https://github.com/GGFHF/ddRADseqTools.git"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/install_ddradseqtools.sh [--dest external/ddRADseqTools]
+  scripts/comparators/install_ddradseqtools.sh [--dest external/ddRADseqTools]
 
 Clones or updates DDRADSEQTOOLS into external/.
 The external checkout is ignored by Git.

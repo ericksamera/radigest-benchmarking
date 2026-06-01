@@ -35,7 +35,7 @@ make reference-data
 Equivalent direct command:
 
 ```bash
-scripts/download_reference_data.sh \
+scripts/reference/download_reference_data.sh \
   --datasets config/datasets.tsv \
   --dataset yeast_small,moderate_genome,sockeye_reference,trichoderma_reference \
   --prepare-plain \

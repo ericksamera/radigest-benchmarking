@@ -11,7 +11,7 @@ usage <- function(status = 0) {
   cat(
     paste(
       "Usage:",
-      "  Rscript scripts/run_simrad_warm_benchmark.R \\",
+      "  Rscript scripts/benchmarks/run_simrad_warm_benchmark.R \\",
       "    --reference REF.fa[.gz] \\",
       "    --enzyme1 EcoRI \\",
       "    --enzyme2 MseI \\",

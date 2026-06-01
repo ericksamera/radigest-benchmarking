@@ -56,7 +56,7 @@ rule matched_tool_benchmarks:
           digital_args+=(--skip-digital-rads)
         fi
 
-        bash scripts/run_matched_tool_benchmarks.sh \
+        bash scripts/benchmarks/run_matched_tool_benchmarks.sh \
           --reference {params.reference:q} \
           --dataset {params.dataset:q} \
           --condition {params.condition:q} \

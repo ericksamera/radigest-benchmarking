@@ -145,78 +145,38 @@ make tool-timing-table
 Optional screening-speed benchmarks:
 
 ```bash
-bash scripts/run_screening_speed_benchmark.sh
-python3 scripts/summarize_screening_speed.py
+bash scripts/benchmarks/run_screening_speed_benchmark.sh
+python3 scripts/benchmarks/summarize_screening_speed.py
 ```
 
 ## 7. Moderate-genome radigest scaling
 
-Run only after `data/reference/moderate.fa` exists.
+Run only after `data/reference/moderate.fa` exists. The scaling runs are
+Snakemake-managed through `workflow/scaling.smk`; the Make target below keeps
+the original output filenames and summary tables.
 
 ```bash
-bash scripts/run_radigest_thread_scaling.sh \
-  --reference data/reference/moderate.fa \
-  --dataset cannabis_pink_pepper_plain \
-  --condition B1 \
-  --enzymes EcoRI,MseI \
-  --min 100 \
-  --max 300 \
-  --threads-list 1,2,4,8 \
-  --modes json,fragments_tsv \
-  --runs 7 \
-  --radigest "$RADIGEST"
-
-bash scripts/run_radigest_thread_scaling.sh \
-  --reference data/reference/moderate.fa \
-  --dataset cannabis_pink_pepper_plain \
-  --condition B2 \
-  --enzymes PstI,MspI \
-  --min 250 \
-  --max 500 \
-  --threads-list 1,2,4,8 \
-  --modes json,fragments_tsv \
-  --runs 7 \
-  --radigest "$RADIGEST"
-
-python3 scripts/summarize_radigest_thread_scaling.py
+make radigest-thread-scaling \
+  RADIGEST="$RADIGEST" \
+  MODERATE_PLAIN_REF=data/reference/moderate.fa \
+  THREAD_SCALING_RUNS=7 \
+  SCALING_THREADS_LIST=1,2,4,8 \
+  SCALING_SNAKEMAKE_CORES=1
 ```
 
 ## 8. Pair-screening job scaling
 
-Run only on the final benchmark machine.
+Run only on the final benchmark machine. This is also Snakemake-managed through
+`workflow/scaling.smk`, with one rule instance per jobs × replicate combination.
 
 ```bash
-for jobs in 1 2 4 8; do
-  for run in 1 2 3; do
-    stem="cannabis_B1_jobs${jobs}_run${run}"
-    outdir="results/raw/pair_screen_scaling/${stem}"
-    rm -rf "$outdir"
-    mkdir -p "$outdir"
-
-    /usr/bin/time -v \
-      -o "benchmark/memory/pair_screen_scaling/${stem}.time" \
-      "$RADIGEST_SCREEN_PAIRS" \
-        --fasta data/reference/moderate.fa \
-        --enzymes config/candidate_enzymes.txt \
-        --min 300 \
-        --max 600 \
-        --score-min 1 \
-        --score-max 2000 \
-        --size-model hard \
-        --jobs "$jobs" \
-        --radigest-threads 1 \
-        --out-dir "$outdir" \
-      > "benchmark/logs/pair_screen_scaling/${stem}.stdout.log" \
-      2> "benchmark/logs/pair_screen_scaling/${stem}.stderr.log"
-  done
-done
-
-python3 scripts/summarize_pair_screen_scaling.py \
-  --dataset cannabis_pink_pepper_plain \
-  --time-dir benchmark/memory/pair_screen_scaling \
-  --output-root results/raw/pair_screen_scaling \
-  --out-runs results/tables/pair_screen_scaling_runs.tsv \
-  --out-summary results/tables/pair_screen_scaling_summary.tsv
+make pair-screen-scaling \
+  RADIGEST="$RADIGEST" \
+  RADIGEST_SCREEN_PAIRS="$RADIGEST_SCREEN_PAIRS" \
+  MODERATE_PLAIN_REF=data/reference/moderate.fa \
+  PAIR_SCREEN_RUNS=3 \
+  PAIR_SCREEN_JOBS="1 2 4 8" \
+  SCALING_SNAKEMAKE_CORES=1
 ```
 
 ## 9. Empirical recovery
@@ -244,7 +204,7 @@ results/tables/empirical_recovery_model_sensitivity.tsv
 ```bash
 make manuscript-tables
 
-python3 scripts/make_empirical_recovery_figures.py \
+python3 scripts/manuscript/make_empirical_recovery_figures.py \
   --tlens results/processed/empirical_recovery/sockeye_ddrad/all.tlens.tsv \
   --hard-fragments results/processed/empirical_recovery/sockeye_ddrad/fragments.score_range.tsv \
   --weighted-fragments results/processed/empirical_recovery/sockeye_ddrad/fragments.empirical_weighted.tsv \
@@ -257,7 +217,7 @@ python3 scripts/make_empirical_recovery_figures.py \
   --out-dir results/figures \
   --manuscript-dir manuscript_figures
 
-python3 scripts/make_empirical_recovery_figures.py \
+python3 scripts/manuscript/make_empirical_recovery_figures.py \
   --tlens results/processed/empirical_recovery/trichoderma_ddrad/all.tlens.tsv \
   --hard-fragments results/processed/empirical_recovery/trichoderma_ddrad/fragments.score_range.tsv \
   --weighted-fragments results/processed/empirical_recovery/trichoderma_ddrad/fragments.empirical_weighted.tsv \

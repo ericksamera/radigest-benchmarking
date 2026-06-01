@@ -6,6 +6,7 @@ SNAKEFILE ?= workflow/Snakefile
 MATCHED_TOOLS_SNAKEFILE ?= workflow/matched_tools.smk
 DDGRADER_BINNED_SNAKEFILE ?= workflow/ddgrader_binned.smk
 SCREENING_SPEED_SNAKEFILE ?= workflow/screening_speed.smk
+SCALING_SNAKEFILE ?= workflow/scaling.smk
 WORKFLOW_CONFIG ?= workflow/config.yml
 
 RADIGEST ?= $(LOCAL_RADIGEST)
@@ -98,6 +99,7 @@ help:
 	@echo "  dry-run                  Show planned lightweight workflow"
 	@echo "  dag                      Write workflow DAG for configured benchmark"
 	@echo "  check                    Syntax checks + default all dry-run only"
+	@echo "  lint                     Run shellcheck and Python compile checks"
 	@echo "  audit                    Check reproducibility repo state"
 	@echo "  audit-strict             Treat audit warnings as failures"
 	@echo "  check-benchmark          Dry-run benchmark/summary/table/figure targets"
@@ -155,9 +157,14 @@ dag:
 	mkdir -p workflow
 	$(call smk,--dag benchmark_radigest_all) > workflow/benchmark_dag.dot
 
+.PHONY: lint
+lint:
+	find scripts envs -name '*.sh' -print0 | xargs -0 shellcheck
+	python3 scripts/core/compile_python_tree.py scripts
+
 check:
-	bash -n scripts/capture_environment.sh
-	bash -n scripts/download_reference_data.sh
+	bash -n scripts/core/capture_environment.sh
+	bash -n scripts/reference/download_reference_data.sh
 	python3 scripts/core/compile_python_tree.py scripts
 	@echo "Skipping R syntax check in driver env; run \"make check-r\" for SimRAD/R scripts."
 	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
@@ -201,7 +208,7 @@ check-pair-screen:
 	           threads=1
 
 benchmark-matched-tools:
-	bash scripts/run_matched_tool_benchmarks.sh \
+	bash scripts/benchmarks/run_matched_tool_benchmarks.sh \
 	  --reference data/reference/yeast.fa.gz \
 	  --dataset yeast_small \
 	  --condition B1 \
@@ -216,7 +223,7 @@ benchmark-matched-tools:
 	  --skip-simrad
 
 benchmark-matched-tools-with-digital:
-	bash scripts/run_matched_tool_benchmarks.sh \
+	bash scripts/benchmarks/run_matched_tool_benchmarks.sh \
 	  --reference data/reference/yeast.fa.gz \
 	  --dataset yeast_small \
 	  --condition B1 \
@@ -230,7 +237,7 @@ benchmark-matched-tools-with-digital:
 	  --skip-simrad
 
 summarize-matched-tools:
-	python3 scripts/summarize_matched_tool_benchmarks.py \
+	python3 scripts/benchmarks/summarize_matched_tool_benchmarks.py \
 	  --root results/raw/matched_tool_benchmarks \
 	  --time-dir benchmark/memory/matched_tools \
 	  --dataset yeast_small \
@@ -242,7 +249,7 @@ benchmark-simrad-warm:
 	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
 	/usr/bin/time -v \
 	  -o benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
+	  Rscript scripts/benchmarks/run_simrad_warm_benchmark.R \
 	    --reference data/reference/yeast.fa.gz \
 	    --enzyme1 EcoRI \
 	    --enzyme2 MseI \
@@ -257,7 +264,7 @@ benchmark-simrad-warm:
 	    2> benchmark/logs/matched_tools/simrad_warm.stderr.log
 	/usr/bin/time -v \
 	  -o benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
+	  Rscript scripts/benchmarks/run_simrad_warm_benchmark.R \
 	    --reference data/reference/yeast.fa.gz \
 	    --enzyme1 EcoRI \
 	    --enzyme2 MseI \
@@ -281,13 +288,13 @@ input-format-table:
 .PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict reference-data reference-data-dry-run reference-checksums build-radigest
 
 tool-comparison-figures:
-	python3 scripts/make_tool_comparison_figures.py \
+	python3 scripts/manuscript/make_tool_comparison_figures.py \
 	  --timing-table results/tables/tool_timing_interpretation.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
 
 input-format-figures:
-	python3 scripts/make_input_format_figures.py \
+	python3 scripts/manuscript/make_input_format_figures.py \
 	  --comparison results/tables/radigest_input_format_comparison.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
@@ -352,16 +359,16 @@ empirical-recovery-local: radigest-local
 	  THREADS="$(THREADS)"
 
 manuscript-tables:
-	python3 scripts/make_manuscript_tables.py --out-dir manuscript_tables
+	python3 scripts/manuscript/make_manuscript_tables.py --out-dir manuscript_tables
 	@if [ -s results/tables/cut_equivalence_summary.tsv ]; then \
-	  python3 scripts/build_cut_equivalence_table.py; \
+	  python3 scripts/comparators/build_cut_equivalence_table.py; \
 	fi
 
 audit:
-	python3 scripts/audit_reproducibility.py
+	python3 scripts/core/audit_reproducibility.py
 
 audit-strict:
-	python3 scripts/audit_reproducibility.py --fail-on-warn
+	python3 scripts/core/audit_reproducibility.py --fail-on-warn
 
 .PHONY: reference-data-dry-run reference-data reference-checksums
 
@@ -378,7 +385,7 @@ reference-data:
 	           prepare_plain=true
 
 reference-checksums:
-	scripts/download_reference_data.sh \
+	scripts/reference/download_reference_data.sh \
 	  --datasets config/datasets.tsv \
 	  --dataset "$(REFERENCE_DATASETS)" \
 	  --prepare-plain \
@@ -418,6 +425,29 @@ SIMRAD_WARM_SNAKEFILE ?= workflow/simrad_warm.smk
 
 .PHONY: benchmark-simrad-warm-managed tool-timing-table
 
+benchmark-simrad-warm-managed:
+	$(SNAKEMAKE) -s $(SIMRAD_WARM_SNAKEFILE) --cores 1 \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds --forceall all \
+	  --config reference="$(YEAST_PLAIN_REF)" \
+	           dataset="$(YEAST_PLAIN_DATASET)" \
+	           condition="$(YEAST_CONDITION)" \
+	           enzyme1="EcoRI" \
+	           enzyme2="MseI" \
+	           min_size=100 \
+	           max_size=300 \
+	           runs=$(MATCHED_RUNS)
+
+tool-timing-table:
+	python3 scripts/benchmarks/build_tool_timing_interpretation_table.py \
+	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
+	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
+	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
+	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
+	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
+	  --dataset "$(YEAST_PLAIN_DATASET)" \
+	  --condition "$(YEAST_CONDITION)" \
+	  --out results/tables/tool_timing_interpretation.tsv
 
 # ----------------------------------------------------------------------
 # Reviewer-facing non-empirical rerun targets
@@ -433,6 +463,10 @@ PAIR_SCREEN_RUNS ?= 3
 PAIR_SCREEN_JOBS ?= 1 2 4 8
 SCALING_THREADS_LIST ?= 1,2,4,8
 MODERATE_PLAIN_REF ?= data/reference/moderate.fa
+SCALING_SNAKEMAKE_CORES ?= 1
+THREAD_SCALING_CONDITIONS ?= B1,B2
+SCALING_MODES ?= json,fragments_tsv
+PAIR_SCREEN_STEM_PREFIX ?= cannabis
 
 .PHONY: reviewer-prepare benchmark-digest-tool-comparison benchmark-tool-comparison
 .PHONY: benchmark-input-format benchmark-scaling radigest-thread-scaling
@@ -452,9 +486,9 @@ reviewer-prepare: build-radigest
 	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
 	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
 	  THREADS=1
-	bash scripts/install_digital_rads.sh
-	bash scripts/install_ddradseqtools.sh
-	bash scripts/install_ddgrader.sh
+	bash scripts/comparators/install_digital_rads.sh
+	bash scripts/comparators/install_ddradseqtools.sh
+	bash scripts/comparators/install_ddgrader.sh
 
 benchmark-digest-tool-comparison:
 	test -s "$(YEAST_PLAIN_REF)"
@@ -483,7 +517,7 @@ benchmark-digest-tool-comparison:
 	           min_size=100 \
 	           max_size=300 \
 	           runs=$(MATCHED_RUNS)
-	python3 scripts/build_tool_timing_interpretation_table.py \
+	python3 scripts/benchmarks/build_tool_timing_interpretation_table.py \
 	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
 	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
 	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
@@ -508,6 +542,7 @@ benchmark-screening-speed:
 	           score_max=2000 \
 	           size_model="hard" \
 	           runs=$(SCREENING_RUNS) \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
 	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)" \
 	           ddgrader_repo="external/ddRadSeqWebTool" \
 	           jobs=2 \
@@ -537,98 +572,58 @@ benchmark-input-format:
 
 radigest-thread-scaling:
 	test -s "$(MODERATE_PLAIN_REF)"
-	bash scripts/run_radigest_thread_scaling.sh \
-	  --reference "$(MODERATE_PLAIN_REF)" \
-	  --dataset cannabis_pink_pepper_plain \
-	  --condition B1 \
-	  --enzymes EcoRI,MseI \
-	  --min 100 \
-	  --max 300 \
-	  --threads-list $(SCALING_THREADS_LIST) \
-	  --modes json,fragments_tsv \
-	  --runs $(THREAD_SCALING_RUNS) \
-	  --radigest "$(EFFECTIVE_RADIGEST)"
-	bash scripts/run_radigest_thread_scaling.sh \
-	  --reference "$(MODERATE_PLAIN_REF)" \
-	  --dataset cannabis_pink_pepper_plain \
-	  --condition B2 \
-	  --enzymes PstI,MspI \
-	  --min 250 \
-	  --max 500 \
-	  --threads-list $(SCALING_THREADS_LIST) \
-	  --modes json,fragments_tsv \
-	  --runs $(THREAD_SCALING_RUNS) \
-	  --radigest "$(EFFECTIVE_RADIGEST)"
-	python3 scripts/summarize_radigest_thread_scaling.py \
-	  --root results/raw/radigest_thread_scaling \
-	  --time-dir benchmark/memory/radigest_thread_scaling \
-	  --out-runs results/tables/radigest_thread_scaling_runs.tsv \
-	  --out-summary results/tables/radigest_thread_scaling_summary.tsv
+	$(SNAKEMAKE) -s $(SCALING_SNAKEFILE) --cores $(SCALING_SNAKEMAKE_CORES) \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds radigest_thread_scaling_all \
+	  --config reference="$(MODERATE_PLAIN_REF)" \
+	           dataset="cannabis_pink_pepper_plain" \
+	           thread_scaling_conditions="$(THREAD_SCALING_CONDITIONS)" \
+	           thread_scaling_modes="$(SCALING_MODES)" \
+	           thread_scaling_threads="$(SCALING_THREADS_LIST)" \
+	           thread_scaling_runs=$(THREAD_SCALING_RUNS) \
+	           radigest="$(EFFECTIVE_RADIGEST)"
 
 pair-screen-scaling:
 	test -s "$(MODERATE_PLAIN_REF)"
-	mkdir -p results/raw/pair_screen_scaling \
-	  benchmark/memory/pair_screen_scaling \
-	  benchmark/logs/pair_screen_scaling \
-	  results/tables
-	screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)"; \
-	radigest="$(EFFECTIVE_RADIGEST)"; \
-	screen_pairs="$$(realpath "$${screen_pairs}")"; \
-	radigest="$$(realpath "$${radigest}")"; \
-	export PATH="$$(dirname "$${screen_pairs}"):$$(dirname "$${radigest}"):$$PATH"; \
-	for jobs in $(PAIR_SCREEN_JOBS); do \
-	  for run in $$(seq 1 $(PAIR_SCREEN_RUNS)); do \
-	    stem="cannabis_jobs$${jobs}_run$${run}"; \
-	    outdir="results/raw/pair_screen_scaling/$${stem}"; \
-	    rm -rf "$${outdir}"; \
-	    mkdir -p "$${outdir}"; \
-	    echo "[RUN] $${stem}" >&2; \
-	    /usr/bin/time -v \
-	      -o "benchmark/memory/pair_screen_scaling/$${stem}.time" \
-	      "$${screen_pairs}" \
-	        --radigest "$${radigest}" \
-	        --fasta "$(MODERATE_PLAIN_REF)" \
-	        --enzymes config/candidate_enzymes.txt \
-	        --min 300 \
-	        --max 600 \
-	        --score-min 1 \
-	        --score-max 2000 \
-	        --size-model hard \
-	        --jobs "$${jobs}" \
-	        --radigest-threads 1 \
-	        --out-dir "$${outdir}" \
-	      > "benchmark/logs/pair_screen_scaling/$${stem}.stdout.log" \
-	      2> "benchmark/logs/pair_screen_scaling/$${stem}.stderr.log"; \
-	  done; \
-	done
-	python3 scripts/summarize_pair_screen_scaling.py \
-	  --dataset cannabis_pink_pepper_plain \
-	  --time-dir benchmark/memory/pair_screen_scaling \
-	  --output-root results/raw/pair_screen_scaling \
-	  --out-runs results/tables/pair_screen_scaling_runs.tsv \
-	  --out-summary results/tables/pair_screen_scaling_summary.tsv
+	$(SNAKEMAKE) -s $(SCALING_SNAKEFILE) --cores $(SCALING_SNAKEMAKE_CORES) \
+	  $(SNAKEMAKE_CONDA_ARGS) \
+	  --rerun-incomplete --printshellcmds pair_screen_scaling_all \
+	  --config reference="$(MODERATE_PLAIN_REF)" \
+	           dataset="cannabis_pink_pepper_plain" \
+	           pair_screen_stem_prefix="$(PAIR_SCREEN_STEM_PREFIX)" \
+	           pair_screen_enzymes="config/candidate_enzymes.txt" \
+	           pair_screen_min_size=300 \
+	           pair_screen_max_size=600 \
+	           pair_screen_score_min=1 \
+	           pair_screen_score_max=2000 \
+	           pair_screen_size_model="hard" \
+	           pair_screen_runs=$(PAIR_SCREEN_RUNS) \
+	           pair_screen_jobs="$(PAIR_SCREEN_JOBS)" \
+	           pair_screen_radigest_threads=1 \
+	           radigest="$(EFFECTIVE_RADIGEST)" \
+	           radigest_screen_pairs="$(EFFECTIVE_RADIGEST_SCREEN_PAIRS)"
 
 benchmark-scaling: radigest-thread-scaling pair-screen-scaling
 
 figures-nonempirical:
 	mkdir -p results/figures manuscript_figures
-	python3 scripts/make_figures.py \
+	python3 scripts/manuscript/make_figures.py \
 	  --benchmark-summary results/tables/radigest_benchmark_summary.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
-	python3 scripts/make_tool_comparison_figures.py \
+	python3 scripts/manuscript/make_tool_comparison_figures.py \
 	  --timing-table results/tables/tool_timing_interpretation.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
-	python3 scripts/make_input_format_figures.py \
+	python3 scripts/manuscript/make_input_format_figures.py \
 	  --comparison results/tables/radigest_input_format_comparison.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
-	python3 scripts/make_screening_speed_figures.py \
+	python3 scripts/manuscript/make_screening_speed_figures.py \
 	  --summary results/tables/screening_speed_summary.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
-	python3 scripts/make_pair_screen_scaling_figures.py \
+	python3 scripts/manuscript/make_pair_screen_scaling_figures.py \
 	  --summary results/tables/pair_screen_scaling_summary.tsv \
 	  --out-dir results/figures \
 	  --manuscript-dir manuscript_figures
@@ -677,4 +672,4 @@ compare-ddgrader-binned:
 	           ddgrader_repo="external/ddRadSeqWebTool"
 
 build-cut-equivalence-table:
-	python3 scripts/build_cut_equivalence_table.py
+	python3 scripts/comparators/build_cut_equivalence_table.py

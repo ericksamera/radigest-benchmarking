@@ -27,7 +27,7 @@ TABLE_DIR="results/tables"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/run_screening_speed_benchmark.sh [options]
+  scripts/benchmarks/run_screening_speed_benchmark.sh [options]
 
 Options:
   --reference PATH              Reference FASTA, preferably plain FASTA for fair timing
@@ -93,31 +93,23 @@ if ! command -v "$RADIGEST" >/dev/null 2>&1 && [[ ! -x "$RADIGEST" ]]; then
   exit 2
 fi
 
-# If local executables are provided by path, resolve them and expose their
-# directory. radigest-screen-pairs internally spawns radigest worker commands.
-if [[ -x "$RADIGEST_SCREEN_PAIRS" ]]; then
-  RADIGEST_SCREEN_PAIRS="$(realpath "$RADIGEST_SCREEN_PAIRS")"
-  export PATH="$(dirname "$RADIGEST_SCREEN_PAIRS"):$PATH"
-fi
+resolve_exe() {
+  local exe="$1"
 
-if [[ -x "$RADIGEST" ]]; then
-  RADIGEST="$(realpath "$RADIGEST")"
-  export PATH="$(dirname "$RADIGEST"):$PATH"
-fi
+  if [[ -x "$exe" ]]; then
+    realpath "$exe"
+    return
+  fi
 
+  command -v "$exe"
+}
 
-# Make the local radigest tool directory visible to radigest-screen-pairs.
-# This matters inside Snakemake-managed Conda environments, where PATH does not
-# automatically include .local/bin even when the executable is invoked by path.
-if [[ -x "$RADIGEST_SCREEN_PAIRS" ]]; then
-  RADIGEST_SCREEN_PAIRS="$(realpath "$RADIGEST_SCREEN_PAIRS")"
-  export PATH="$(dirname "$RADIGEST_SCREEN_PAIRS"):$PATH"
-fi
-
+RADIGEST_SCREEN_PAIRS="$(resolve_exe "$RADIGEST_SCREEN_PAIRS")"
+RADIGEST="$(resolve_exe "$RADIGEST")"
 
 if [[ ! -d "$DDGRADER_REPO" ]]; then
   echo "error: ddgRADer repo not found: $DDGRADER_REPO" >&2
-  echo "Run: bash scripts/install_ddgrader.sh" >&2
+  echo "Run: bash scripts/comparators/install_ddgrader.sh" >&2
   exit 2
 fi
 
@@ -126,7 +118,7 @@ mkdir -p "$OUT_ROOT" "$PROCESSED_DIR" "$TIME_DIR" "$LOG_DIR" "$TABLE_DIR"
 PAIR_TSV="$PROCESSED_DIR/enzyme_pairs.tsv"
 PAIR_DDGRADER="$PROCESSED_DIR/enzyme_pairs.ddgrader.txt"
 
-python3 scripts/make_enzyme_pair_list.py \
+python3 scripts/benchmarks/make_enzyme_pair_list.py \
   --enzymes "$ENZYMES" \
   --out-tsv "$PAIR_TSV" \
   --out-ddgrader "$PAIR_DDGRADER"
@@ -143,6 +135,7 @@ for run in $(seq 1 "$RUNS"); do
   /usr/bin/time -v \
     -o "$TIME_DIR/radigest_screen_pairs__${DATASET}__run${run}.time" \
     "$RADIGEST_SCREEN_PAIRS" \
+      --radigest "$RADIGEST" \
       --fasta "$REFERENCE" \
       --enzymes "$ENZYMES" \
       --min "$MIN_SIZE" \
@@ -164,7 +157,7 @@ for run in $(seq 1 "$RUNS"); do
 
   /usr/bin/time -v \
     -o "$TIME_DIR/ddgrader_backend__${DATASET}__run${run}.time" \
-    python3 scripts/run_ddgrader_backend.py \
+    python3 scripts/comparators/run_ddgrader_backend.py \
       --repo "$DDGRADER_REPO" \
       --reference "$REFERENCE" \
       --enzyme-pairs "$PAIR_TEXT" \
@@ -178,7 +171,7 @@ for run in $(seq 1 "$RUNS"); do
       2> "$LOG_DIR/ddgrader_backend__${DATASET}__run${run}.stderr.log"
 done
 
-python3 scripts/summarize_screening_speed.py \
+python3 scripts/benchmarks/summarize_screening_speed.py \
   --root "$OUT_ROOT" \
   --time-dir "$TIME_DIR" \
   --pair-tsv "$PAIR_TSV" \

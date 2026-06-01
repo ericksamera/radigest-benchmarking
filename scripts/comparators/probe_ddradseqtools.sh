@@ -7,7 +7,7 @@ OUT="results/processed/ddradseqtools_probe.txt"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/probe_ddradseqtools.sh \
+  scripts/comparators/probe_ddradseqtools.sh \
     [--repo external/ddRADseqTools] \
     [--out results/processed/ddradseqtools_probe.txt]
 

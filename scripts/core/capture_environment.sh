@@ -10,7 +10,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      echo "Usage: scripts/capture_environment.sh [--out results/processed/environment.txt]"
+      echo "Usage: scripts/core/capture_environment.sh [--out results/processed/environment.txt]"
       exit 0
       ;;
     *)

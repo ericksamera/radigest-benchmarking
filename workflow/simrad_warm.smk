@@ -39,7 +39,7 @@ rule simrad_warm_reload_reference:
 
         /usr/bin/time -v \
           -o {output.time:q} \
-          Rscript scripts/run_simrad_warm_benchmark.R \
+          Rscript scripts/benchmarks/run_simrad_warm_benchmark.R \
             --reference {REFERENCE:q} \
             --enzyme1 {ENZYME1:q} \
             --enzyme2 {ENZYME2:q} \
@@ -72,7 +72,7 @@ rule simrad_warm_reuse_reference:
 
         /usr/bin/time -v \
           -o {output.time:q} \
-          Rscript scripts/run_simrad_warm_benchmark.R \
+          Rscript scripts/benchmarks/run_simrad_warm_benchmark.R \
             --reference {REFERENCE:q} \
             --enzyme1 {ENZYME1:q} \
             --enzyme2 {ENZYME2:q} \

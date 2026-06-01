@@ -25,7 +25,7 @@ SKIP_DIGITAL="0"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/run_matched_tool_benchmarks.sh [options]
+  scripts/benchmarks/run_matched_tool_benchmarks.sh [options]
 
 Options:
   --reference PATH       Reference FASTA. Default: data/reference/yeast.fa.gz
@@ -102,14 +102,14 @@ fi
 
 if [[ "$SKIP_SIMRAD" == "0" ]]; then
   if ! Rscript -e 'quit(status = ifelse(requireNamespace("SimRAD", quietly = TRUE), 0, 1))' >/dev/null 2>&1; then
-    echo "error: SimRAD is not installed. Run scripts/install_simrad_archive.R or use --skip-simrad." >&2
+    echo "error: SimRAD is not installed. Run scripts/comparators/install_simrad_archive.R or use --skip-simrad." >&2
     exit 2
   fi
 fi
 
 if [[ "$SKIP_DIGITAL" == "0" && ! -s "$DIGITAL_RADS" ]]; then
   echo "error: Digital_RADs.py not found: $DIGITAL_RADS" >&2
-  echo "Install with: bash scripts/install_digital_rads.sh" >&2
+  echo "Install with: bash scripts/comparators/install_digital_rads.sh" >&2
   echo "Or use --skip-digital-rads." >&2
   exit 2
 fi
@@ -185,7 +185,7 @@ for run in $(seq 1 "$RUNS"); do
     echo "  -fragments-tsv $(quote "${out_dir}/radigest.fragments.tsv") \\"
     echo "  -json $(quote "${out_dir}/radigest.json")"
     echo
-    echo "python3 scripts/normalize_radigest_tsv.py \\"
+    echo "python3 scripts/validation/normalize_radigest_tsv.py \\"
     echo "  --input $(quote "${out_dir}/radigest.fragments.tsv") \\"
     echo "  --output $(quote "${out_dir}/radigest.normalized.tsv") \\"
     echo "  --source-tool radigest \\"
@@ -198,7 +198,7 @@ for run in $(seq 1 "$RUNS"); do
     cmd="${out_dir}/command.sh"
     write_header "$cmd"
     {
-      echo "Rscript scripts/run_simrad_ddrad.R \\"
+      echo "Rscript scripts/comparators/run_simrad_ddrad.R \\"
       echo "  --reference $(quote "$REFERENCE") \\"
       echo "  --enzyme1 $(quote "$ENZYME1") \\"
       echo "  --enzyme2 $(quote "$ENZYME2") \\"
@@ -216,7 +216,7 @@ for run in $(seq 1 "$RUNS"); do
     cmd="${out_dir}/command.sh"
     write_header "$cmd"
     {
-      echo "bash scripts/run_digital_rads.sh \\"
+      echo "bash scripts/comparators/run_digital_rads.sh \\"
       echo "  --digital-rads $(quote "$DIGITAL_RADS") \\"
       echo "  --reference $(quote "$REFERENCE") \\"
       echo "  --enzyme1 $(quote "$ENZYME1") \\"
@@ -231,7 +231,7 @@ for run in $(seq 1 "$RUNS"); do
       echo "  --stdout-log $(quote "${out_dir}/digital.stdout.log") \\"
       echo "  --stderr-log $(quote "${out_dir}/digital.stderr.log")"
       echo
-      echo "python3 scripts/normalize_digital_rads.py \\"
+      echo "python3 scripts/comparators/normalize_digital_rads.py \\"
       echo "  --input $(quote "${out_dir}/digital.raw.tsv") \\"
       echo "  --output $(quote "${out_dir}/digital.normalized.tsv") \\"
       echo "  --summary $(quote "${out_dir}/digital.normalize_summary.tsv") \\"
@@ -245,7 +245,7 @@ for run in $(seq 1 "$RUNS"); do
   fi
 done
 
-python3 scripts/summarize_matched_tool_benchmarks.py \
+python3 scripts/benchmarks/summarize_matched_tool_benchmarks.py \
   --root "$OUT_ROOT" \
   --time-dir "$TIME_DIR" \
   --dataset "$DATASET" \

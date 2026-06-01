@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Summarize matched tool benchmark outputs.
 
-This script summarizes benchmark outputs from scripts/run_matched_tool_benchmarks.sh.
+This script summarizes benchmark outputs from scripts/benchmarks/run_matched_tool_benchmarks.sh.
 
 It reports runtime and memory from GNU time -v files and combines them with
 task-specific fragment/bases metrics.

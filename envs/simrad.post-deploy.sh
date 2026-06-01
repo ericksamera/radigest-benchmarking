@@ -8,5 +8,5 @@ if [[ -z "${CONDA_PREFIX:-}" ]]; then
   exit 2
 fi
 
-"${CONDA_PREFIX}/bin/Rscript" scripts/install_simrad_archive.R
+"${CONDA_PREFIX}/bin/Rscript" scripts/comparators/install_simrad_archive.R
 "${CONDA_PREFIX}/bin/Rscript" -e 'library(SimRAD); packageVersion("SimRAD")'

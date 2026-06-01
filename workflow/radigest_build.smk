@@ -14,7 +14,7 @@ RADIGEST_BINARIES = [
 
 # Newer radigest checkouts may also provide radigest-plan-depth and a cached
 # Go pair-screening binary. They are copied opportunistically by
-# scripts/ensure_radigest.sh if present, but are not required workflow outputs.
+# scripts/core/ensure_radigest.sh if present, but are not required workflow outputs.
 
 rule all:
     input:
@@ -24,7 +24,7 @@ rule all:
 
 rule build_radigest:
     input:
-        script="scripts/ensure_radigest.sh"
+        script="scripts/core/ensure_radigest.sh"
     output:
         radigest=f"{LOCAL_BIN}/radigest",
         screen=f"{LOCAL_BIN}/radigest-screen-pairs",

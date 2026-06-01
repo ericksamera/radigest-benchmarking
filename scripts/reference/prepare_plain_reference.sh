@@ -9,7 +9,7 @@ FORCE="0"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/prepare_plain_reference.sh \
+  scripts/reference/prepare_plain_reference.sh \
     --source data/reference/yeast.fa.gz \
     --dest data/reference/yeast.fa \
     [--out results/processed/plain_reference_checksums.tsv] \

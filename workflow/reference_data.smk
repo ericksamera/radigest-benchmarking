@@ -76,7 +76,7 @@ rule download_references:
         r"""
         mkdir -p data/reference results/processed results/processed/fasta
 
-        scripts/download_reference_data.sh \
+        scripts/reference/download_reference_data.sh \
           --datasets {DATASETS_TSV:q} \
           --out {output.checksums:q} \
           --dataset {params.dataset_ids:q} \
@@ -94,7 +94,7 @@ rule summarize_reference_fasta:
     shell:
         r"""
         mkdir -p results/processed/fasta
-        python3 scripts/summarize_fasta.py \
+        python3 scripts/reference/summarize_fasta.py \
           -o {output:q} \
           {input:q}
         """

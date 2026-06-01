@@ -90,8 +90,9 @@ def parse_time_file(path: Path) -> dict[str, str]:
     return out
 
 
-def parse_name(path: Path) -> tuple[int, str] | None:
-    match = re.search(r"jobs(\d+)_run(\d+)", path.name)
+def parse_name(path: Path, stem_prefix: str = "cannabis") -> tuple[int, str] | None:
+    pattern = rf"{re.escape(stem_prefix)}_jobs(\d+)_run(\d+)"
+    match = re.search(pattern, path.name)
     if not match:
         return None
     jobs = int(match.group(1))
@@ -185,11 +186,12 @@ def build_run_rows(
     dataset: str,
     time_dir: Path,
     output_root: Path,
+    stem_prefix: str = "cannabis",
 ) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
 
-    for time_file in sorted(time_dir.glob("cannabis_jobs*_run*.time")):
-        parsed = parse_name(time_file)
+    for time_file in sorted(time_dir.glob(f"{stem_prefix}_jobs*_run*.time")):
+        parsed = parse_name(time_file, stem_prefix=stem_prefix)
         if parsed is None:
             print(
                 f"warning: skipped unrecognized time file: {time_file}", file=sys.stderr
@@ -198,7 +200,7 @@ def build_run_rows(
 
         jobs, replicate = parsed
         run_number = replicate.removeprefix("run")
-        output_dir = output_root / f"cannabis_jobs{jobs}_run{run_number}"
+        output_dir = output_root / f"{stem_prefix}_jobs{jobs}_run{run_number}"
         timing = parse_time_file(time_file)
         completed_pairs = count_completed_pairs(output_dir)
 
@@ -294,6 +296,7 @@ def write_tsv(path: Path, rows: list[dict[str, str]], fields: list[str]) -> None
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="cannabis_pink_pepper_plain")
+    parser.add_argument("--stem-prefix", default="cannabis")
     parser.add_argument(
         "--time-dir",
         type=Path,
@@ -321,6 +324,7 @@ def main(argv: list[str]) -> int:
             dataset=args.dataset,
             time_dir=args.time_dir,
             output_root=args.output_root,
+            stem_prefix=args.stem_prefix,
         )
         if not run_rows:
             raise ValueError("no pair-screen scaling runs found")

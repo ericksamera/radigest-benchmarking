@@ -8,7 +8,7 @@ BRANCH="development"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/install_ddgrader.sh [--dest external/ddRadSeqWebTool] [--branch development]
+  scripts/comparators/install_ddgrader.sh [--dest external/ddRadSeqWebTool] [--branch development]
 
 Clones or updates ddgRADer / ddRadSeqWebTool into external/.
 The external checkout is ignored by Git.

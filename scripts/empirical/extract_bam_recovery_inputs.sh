@@ -9,7 +9,7 @@ KEEP_DUPLICATES="false"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/extract_bam_recovery_inputs.sh \
+  scripts/empirical/extract_bam_recovery_inputs.sh \
     --bam alignments.bam \
     --out-prefix results/raw/empirical_recovery/dataset/sample \
     --mapq 20

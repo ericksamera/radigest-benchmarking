@@ -134,7 +134,7 @@ rule capture_environment:
     shell:
         r"""
         mkdir -p results/processed benchmark/logs
-        RADIGEST={config[radigest]:q} ./scripts/capture_environment.sh
+        RADIGEST={config[radigest]:q} ./scripts/core/capture_environment.sh
         """
 
 
@@ -150,7 +150,7 @@ rule synthetic_validation:
     shell:
         r"""
         mkdir -p results/raw/synthetic results/processed
-        python3 scripts/validate_synthetic.py \
+        python3 scripts/validation/validate_synthetic.py \
           --radigest {params.radigest:q} \
           --fasta {input.fasta:q} \
           --expected {input.expected:q} \
@@ -332,7 +332,7 @@ rule summarize_radigest_json:
     shell:
         r"""
         mkdir -p results/tables
-        python3 scripts/summarize_radigest_json.py {input} > {output:q}
+        python3 scripts/benchmarks/summarize_radigest_json.py {input} > {output:q}
         """
 
 
@@ -344,7 +344,7 @@ rule summarize_time_v:
     shell:
         r"""
         mkdir -p results/tables
-        python3 scripts/summarize_time_v.py {input} > {output:q}
+        python3 scripts/benchmarks/summarize_time_v.py {input} > {output:q}
         """
 
 
@@ -364,6 +364,7 @@ rule pair_screen:
     params:
         screen=config["radigest_screen_pairs"],
         rank=config["radigest_rank_pairs"],
+        radigest=config["radigest"],
         outdir="results/raw/pair_screen",
         min_size=config["pair_screen"]["min_size"],
         max_size=config["pair_screen"]["max_size"],
@@ -378,6 +379,7 @@ rule pair_screen:
         mkdir -p results/raw/pair_screen results/tables benchmark/logs
         (
           {params.screen:q} \
+            --radigest {params.radigest:q} \
             --fasta {input.ref:q} \
             --enzymes {input.enzymes:q} \
             --min {params.min_size} \
@@ -413,7 +415,7 @@ rule reference_data_download:
     shell:
         r"""
         mkdir -p results/processed data/reference
-        ./scripts/download_reference_data.sh \
+        ./scripts/reference/download_reference_data.sh \
           --datasets {input.datasets:q} \
           --out {output:q}
         """
@@ -432,7 +434,7 @@ rule summarize_fasta_dataset:
     shell:
         r"""
         mkdir -p results/processed/fasta
-        python3 scripts/summarize_fasta.py \
+        python3 scripts/reference/summarize_fasta.py \
           -o {output:q} \
           {input.ref:q}
         """
@@ -474,12 +476,12 @@ rule interval_smoke:
             -fragments-tsv {output.raw_tsv:q} \
             -json {output.json:q}
 
-          python3 scripts/normalize_radigest_tsv.py \
+          python3 scripts/validation/normalize_radigest_tsv.py \
             --input {output.raw_tsv:q} \
             --output {output.normalized:q} \
             --source-tool radigest
 
-          python3 scripts/compare_interval_sets.py \
+          python3 scripts/validation/compare_interval_sets.py \
             --first {output.normalized:q} \
             --second {output.normalized:q} \
             --first-name radigest \
@@ -579,7 +581,7 @@ rule simrad_run:
     shell:
         r"""
         mkdir -p results/raw/comparators/simrad benchmark/logs
-        Rscript scripts/run_simrad_ddrad.R \
+        Rscript scripts/comparators/run_simrad_ddrad.R \
           --reference {input.ref:q} \
           --enzyme1 {params.enzyme1:q} \
           --enzyme2 {params.enzyme2:q} \
@@ -601,7 +603,7 @@ rule compare_radigest_simrad_counts:
     shell:
         r"""
         mkdir -p results/processed/comparisons/simrad
-        python3 scripts/compare_radigest_simrad_counts.py \
+        python3 scripts/comparators/compare_radigest_simrad_counts.py \
           --radigest-json {input.radigest:q} \
           --simrad-tsv {input.simrad:q} \
           --dataset {wildcards.dataset:q} \
@@ -683,7 +685,7 @@ rule normalize_radigest_for_digital:
     shell:
         r"""
         mkdir -p results/processed/intervals/radigest_for_digital
-        python3 scripts/normalize_radigest_tsv.py \
+        python3 scripts/validation/normalize_radigest_tsv.py \
           --input {input:q} \
           --output {output:q} \
           --source-tool radigest \
@@ -711,7 +713,7 @@ rule digital_rads_run:
     shell:
         r"""
         mkdir -p results/raw/comparators/digital_rads benchmark/logs
-        bash scripts/run_digital_rads.sh \
+        bash scripts/comparators/run_digital_rads.sh \
           --digital-rads {input.script:q} \
           --reference {input.ref:q} \
           --enzyme1 {params.enzyme1:q} \
@@ -743,7 +745,7 @@ rule normalize_digital_rads:
     shell:
         r"""
         mkdir -p results/processed/intervals/digital_rads
-        python3 scripts/normalize_digital_rads.py \
+        python3 scripts/comparators/normalize_digital_rads.py \
           --input {input.raw:q} \
           --output {output.normalized:q} \
           --summary {output.summary:q} \
@@ -769,7 +771,7 @@ rule compare_radigest_digital_rads_intervals:
     shell:
         r"""
         mkdir -p results/processed/comparisons/digital_rads
-        python3 scripts/compare_interval_sets.py \
+        python3 scripts/validation/compare_interval_sets.py \
           --first {input.first:q} \
           --second {input.second:q} \
           --first-name radigest \
@@ -797,7 +799,7 @@ rule build_benchmark_tables:
     shell:
         r"""
         mkdir -p results/tables
-        python3 scripts/build_benchmark_table.py \
+        python3 scripts/benchmarks/build_benchmark_table.py \
           --json-summary {input.json_summary:q} \
           --time-summary {input.time_summary:q} \
           --out-runs {output.runs:q} \
@@ -822,7 +824,7 @@ rule benchmark_figures:
     shell:
         r"""
         mkdir -p results/figures manuscript_figures
-        python3 scripts/make_figures.py \
+        python3 scripts/manuscript/make_figures.py \
           --benchmark-summary {input:q} \
           --out-dir results/figures \
           --manuscript-dir manuscript_figures
@@ -852,7 +854,7 @@ rule summarize_pair_screen:
     shell:
         r"""
         mkdir -p results/tables
-        python3 scripts/summarize_pair_screen.py \
+        python3 scripts/benchmarks/summarize_pair_screen.py \
           --ranked {input.ranked:q} \
           --out-top {output.top:q} \
           --out-matrix {output.matrix:q} \
@@ -877,7 +879,7 @@ rule pair_screen_heatmap:
     shell:
         r"""
         mkdir -p results/figures manuscript_figures
-        python3 scripts/make_pair_screen_figures.py \
+        python3 scripts/manuscript/make_pair_screen_figures.py \
           --matrix {input:q} \
           --out {output:q} \
           --manuscript-dir manuscript_figures \
@@ -901,7 +903,7 @@ rule prepare_plain_reference_yeast:
     shell:
         r"""
         mkdir -p data/reference results/processed benchmark/logs
-        bash scripts/prepare_plain_reference.sh \
+        bash scripts/reference/prepare_plain_reference.sh \
           --source {input:q} \
           --dest {output:q} \
           --out results/processed/plain_reference_checksums.tsv \
@@ -923,7 +925,7 @@ rule build_input_format_table:
     shell:
         r"""
         mkdir -p results/tables
-        python3 scripts/compare_input_format_benchmark.py \
+        python3 scripts/benchmarks/compare_input_format_benchmark.py \
           --summary {input:q} \
           --gzip-dataset yeast_small \
           --plain-dataset yeast_small_plain \
@@ -959,7 +961,7 @@ rule ddradseqtools_rsitesearch_yeast_B1:
                  results/processed/comparisons/ddradseqtools \
                  benchmark/logs
 
-        bash scripts/run_ddradseqtools_rsitesearch.sh \
+        bash scripts/comparators/run_ddradseqtools_rsitesearch.sh \
           --repo {params.repo:q} \
           --reference {input.ref:q} \
           --enzyme1 EcoRI \
@@ -986,7 +988,7 @@ rule normalize_ddradseqtools_yeast_B1:
         r"""
         mkdir -p results/processed/comparisons/ddradseqtools
 
-        python3 scripts/normalize_ddradseqtools_fragments.py \
+        python3 scripts/comparators/normalize_ddradseqtools_fragments.py \
           --frags {input:q} \
           --enzymes-tsv config/enzymes.tsv \
           --enzyme1 EcoRI \
@@ -1032,7 +1034,7 @@ rule normalize_radigest_for_ddradseqtools_yeast_B1:
         r"""
         mkdir -p results/processed/comparisons/ddradseqtools
 
-        python3 scripts/normalize_radigest_tsv.py \
+        python3 scripts/validation/normalize_radigest_tsv.py \
           --input {input:q} \
           --output {output:q} \
           --source-tool radigest \
@@ -1053,7 +1055,7 @@ rule compare_ddradseqtools_intervals_yeast_B1:
         prefix="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare"
     shell:
         r"""
-        python3 scripts/compare_interval_sets.py \
+        python3 scripts/validation/compare_interval_sets.py \
           --first {input.radigest:q} \
           --second {input.ddradseqtools:q} \
           --first-name radigest \

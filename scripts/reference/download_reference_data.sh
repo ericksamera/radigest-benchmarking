@@ -11,7 +11,7 @@ NCBI_PACKAGE_DIR="data/reference/ncbi_packages"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/download_reference_data.sh [options]
+  scripts/reference/download_reference_data.sh [options]
 
 Options:
   --datasets PATH       Dataset TSV. Default: config/datasets.tsv
@@ -30,7 +30,7 @@ Input TSV requirements:
     assembly
     accession_or_url
     local_path
-    expected_sha256
+    expected_sha256 or sha256
 
 Supported accession_or_url values:
   - GCA_* or GCF_*: downloaded with NCBI Datasets CLI
@@ -270,7 +270,7 @@ def process_row(row: dict[str, str]) -> dict[str, str]:
     assembly = row_get(row, "assembly")
     accession = row_get(row, "accession_or_url")
     local_raw = row_get(row, "local_path")
-    expected = row_get(row, "expected_sha256")
+    expected = row_get(row, "expected_sha256", "sha256")
 
     result = {
         "dataset": dataset_id,

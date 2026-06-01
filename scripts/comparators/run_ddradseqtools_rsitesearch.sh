@@ -19,7 +19,7 @@ FRAGST_INTERVAL="25"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/run_ddradseqtools_rsitesearch.sh \
+  scripts/comparators/run_ddradseqtools_rsitesearch.sh \
     --repo external/ddRADseqTools \
     --reference REF.fa[.gz] \
     --enzyme1 EcoRI \
@@ -180,7 +180,7 @@ if [[ "$STATUS" -ne 0 ]]; then
   exit "$STATUS"
 fi
 
-python3 scripts/summarize_ddradseqtools_fragments.py \
+python3 scripts/comparators/summarize_ddradseqtools_fragments.py \
   --frags "$FRAGS_OUT" \
   --stats "$STATS_OUT" \
   --reference "$REFERENCE" \

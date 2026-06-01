@@ -1,10 +1,8 @@
 # Scripts layout
 
-Scripts are grouped by workflow role.
-
-The top-level `scripts/<name>` files may be compatibility wrappers that forward
-to implementation scripts in subdirectories. Existing commands and Snakefiles can
-continue to use the old paths while the codebase transitions to the new layout.
+Scripts are grouped by workflow role. Top-level compatibility wrappers were
+removed after the workflow, Makefile, and documentation references were updated
+to point directly at the categorized implementation paths.
 
 ## Categories
 
@@ -18,11 +16,10 @@ continue to use the old paths while the codebase transitions to the new layout.
 | `scripts/empirical/`   | Empirical TLEN extraction, recovery fitting, and input checks                      |
 | `scripts/manuscript/`  | Manuscript table and figure generation                                             |
 
-## Compatibility wrappers
+Use implementation paths directly, for example:
 
-During the transition, compatibility wrappers are kept at the original
-`scripts/<name>` paths. This avoids breaking Makefile targets, Snakefiles, and
-documentation while keeping implementation code organized.
-
-A later cleanup can patch workflows to call implementation paths directly and
-remove wrappers once tests pass.
+```bash
+python3 scripts/benchmarks/summarize_screening_speed.py --help
+bash scripts/reference/download_reference_data.sh --help
+Rscript scripts/comparators/run_simrad_ddrad.R --help
+```

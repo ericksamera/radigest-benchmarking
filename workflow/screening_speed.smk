@@ -35,7 +35,7 @@ rule screening_speed:
         r"""
         set -euo pipefail
 
-        bash scripts/run_screening_speed_benchmark.sh \
+        bash scripts/benchmarks/run_screening_speed_benchmark.sh \
           --reference {REFERENCE:q} \
           --dataset {DATASET:q} \
           --enzymes {ENZYMES:q} \

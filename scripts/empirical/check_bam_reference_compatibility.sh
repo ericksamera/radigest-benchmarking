@@ -8,7 +8,7 @@ OUT=""
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/check_bam_reference_compatibility.sh \
+  scripts/empirical/check_bam_reference_compatibility.sh \
     --reference data/empirical/sockeye/reference.fa \
     --bam-glob 'data/empirical/sockeye/bam/*.bam' \
     --out results/processed/empirical_recovery/sockeye_ddrad/reference_compatibility.tsv

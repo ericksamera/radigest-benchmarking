@@ -7,7 +7,7 @@
 # fragment TSV/GFF3 outputs.
 #
 # Example:
-#   Rscript scripts/run_simrad_ddrad.R \
+#   Rscript scripts/comparators/run_simrad_ddrad.R \
 #     --reference ref.fa \
 #     --enzyme1 EcoRI \
 #     --enzyme2 MseI \
@@ -21,7 +21,7 @@ usage <- function(status = 0) {
   cat(
     paste(
       "Usage:",
-      "  Rscript scripts/run_simrad_ddrad.R \\",
+      "  Rscript scripts/comparators/run_simrad_ddrad.R \\",
       "    --reference REF.fa[.gz] \\",
       "    --enzyme1 ENZ1 \\",
       "    [--enzyme2 ENZ2|NA] \\",
@@ -252,7 +252,7 @@ if (min_size > max_size) {
 if (!requireNamespace("SimRAD", quietly = TRUE)) {
   stop(
     "R package SimRAD is not installed. Run: ",
-    "Rscript scripts/install_simrad_archive.R"
+    "Rscript scripts/comparators/install_simrad_archive.R"
   )
 }
 

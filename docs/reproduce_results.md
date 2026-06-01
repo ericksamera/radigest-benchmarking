@@ -63,7 +63,26 @@ make figures RADIGEST=.local/bin/radigest THREADS=4
 
 Benchmark claims should use medians and Q1-Q3 intervals, not single runs.
 
-## 5. Empirical recovery workflow
+## 5. Non-empirical scaling benchmarks
+
+Moderate-genome scaling benchmarks are Snakemake-managed through
+`workflow/scaling.smk`. Run these only on the machine intended for final runtime
+reporting.
+
+```bash
+make radigest-thread-scaling \
+  RADIGEST=.local/bin/radigest \
+  MODERATE_PLAIN_REF=data/reference/moderate.fa \
+  SCALING_SNAKEMAKE_CORES=1
+
+make pair-screen-scaling \
+  RADIGEST=.local/bin/radigest \
+  RADIGEST_SCREEN_PAIRS=.local/bin/radigest-screen-pairs \
+  MODERATE_PLAIN_REF=data/reference/moderate.fa \
+  SCALING_SNAKEMAKE_CORES=1
+```
+
+## 6. Empirical recovery workflow
 
 Empirical recovery requires local BAM/CRAM files and reference FASTA files
 described in `config/empirical_recovery.tsv`.
@@ -93,7 +112,7 @@ Outputs include:
 - `results/tables/empirical_recovery_summary.tsv`
 - `results/tables/empirical_recovery_model_sensitivity.tsv`
 
-## 6. Manuscript tables
+## 7. Manuscript tables
 
 ```bash
 make manuscript-tables
@@ -102,7 +121,7 @@ make manuscript-tables
 Curated tables are written to `manuscript_tables/`. Raw and intermediate
 outputs remain ignored by Git.
 
-## 7. What not to run by default
+## 8. What not to run by default
 
 Do not make the following part of default CI or `make all`:
 

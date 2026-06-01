@@ -7,7 +7,7 @@ REPO="https://github.com/BU-RAD-seq/Digital_RADs.git"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/install_digital_rads.sh [--dest external/Digital_RADs]
+  scripts/comparators/install_digital_rads.sh [--dest external/Digital_RADs]
 
 Clones or updates BU-RAD-seq/Digital_RADs into external/.
 The external checkout is ignored by Git; record commit/version metadata in workflow outputs.

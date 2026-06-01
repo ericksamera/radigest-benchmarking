@@ -47,7 +47,7 @@ rule ddgrader_binned_cut_equivalence:
           -fragments-tsv {output.radigest_fragments:q} \
           -json {output.radigest_json:q}
 
-        python3 scripts/bin_radigest_fragments.py \
+        python3 scripts/benchmarks/bin_radigest_fragments.py \
           --input {output.radigest_fragments:q} \
           --enzyme-pair {ENZYME_PAIR:q} \
           --min {MIN_SIZE:q} \
@@ -55,7 +55,7 @@ rule ddgrader_binned_cut_equivalence:
           --out-bins {output.radigest_bins:q} \
           --out-summary {output.radigest_summary:q}
 
-        python3 scripts/run_ddgrader_backend.py \
+        python3 scripts/comparators/run_ddgrader_backend.py \
           --repo {DDGRADER_REPO:q} \
           --reference {REFERENCE:q} \
           --enzyme-pairs {ENZYMES:q} \
@@ -66,7 +66,7 @@ rule ddgrader_binned_cut_equivalence:
           --out-summary {output.ddgrader_summary:q} \
           --version-log {output.ddgrader_version:q}
 
-        python3 scripts/compare_binned_fragment_tables.py \
+        python3 scripts/comparators/compare_binned_fragment_tables.py \
           --first {output.radigest_bins:q} \
           --second {output.ddgrader_bins:q} \
           --first-name radigest_binned \

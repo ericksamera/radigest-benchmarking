@@ -18,7 +18,7 @@ STDERR_LOG=""
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/run_digital_rads.sh \
+  scripts/comparators/run_digital_rads.sh \
     --digital-rads external/Digital_RADs/Digital_RADs.py \
     --reference REF.fa[.gz] \
     --enzyme1 EcoRI \

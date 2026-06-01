@@ -20,7 +20,7 @@ LOG_DIR="benchmark/logs/radigest_thread_scaling"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/run_radigest_thread_scaling.sh \
+  scripts/benchmarks/run_radigest_thread_scaling.sh \
     --reference data/reference/yeast.fa \
     --dataset yeast_small_plain \
     --condition B1 \

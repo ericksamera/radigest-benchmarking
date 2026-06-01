@@ -12,7 +12,7 @@
 #
 # Then run:
 #
-#   Rscript scripts/install_simrad_archive.R
+#   Rscript scripts/comparators/install_simrad_archive.R
 
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
