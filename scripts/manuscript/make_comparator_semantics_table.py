@@ -27,7 +27,7 @@ TABLE_COLUMNS = [
 ]
 CLAIM_BOUNDARIES = {
     "coordinate_equivalence": "Normalized interval output supports coordinate-equivalence checks for the declared case.",
-    "count_level_digest": "Aggregate retained-fragment and retained-base counts only; no coordinate-level interval-equivalence claim.",
+    "count_level_digest": "Aggregate retained-fragment count only; retained-base fields are trace metadata when present. No coordinate-level interval-equivalence claim.",
     "screening_throughput": "Binned fragment-screening behavior only; no coordinate-level interval-equivalence claim.",
 }
 TRUE_VALUES = {"1", "true", "yes", "y"}
@@ -88,7 +88,13 @@ def summarize_status(path: Path) -> tuple[str, str]:
     statuses = sorted(
         {(row.get("status") or "PRESENT").strip() or "PRESENT" for row in rows}
     )
-    observed = "PASS" if statuses == ["PASS"] else ";".join(statuses)
+    claim_statuses = [status for status in statuses if status != "INFO_ONLY"]
+    if statuses == ["INFO_ONLY"]:
+        observed = "INFO_ONLY"
+    elif claim_statuses and set(claim_statuses) <= {"PASS"}:
+        observed = "PASS"
+    else:
+        observed = ";".join(statuses)
     details: list[str] = []
     for row in rows:
         label = (

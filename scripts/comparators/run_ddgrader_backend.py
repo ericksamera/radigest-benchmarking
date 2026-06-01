@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import importlib
 import os
 import shutil
 import subprocess
@@ -28,8 +29,6 @@ import tempfile
 from io import StringIO
 from pathlib import Path
 from typing import Any
-
-import pandas as pd
 
 BIN_COLUMNS = [
     "enzyme_pair",
@@ -164,19 +163,17 @@ def import_ddgrader(repo: Path) -> tuple[Path, dict[str, Any]]:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 
     try:
-        from backend.controller.ddRadtoolController import collectRestrictionEnzymePairs
-        from backend.service.DoubleDigestedDnaComparison import (
-            DoubleDigestedDnaComparison,
+        controller: Any = importlib.import_module(
+            "backend.controller.ddRadtoolController"
         )
-        from backend.service.ExtractRestrictionEnzymes import (
-            getRestrictionEnzymeObjectByName,
+        comparison_module: Any = importlib.import_module(
+            "backend.service.DoubleDigestedDnaComparison"
         )
-        from backend.service.HandleFastafile import countFragmentLengthOfInputFasta
-        from backend.settings import (
-            BINNING_STEPS,
-            FIRST_BINNING_LIMIT,
-            MAX_BINNING_LIMIT,
+        enzyme_module: Any = importlib.import_module(
+            "backend.service.ExtractRestrictionEnzymes"
         )
+        fasta_module: Any = importlib.import_module("backend.service.HandleFastafile")
+        settings_module: Any = importlib.import_module("backend.settings")
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             f"{exc}. ddgRADer project_root={project_root}; "
@@ -184,17 +181,22 @@ def import_ddgrader(repo: Path) -> tuple[Path, dict[str, Any]]:
         ) from exc
 
     return project_root, {
-        "collectRestrictionEnzymePairs": collectRestrictionEnzymePairs,
-        "DoubleDigestedDnaComparison": DoubleDigestedDnaComparison,
-        "getRestrictionEnzymeObjectByName": getRestrictionEnzymeObjectByName,
-        "countFragmentLengthOfInputFasta": countFragmentLengthOfInputFasta,
-        "BINNING_STEPS": BINNING_STEPS,
-        "FIRST_BINNING_LIMIT": FIRST_BINNING_LIMIT,
-        "MAX_BINNING_LIMIT": MAX_BINNING_LIMIT,
+        "collectRestrictionEnzymePairs": (controller.collectRestrictionEnzymePairs),
+        "DoubleDigestedDnaComparison": (comparison_module.DoubleDigestedDnaComparison),
+        "getRestrictionEnzymeObjectByName": (
+            enzyme_module.getRestrictionEnzymeObjectByName
+        ),
+        "countFragmentLengthOfInputFasta": (
+            fasta_module.countFragmentLengthOfInputFasta
+        ),
+        "BINNING_STEPS": settings_module.BINNING_STEPS,
+        "FIRST_BINNING_LIMIT": settings_module.FIRST_BINNING_LIMIT,
+        "MAX_BINNING_LIMIT": settings_module.MAX_BINNING_LIMIT,
     }
 
 
-def dataframe_to_long_bins(csv_text: str) -> pd.DataFrame:
+def dataframe_to_long_bins(csv_text: str) -> Any:
+    pd: Any = importlib.import_module("pandas")
     df = pd.read_csv(StringIO(csv_text))
 
     first_col = df.columns[0]
@@ -217,7 +219,7 @@ def dataframe_to_long_bins(csv_text: str) -> pd.DataFrame:
 
 
 def write_summary(
-    long_df: pd.DataFrame,
+    long_df: Any,
     reference: Path,
     min_size: int,
     max_size: int,
@@ -308,7 +310,7 @@ def main(argv: list[str]) -> int:
         step = int(modules["BINNING_STEPS"])
         max_limit = int(modules["MAX_BINNING_LIMIT"])
 
-        import numpy as np
+        np: Any = importlib.import_module("numpy")
 
         binning_sizes = np.append(
             np.arange(first, max_limit + step, step),

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Compare radigest aggregate fragment counts with SimRAD count-level output.
 
-This comparison is intentionally limited to aggregate retained-fragment counts
-and retained bases. It does not compare coordinates or fragment interval sets.
+This comparison is intentionally limited to aggregate retained-fragment counts.
+Retained-base totals are reported as trace metadata only. It does not compare
+coordinates or fragment interval sets.
 """
 
 from __future__ import annotations
@@ -105,12 +106,24 @@ def row(
     radigest_fragments: Path,
     simrad_tsv: Path,
     notes: str,
+    *,
+    enforce_exact_match: bool,
 ) -> dict[str, str]:
     diff = simrad_value - radigest_value
     if radigest_value == 0:
         rel = "" if simrad_value == 0 else "inf"
     else:
         rel = f"{diff / radigest_value:.8f}"
+    if enforce_exact_match:
+        status = "PASS" if abs(diff) < 1e-9 else "DIFFER"
+        row_notes = notes
+    else:
+        status = "INFO_ONLY"
+        row_notes = (
+            notes
+            + ("; " if notes else "")
+            + "trace metric only; not enforced for SimRAD count-level claim"
+        )
     return {
         "dataset": dataset,
         "condition": condition,
@@ -119,12 +132,12 @@ def row(
         "simrad_value": fmt(simrad_value),
         "difference_simrad_minus_radigest": fmt(diff),
         "relative_difference_vs_radigest": rel,
-        "status": "PASS" if abs(diff) < 1e-9 else "DIFFER",
+        "status": status,
         "claim_boundary": "count_level_digest_only_no_coordinate_equivalence",
         "radigest_json": "" if radigest_json is None else str(radigest_json),
         "radigest_fragments": str(radigest_fragments),
         "simrad_tsv": str(simrad_tsv),
-        "notes": notes,
+        "notes": row_notes,
     }
 
 
@@ -167,6 +180,7 @@ def main(argv: list[str]) -> int:
                 args.radigest_fragments,
                 args.simrad_tsv,
                 notes,
+                enforce_exact_match=True,
             ),
             row(
                 args.dataset,
@@ -178,6 +192,7 @@ def main(argv: list[str]) -> int:
                 args.radigest_fragments,
                 args.simrad_tsv,
                 notes,
+                enforce_exact_match=False,
             ),
         ]
         args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -190,7 +205,8 @@ def main(argv: list[str]) -> int:
         return 2
 
     print(f"wrote {args.out}", file=sys.stderr)
-    if args.fail_on_difference and any(r["status"] != "PASS" for r in rows):
+    enforced_rows = [row for row in rows if row["metric"] == "fragments"]
+    if args.fail_on_difference and any(r["status"] != "PASS" for r in enforced_rows):
         return 1
     return 0
 

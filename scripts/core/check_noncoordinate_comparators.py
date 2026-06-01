@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -57,7 +58,7 @@ def rel(path: Path) -> Path:
     return ROOT / path
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(f"error: {message}")
 
 
@@ -69,12 +70,13 @@ def read_tsv(
         fail(f"missing required file: {path}")
     with full.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
-        if reader.fieldnames is None:
+        fieldnames = reader.fieldnames
+        if fieldnames is None:
             fail(f"{path}: missing header")
-        fieldnames = list(reader.fieldnames)
+        fieldname_set = set(fieldnames)
         if required_columns is not None:
             missing = [
-                column for column in required_columns if column not in fieldnames
+                column for column in required_columns if column not in fieldname_set
             ]
             if missing:
                 fail(f"{path}: missing columns: {', '.join(missing)}")

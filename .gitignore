@@ -44,3 +44,5 @@ data/empirical/
 *.bak
 *.log
 .DS_Store
+
+*codebase*
