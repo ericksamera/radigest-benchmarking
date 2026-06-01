@@ -16,3 +16,15 @@ results/validation/raw/synthetic/*.log
 ```
 
 The raw per-case files and benchmark logs are generated artifacts and are not tracked.
+
+Stage 3 reference outputs are:
+
+```text
+data/reference/yeast.fa.gz
+data/reference/yeast.fa
+data/reference/moderate.fa.gz
+data/reference/moderate.fa
+results/references/reference_checksums.tsv
+benchmark/logs/references/*.log
+results/references/metadata/*
+```

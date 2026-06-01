@@ -1,0 +1,3 @@
+reference_id	display_name	accession	source_type	output_gzip	output_plain	required_for_nonempirical	notes
+yeast	Saccharomyces cerevisiae S288C R64	GCF_000146045.2	ncbi_datasets	data/reference/yeast.fa.gz	data/reference/yeast.fa	true	Small public reference for matched digest and input-format checks.
+moderate	Cannabis sativa Pink Pepper ASM2916894v1	GCA_029168945.1	ncbi_datasets	data/reference/moderate.fa.gz	data/reference/moderate.fa	true	Moderate-size public reference for scaling and pair screening.

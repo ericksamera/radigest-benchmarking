@@ -3,4 +3,5 @@ synthetic_tiny	Synthetic tiny validation	data/synthetic/synthetic_validation.fa	
 yeast_small_plain	Saccharomyces cerevisiae small plain FASTA	data/reference/yeast.fa	fasta	reviewer_nonempirical	false	Public reference prepared in Stage 3.
 yeast_small_gzip	Saccharomyces cerevisiae small gzip FASTA	data/reference/yeast.fa.gz	fasta_gzip	reviewer_nonempirical	false	Public reference prepared in Stage 3.
 cannabis_pink_pepper_plain	Moderate reference panel	data/reference/moderate.fa	fasta	reviewer_nonempirical	false	Moderate-size reference prepared in Stage 3.
+cannabis_pink_pepper_gzip	Moderate reference panel gzip	data/reference/moderate.fa.gz	fasta_gzip	reviewer_nonempirical	false	Moderate-size reference prepared in Stage 3.
 sockeye_ddrad	Sockeye empirical ddRAD	NA	empirical	empirical	false	Optional until public empirical inputs are configured.

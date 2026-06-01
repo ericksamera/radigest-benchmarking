@@ -2,6 +2,7 @@ references:
   yeast_plain: data/reference/yeast.fa
   yeast_gzip: data/reference/yeast.fa.gz
   moderate_plain: data/reference/moderate.fa
+  moderate_gzip: data/reference/moderate.fa.gz
 
 matched_digest:
   dataset: yeast_small_plain

@@ -17,6 +17,7 @@ MANIFESTS = [
     "config/artifacts.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
+    "config/references.tsv",
     "config/scenarios/smoke.yml",
     "config/scenarios/reviewer_nonempirical.yml",
     "config/scenarios/reviewer_empirical.yml",
@@ -63,14 +64,14 @@ rule references_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_nonempirical.yml",
-        "data/reference/.gitkeep",
-        "results/references/.gitkeep"
+        REFERENCE_ALL_OUTPUTS
 
 rule reviewer_nonempirical_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_nonempirical.yml",
         SYNTHETIC_VALIDATION_OUTPUTS,
+        REFERENCE_ALL_OUTPUTS,
         "results/comparators/.gitkeep",
         "results/performance/.gitkeep"
 
@@ -85,6 +86,7 @@ rule reviewer_all:
         MANIFESTS,
         "config/scenarios/reviewer_all.yml",
         SYNTHETIC_VALIDATION_OUTPUTS,
+        REFERENCE_ALL_OUTPUTS,
         "results/comparators/.gitkeep",
         "results/performance/.gitkeep",
         "results/empirical/.gitkeep"

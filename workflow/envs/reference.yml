@@ -1,7 +1,9 @@
 name: radigest-reference
 channels:
   - conda-forge
+  - bioconda
 dependencies:
   - python >=3.11
   - curl
   - gzip
+  - ncbi-datasets-cli

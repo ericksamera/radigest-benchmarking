@@ -57,6 +57,16 @@ TSV_SPECS = {
         "expected_gff_1based_closed",
         "note",
     ],
+    "config/references.tsv": [
+        "reference_id",
+        "display_name",
+        "accession",
+        "source_type",
+        "output_gzip",
+        "output_plain",
+        "required_for_nonempirical",
+        "notes",
+    ],
     "config/comparators.tsv": [
         "tool_id",
         "display_name",
@@ -96,6 +106,9 @@ EXTRA_REQUIRED_FILES = [
     "data/synthetic/synthetic_validation.fa",
     "scripts/validation/validate_synthetic.py",
     "scripts/manuscript/make_synthetic_validation_table.py",
+    "scripts/reference/fetch_ncbi_reference.py",
+    "scripts/reference/prepare_plain_reference.py",
+    "scripts/reference/write_reference_checksums.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
@@ -109,6 +122,7 @@ EXTRA_REQUIRED_FILES = [
 BOOL_COLUMNS = {
     "config/datasets.tsv": ["required_for_smoke"],
     "config/artifacts.tsv": ["required_for_release"],
+    "config/references.tsv": ["required_for_nonempirical"],
 }
 
 DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
@@ -238,6 +252,37 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                     f"{path}: case {case} has invalid options: "
                     + ", ".join(invalid_options)
                 )
+    if path == "config/references.tsv":
+        for row in rows:
+            reference = row["reference_id"]
+            source_type = row["source_type"]
+            if source_type not in {"ncbi_datasets", "url"}:
+                fail(
+                    f"{path}: reference {reference} has invalid source_type {source_type!r}"
+                )
+            accession = row["accession"]
+            if not accession or accession.upper() in {
+                "NA",
+                "N/A",
+                "NONE",
+                "NULL",
+                "TO_BE_FILLED",
+                "TBD",
+            }:
+                fail(f"{path}: reference {reference} has missing accession")
+            gzip_path = row["output_gzip"]
+            plain_path = row["output_plain"]
+            expected_gzip = f"data/reference/{reference}.fa.gz"
+            expected_plain = f"data/reference/{reference}.fa"
+            if gzip_path != expected_gzip:
+                fail(
+                    f"{path}: reference {reference} output_gzip must be {expected_gzip}"
+                )
+            if plain_path != expected_plain:
+                fail(
+                    f"{path}: reference {reference} output_plain must be {expected_plain}"
+                )
+
     if path == "config/artifacts.tsv":
         for row in rows:
             claim = row["claim_id"]

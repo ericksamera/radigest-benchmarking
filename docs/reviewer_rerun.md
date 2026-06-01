@@ -13,6 +13,9 @@ At Stage 2, the concrete executable target is the synthetic-validation smoke run
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
+make references THREADS=4
 ```
 
 This writes the validation summary and manuscript-facing synthetic-validation table. Later stages will add references, comparators, performance workflows, empirical recovery, and full audit products.
+
+Stage 3 adds public reference acquisition. The reference step requires network access and the NCBI Datasets CLI supplied by `workflow/envs/reference.yml`.
