@@ -1,0 +1,7 @@
+name: radigest-reference
+channels:
+  - conda-forge
+dependencies:
+  - python >=3.11
+  - curl
+  - gzip

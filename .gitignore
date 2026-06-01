@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments
+.env
+.venv/
+env/
+venv/
+
+# Snakemake
+.snakemake/
+.snakemake/conda/
+.snakemake/log/
+
+# Local tool checkouts and private inputs
+external/
+data/empirical/
+
+# Reference data are produced by the references workflow.
+/data/reference/**
+!/data/reference/
+!/data/reference/.gitkeep
+
+# Generated outputs. Keep directory contracts only.
+/results/**
+!/results/**/
+!/results/**/.gitkeep
+
+/benchmark/logs/**
+!/benchmark/logs/
+!/benchmark/logs/.gitkeep
+
+/benchmark/memory/**
+!/benchmark/memory/
+!/benchmark/memory/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+.DS_Store

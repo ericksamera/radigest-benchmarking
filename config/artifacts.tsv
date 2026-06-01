@@ -1,0 +1,10 @@
+claim_id	category	required_output	manuscript_artifact	producer_rule	required_for_release	notes
+C01	validation	results/validation/synthetic_validation_results.tsv	results/manuscript/tables/table_02_synthetic_validation.tsv	validation_all	true	Synthetic digest validation.
+C02	comparators	results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv	results/manuscript/tables/table_03_interval_comparisons.tsv	comparators_all	true	Digital_RADs normalized interval comparison.
+C03	comparators	results/comparators/ddradseqtools/yeast_B1.interval_compare.summary.tsv	results/manuscript/tables/table_03_interval_comparisons.tsv	comparators_all	true	DDRADSEQTOOLS normalized interval comparison.
+C04	performance	results/performance/matched_tools/tool_timing_interpretation.tsv	results/manuscript/tables/table_04_matched_timing.tsv	performance_all	true	Matched tool timing.
+C05	performance	results/performance/screening_speed/screening_speed_summary.tsv	results/manuscript/tables/table_05_screening_speed.tsv	performance_all	true	Screening speed.
+C06	performance	results/performance/input_format/radigest_input_format_comparison.tsv	results/manuscript/tables/table_06_input_format.tsv	performance_all	true	Input format comparison.
+C07	performance	results/performance/thread_scaling/radigest_thread_scaling_summary.tsv	results/manuscript/tables/table_s02_radigest_thread_scaling.tsv	performance_all	true	Thread scaling.
+C08	performance	results/performance/pair_screen_scaling/pair_screen_scaling_summary.tsv	results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv	performance_all	true	Pair-screen job scaling.
+C11	empirical	results/empirical/sockeye_ddrad/empirical_recovery_summary.tsv	results/manuscript/tables/table_08_empirical_recovery.tsv	empirical_all	false	Optional until empirical inputs are public.

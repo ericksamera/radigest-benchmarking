@@ -1,0 +1,6 @@
+enzyme_id	display_name	recognition_sequence	cut_offset	source	notes
+EcoRI	EcoRI	GAATTC	1	NEB	Common validation enzyme.
+MseI	MseI	TTAA	1	NEB	Common validation enzyme.
+PstI	PstI	CTGCAG	5	NEB	Candidate screening enzyme.
+SbfI	SbfI	CCTGCAGG	6	NEB	Candidate screening enzyme.
+MspI	MspI	CCGG	1	NEB	Candidate screening enzyme.

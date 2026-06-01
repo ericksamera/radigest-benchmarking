@@ -1,0 +1,8 @@
+name: radigest-build
+channels:
+  - conda-forge
+dependencies:
+  - python >=3.11
+  - cmake
+  - make
+  - cxx-compiler

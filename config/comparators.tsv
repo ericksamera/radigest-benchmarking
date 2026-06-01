@@ -1,0 +1,5 @@
+tool_id	display_name	comparison_level	workflow	normalizer	primary_output_type	allowed_claim	required_paths
+simrad	SimRAD	count_only	comparators	scripts/comparators/run_simrad_ddrad.R	aggregate_count	count_level_digest	NA
+digital_rads	Digital_RADs.py	normalized_interval	comparators	scripts/comparators/normalize_digital_rads.py	interval_set	coordinate_equivalence	external/Digital_RADs/Digital_RADs.py
+ddradseqtools	DDRADSEQTOOLS rsitesearch.py	normalized_interval	comparators	scripts/comparators/normalize_ddradseqtools_fragments.py	interval_set	coordinate_equivalence	external/ddRADseqTools/Package/rsitesearch.py
+ddgrader	ddgRADer backend	binned_screening	performance	scripts/comparators/run_ddgrader_backend.py	binned_counts	screening_throughput	external/ddRadSeqWebTool/backend/service/DigestSequence.py

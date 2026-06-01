@@ -1,0 +1,8 @@
+empirical:
+  required: false
+  dataset: sockeye_ddrad
+  inputs:
+    bam: data/empirical/sockeye_ddrad/input.bam
+    reference: data/empirical/sockeye_ddrad/reference.fa
+  outputs:
+    summary: results/empirical/sockeye_ddrad/empirical_recovery_summary.tsv

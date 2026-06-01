@@ -1,0 +1,100 @@
+# Clean v2 scaffold Snakefile.
+# Stage 0 contains only target names and file contracts. Analysis rules are ported in later commits.
+
+include: "rules/validation.smk"
+include: "rules/references.smk"
+include: "rules/comparators.smk"
+include: "rules/performance.smk"
+include: "rules/empirical.smk"
+include: "rules/manuscript.smk"
+include: "rules/audit.smk"
+
+MANIFESTS = [
+    "config/datasets.tsv",
+    "config/enzymes.tsv",
+    "config/conditions.tsv",
+    "config/comparators.tsv",
+    "config/artifacts.tsv",
+    "config/candidate_enzymes.txt",
+    "config/scenarios/smoke.yml",
+    "config/scenarios/reviewer_nonempirical.yml",
+    "config/scenarios/reviewer_empirical.yml",
+    "config/scenarios/reviewer_all.yml",
+]
+
+SCAFFOLD_PLACEHOLDERS = [
+    "results/validation/.gitkeep",
+    "results/comparators/.gitkeep",
+    "results/performance/.gitkeep",
+    "results/performance/input_format/.gitkeep",
+    "results/performance/screening_speed/.gitkeep",
+    "results/performance/thread_scaling/.gitkeep",
+    "results/performance/pair_screen_scaling/.gitkeep",
+    "results/performance/large_genome/.gitkeep",
+    "results/empirical/.gitkeep",
+    "results/references/.gitkeep",
+    "results/manuscript/.gitkeep",
+    "results/manuscript/tables/.gitkeep",
+    "results/manuscript/figures/.gitkeep",
+    "benchmark/logs/.gitkeep",
+    "benchmark/memory/.gitkeep",
+    "data/reference/.gitkeep",
+]
+
+rule all:
+    input:
+        MANIFESTS,
+        SCAFFOLD_PLACEHOLDERS
+
+rule scaffold_all:
+    input:
+        MANIFESTS,
+        SCAFFOLD_PLACEHOLDERS
+
+rule smoke_all:
+    input:
+        MANIFESTS,
+        "config/scenarios/smoke.yml",
+        "results/validation/.gitkeep"
+
+rule references_all:
+    input:
+        MANIFESTS,
+        "config/scenarios/reviewer_nonempirical.yml",
+        "data/reference/.gitkeep",
+        "results/references/.gitkeep"
+
+rule reviewer_nonempirical_all:
+    input:
+        MANIFESTS,
+        "config/scenarios/reviewer_nonempirical.yml",
+        "results/validation/.gitkeep",
+        "results/comparators/.gitkeep",
+        "results/performance/.gitkeep"
+
+rule reviewer_empirical_all:
+    input:
+        MANIFESTS,
+        "config/scenarios/reviewer_empirical.yml",
+        "results/empirical/.gitkeep"
+
+rule reviewer_all:
+    input:
+        MANIFESTS,
+        "config/scenarios/reviewer_all.yml",
+        "results/validation/.gitkeep",
+        "results/comparators/.gitkeep",
+        "results/performance/.gitkeep",
+        "results/empirical/.gitkeep"
+
+rule manuscript_all:
+    input:
+        MANIFESTS,
+        "results/manuscript/tables/.gitkeep",
+        "results/manuscript/figures/.gitkeep"
+
+rule audit_all:
+    input:
+        MANIFESTS,
+        "benchmark/logs/.gitkeep",
+        "benchmark/memory/.gitkeep"

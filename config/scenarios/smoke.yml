@@ -1,0 +1,7 @@
+synthetic_validation:
+  enabled: true
+  cases: [tiny]
+  runs: 1
+
+manifest_check:
+  enabled: true

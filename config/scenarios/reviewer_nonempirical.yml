@@ -1,0 +1,43 @@
+references:
+  yeast_plain: data/reference/yeast.fa
+  yeast_gzip: data/reference/yeast.fa.gz
+  moderate_plain: data/reference/moderate.fa
+
+matched_digest:
+  dataset: yeast_small_plain
+  reference: data/reference/yeast.fa
+  condition: B1
+  enzymes: [EcoRI, MseI]
+  min_size: 100
+  max_size: 300
+  runs: 5
+  threads: 1
+
+screening_speed:
+  dataset: yeast_small_plain
+  reference: data/reference/yeast.fa
+  candidate_enzymes: config/candidate_enzymes.txt
+  min_size: 300
+  max_size: 600
+  score_min: 1
+  score_max: 2000
+  size_model: hard
+  runs: 5
+  jobs: 2
+  radigest_threads: 1
+
+thread_scaling:
+  dataset: cannabis_pink_pepper_plain
+  reference: data/reference/moderate.fa
+  conditions: [B1, B2]
+  modes: [json, fragments_tsv]
+  threads: [1, 2, 4, 8]
+  runs: 7
+
+pair_screen_scaling:
+  dataset: cannabis_pink_pepper_plain
+  reference: data/reference/moderate.fa
+  candidate_enzymes: config/candidate_enzymes.txt
+  jobs: [1, 2, 4, 8]
+  runs: 3
+  radigest_threads: 1
