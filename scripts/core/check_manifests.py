@@ -376,9 +376,13 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
             if row["category"] not in valid_categories:
                 fail(f"{path}: case {case} has invalid category {row['category']!r}")
             if row["output_mode"] not in valid_output_modes:
-                fail(f"{path}: case {case} has invalid output_mode {row['output_mode']!r}")
+                fail(
+                    f"{path}: case {case} has invalid output_mode {row['output_mode']!r}"
+                )
             if row["input_format"] not in valid_input_formats:
-                fail(f"{path}: case {case} has invalid input_format {row['input_format']!r}")
+                fail(
+                    f"{path}: case {case} has invalid input_format {row['input_format']!r}"
+                )
             ref_path = row["reference_path"]
             if ref_path == "NA" or ref_path.startswith("/"):
                 fail(

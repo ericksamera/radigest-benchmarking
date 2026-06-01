@@ -88,3 +88,17 @@ results/performance/thread_scaling/raw/*/*.fragments.tsv
 ```
 
 The Stage 5c claim is limited to intra-tool radigest thread scaling on the moderate public cannabis Pink Pepper reference. JSON-summary and fragment-TSV output modes are summarized separately, and retained-fragment counts must agree within each thread-scaling comparison group before speedups are interpreted. The default reviewer tier uses 1, 2, and 4 threads so `make performance-thread-scaling THREADS=4` can run without Snakemake thread downscaling.
+
+
+Stage 5d pair-screen job-scaling performance outputs are:
+
+```text
+results/performance/pair_screen_scaling/pair_screen_scaling_summary.tsv
+results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv
+benchmark/logs/performance/pair_screen_scaling/*.log
+results/performance/pair_screen_scaling/raw/*.runs.tsv
+results/performance/pair_screen_scaling/raw/*/json/*.json
+results/performance/pair_screen_scaling/raw/*/logs/*.log
+```
+
+The Stage 5d claim is limited to intra-tool `radigest-screen-pairs-cached` job scaling on the moderate public cannabis Pink Pepper reference. Candidate-pair evaluation and reported JSON coverage must agree within each job-scaling comparison group before speedups are interpreted. The default reviewer tier uses 1, 2, and 4 jobs so `make performance-pair-screen-scaling THREADS=4` can run without Snakemake thread downscaling.

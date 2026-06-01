@@ -88,9 +88,11 @@ def count_fragments_json(path: Path) -> int:
 
     candidates = [
         payload.get("total_fragments"),
-        payload.get("size_selection", {}).get("raw_fragments_in_window")
-        if isinstance(payload.get("size_selection"), dict)
-        else None,
+        (
+            payload.get("size_selection", {}).get("raw_fragments_in_window")
+            if isinstance(payload.get("size_selection"), dict)
+            else None
+        ),
     ]
     for value in candidates:
         if isinstance(value, int):

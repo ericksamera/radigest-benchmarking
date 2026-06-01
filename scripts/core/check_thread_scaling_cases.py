@@ -139,9 +139,7 @@ def main() -> int:
         threads = parse_int(row["threads"], f"case {case_id} threads")
         runs = parse_int(row["runs"], f"case {case_id} runs")
         if min_size < 0 or max_size <= min_size:
-            fail(
-                f"config/thread_scaling_cases.tsv:{line_number} invalid size interval"
-            )
+            fail(f"config/thread_scaling_cases.tsv:{line_number} invalid size interval")
         if threads < 1 or runs < 1:
             fail(
                 f"config/thread_scaling_cases.tsv:{line_number} "
@@ -151,13 +149,13 @@ def main() -> int:
         group_threads.setdefault(group, set()).add(threads)
         group_modes.setdefault(group, set()).add(output_mode)
 
-    for group, threads in sorted(group_threads.items()):
-        if 1 not in threads:
+    for group, thread_counts in sorted(group_threads.items()):
+        if 1 not in thread_counts:
             fail(
                 f"config/thread_scaling_cases.tsv: comparison_group {group!r} "
                 "must include a 1-thread baseline"
             )
-        if len(threads) < 2:
+        if len(thread_counts) < 2:
             fail(
                 f"config/thread_scaling_cases.tsv: comparison_group {group!r} "
                 "must include at least two thread counts"

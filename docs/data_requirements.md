@@ -33,7 +33,6 @@ config/candidate_enzymes.txt
 
 Stage 5b uses the `radigest-screen-pairs-cached` binary. The Makefile derives `RADIGEST_SCREEN_PAIRS_CACHED` from `RADIGEST` when `RADIGEST` is a path, or uses `radigest-screen-pairs-cached` from `PATH`; override it explicitly when needed.
 
-
 Stage 5c thread-scaling runs use the moderate public cannabis Pink Pepper reference:
 
 ```text
@@ -41,3 +40,13 @@ data/reference/moderate_cannabis_pink-pepper.fa
 ```
 
 The default reviewer thread-scaling tier uses 1, 2, and 4 radigest threads. Run it with `make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest` to avoid Snakemake thread downscaling.
+
+
+Stage 5d pair-screen job-scaling runs also use the moderate public cannabis Pink Pepper reference and the tracked candidate-enzyme list:
+
+```text
+data/reference/moderate_cannabis_pink-pepper.fa
+config/candidate_enzymes.txt
+```
+
+The default reviewer pair-screen job-scaling tier uses 1, 2, and 4 `radigest-screen-pairs-cached` jobs with one radigest thread per pair. Run it with `make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest` to avoid Snakemake job downscaling.

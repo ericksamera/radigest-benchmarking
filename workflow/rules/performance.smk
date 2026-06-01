@@ -1,14 +1,16 @@
 # Stage 5 performance rules.
 # Stage 5a covers radigest input-format timing. Stage 5b adds cached
 # radigest-screen-pairs-cached candidate-pair screening speed. Stage 5c adds
-# intra-tool radigest thread scaling. Later Stage 5 patches should add
-# pair_screen_scaling and large_genome outputs to PERFORMANCE_ALL_OUTPUTS.
+# intra-tool radigest thread scaling. Stage 5d adds cached pair-screen job
+# scaling. Later Stage 5 patches should add large_genome outputs to
+# PERFORMANCE_ALL_OUTPUTS.
 
 import csv
 
 PERFORMANCE_CASE_MANIFEST = "config/performance_cases.tsv"
 SCREENING_SPEED_CASE_MANIFEST = "config/screening_speed_cases.tsv"
 THREAD_SCALING_CASE_MANIFEST = "config/thread_scaling_cases.tsv"
+PAIR_SCREEN_SCALING_CASE_MANIFEST = "config/pair_screen_scaling_cases.tsv"
 PERFORMANCE_INPUT_FORMAT_SUMMARY = (
     "results/performance/input_format/radigest_input_format_comparison.tsv"
 )
@@ -19,6 +21,12 @@ THREAD_SCALING_SUMMARY = (
     "results/performance/thread_scaling/radigest_thread_scaling_summary.tsv"
 )
 THREAD_SCALING_TABLE = "results/manuscript/tables/table_s02_radigest_thread_scaling.tsv"
+PAIR_SCREEN_SCALING_SUMMARY = (
+    "results/performance/pair_screen_scaling/pair_screen_scaling_summary.tsv"
+)
+PAIR_SCREEN_SCALING_TABLE = (
+    "results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv"
+)
 
 
 def _read_tsv_rows(path):
@@ -86,8 +94,29 @@ THREAD_SCALING_OUTPUTS = [
     THREAD_SCALING_SUMMARY,
     THREAD_SCALING_TABLE,
 ]
+
+PAIR_SCREEN_SCALING_CASE_ROWS = _read_tsv_rows(PAIR_SCREEN_SCALING_CASE_MANIFEST)
+PAIR_SCREEN_SCALING_CASE_BY_ID = {
+    row["case_id"]: row for row in PAIR_SCREEN_SCALING_CASE_ROWS
+}
+PAIR_SCREEN_SCALING_CASES = [
+    row["case_id"]
+    for row in PAIR_SCREEN_SCALING_CASE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() == "true"
+]
+PAIR_SCREEN_SCALING_RUN_OUTPUTS = [
+    f"results/performance/pair_screen_scaling/raw/{case_id}.runs.tsv"
+    for case_id in PAIR_SCREEN_SCALING_CASES
+]
+PAIR_SCREEN_SCALING_OUTPUTS = [
+    PAIR_SCREEN_SCALING_SUMMARY,
+    PAIR_SCREEN_SCALING_TABLE,
+]
 PERFORMANCE_ALL_OUTPUTS = (
-    PERFORMANCE_INPUT_FORMAT_OUTPUTS + SCREENING_SPEED_OUTPUTS + THREAD_SCALING_OUTPUTS
+    PERFORMANCE_INPUT_FORMAT_OUTPUTS
+    + SCREENING_SPEED_OUTPUTS
+    + THREAD_SCALING_OUTPUTS
+    + PAIR_SCREEN_SCALING_OUTPUTS
 )
 
 
@@ -110,6 +139,13 @@ def thread_scaling_case(case_id):
         return THREAD_SCALING_CASE_BY_ID[case_id]
     except KeyError as exc:
         raise ValueError(f"unknown thread_scaling case_id: {case_id}") from exc
+
+
+def pair_screen_scaling_case(case_id):
+    try:
+        return PAIR_SCREEN_SCALING_CASE_BY_ID[case_id]
+    except KeyError as exc:
+        raise ValueError(f"unknown pair_screen_scaling case_id: {case_id}") from exc
 
 
 def performance_reference(wc):
@@ -180,6 +216,22 @@ def thread_scaling_enzymes(wc):
     return f"{row['enzyme_1']},{enzyme2}"
 
 
+def pair_screen_scaling_reference(wc):
+    return pair_screen_scaling_case(wc.case_id)["reference_path"]
+
+
+def pair_screen_scaling_candidate_enzymes(wc):
+    return pair_screen_scaling_case(wc.case_id)["candidate_enzymes"]
+
+
+def pair_screen_scaling_value(wc, column):
+    return pair_screen_scaling_case(wc.case_id)[column]
+
+
+def pair_screen_scaling_int(wc, column):
+    return int(pair_screen_scaling_case(wc.case_id)[column])
+
+
 rule performance_all:
     input:
         PERFORMANCE_ALL_OUTPUTS
@@ -198,6 +250,11 @@ rule performance_screening_speed_all:
 rule performance_thread_scaling_all:
     input:
         THREAD_SCALING_OUTPUTS
+
+
+rule performance_pair_screen_scaling_all:
+    input:
+        PAIR_SCREEN_SCALING_OUTPUTS
 
 
 rule run_radigest_input_format_case:
@@ -464,6 +521,105 @@ rule make_thread_scaling_table:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/performance/thread_scaling
         python3 scripts/manuscript/make_thread_scaling_table.py \
+          --summary {input.summary:q} \
+          --datasets {input.datasets:q} \
+          --conditions {input.conditions:q} \
+          --out {output:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+rule run_radigest_pair_screen_scaling_case:
+    input:
+        ref=pair_screen_scaling_reference,
+        candidates=pair_screen_scaling_candidate_enzymes,
+        cases=PAIR_SCREEN_SCALING_CASE_MANIFEST
+    output:
+        "results/performance/pair_screen_scaling/raw/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/pair_screen_scaling/{case_id}.timing.log"
+    threads:
+        lambda wc: pair_screen_scaling_int(wc, "jobs")
+    params:
+        screen_binary=lambda wildcards: config.get(
+            "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"
+        ),
+        dataset=lambda wc: pair_screen_scaling_value(wc, "dataset_id"),
+        condition=lambda wc: pair_screen_scaling_value(wc, "condition_id"),
+        min_size=lambda wc: pair_screen_scaling_int(wc, "min_size"),
+        max_size=lambda wc: pair_screen_scaling_int(wc, "max_size"),
+        score_min=lambda wc: pair_screen_scaling_int(wc, "score_min"),
+        score_max=lambda wc: pair_screen_scaling_int(wc, "score_max"),
+        size_model=lambda wc: pair_screen_scaling_value(wc, "size_model"),
+        jobs=lambda wc: pair_screen_scaling_int(wc, "jobs"),
+        radigest_threads=lambda wc: pair_screen_scaling_int(wc, "radigest_threads"),
+        runs=lambda wc: pair_screen_scaling_int(wc, "runs"),
+        command_template=lambda wc: pair_screen_scaling_value(wc, "command_template"),
+        raw_dir=lambda wc: f"results/performance/pair_screen_scaling/raw/{wc.case_id}"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/pair_screen_scaling/raw benchmark/logs/performance/pair_screen_scaling
+        python3 scripts/performance/run_radigest_screening.py \
+          --screen-binary {params.screen_binary:q} \
+          --reference {input.ref:q} \
+          --case-id {wildcards.case_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --candidate-enzymes {input.candidates:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --score-min {params.score_min} \
+          --score-max {params.score_max} \
+          --size-model {params.size_model:q} \
+          --jobs {params.jobs} \
+          --radigest-threads {params.radigest_threads} \
+          --runs {params.runs} \
+          --command-template {params.command_template:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule summarize_pair_screen_scaling:
+    input:
+        runs=PAIR_SCREEN_SCALING_RUN_OUTPUTS,
+        cases=PAIR_SCREEN_SCALING_CASE_MANIFEST
+    output:
+        PAIR_SCREEN_SCALING_SUMMARY
+    log:
+        "benchmark/logs/performance/pair_screen_scaling/pair_screen_scaling_summary.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/pair_screen_scaling benchmark/logs/performance/pair_screen_scaling
+        python3 scripts/performance/summarize_pair_screen_scaling.py \
+          --cases {input.cases:q} \
+          --runs {input.runs:q} \
+          --out {output:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+
+rule make_pair_screen_scaling_table:
+    input:
+        summary=PAIR_SCREEN_SCALING_SUMMARY,
+        datasets="config/datasets.tsv",
+        conditions="config/conditions.tsv"
+    output:
+        PAIR_SCREEN_SCALING_TABLE
+    log:
+        "benchmark/logs/performance/pair_screen_scaling/pair_screen_scaling_table.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/performance/pair_screen_scaling
+        python3 scripts/manuscript/make_pair_screen_scaling_table.py \
           --summary {input.summary:q} \
           --datasets {input.datasets:q} \
           --conditions {input.conditions:q} \

@@ -42,12 +42,16 @@ thread_scaling:
   claim_note: Intra-tool radigest thread scaling only; output modes are interpreted separately.
 
 pair_screen_scaling:
+  cases: config/pair_screen_scaling_cases.tsv
+  target: performance_pair_screen_scaling_all
   dataset: moderate_cannabis_pink-pepper_plain
   reference: data/reference/moderate_cannabis_pink-pepper.fa
   candidate_enzymes: config/candidate_enzymes.txt
-  jobs: [1, 2, 4, 8]
+  jobs: [1, 2, 4]
   runs: 3
   radigest_threads: 1
+  command_template: radigest-screen-pairs-cached
+  claim_note: Cached pair-screen job scaling only; candidate-pair coverage is enforced before speedups are interpreted.
 
 input_format:
   cases: config/performance_cases.tsv
