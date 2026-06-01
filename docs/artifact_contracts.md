@@ -9,20 +9,20 @@ This layer is intentionally separate from the benchmark-category manifest:
 
 ## Manifest columns
 
-| Column | Meaning |
-| --- | --- |
-| `artifact_id` | Stable row identifier for the contract. |
-| `category_id` | Benchmark category from `config/benchmark_categories.tsv`. |
-| `claim_id` | Claim identifier used in `manuscript_tables/claim_audit.tsv`; blank for static or optional curated tables. |
-| `manuscript_section` | Manuscript or supplement area using the artifact. |
-| `claim` | Human-readable claim supported by the artifact. |
-| `required_input` | Semicolon-separated upstream outputs that must already exist. Globs are allowed. |
-| `generated_artifact` | Curated manuscript output path expected after export. |
-| `manuscript_artifact` | Manuscript table or figure filename. |
-| `producer_target` | Make target(s) expected to generate the upstream input. |
-| `producer_workflow` | Snakemake workflow/target or script responsible for the upstream input. |
-| `required_for_release` | Whether missing inputs should fail a strict release check. |
-| `notes` | Scope or interpretation notes. |
+| Column                 | Meaning                                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `artifact_id`          | Stable row identifier for the contract.                                                                    |
+| `category_id`          | Benchmark category from `config/benchmark_categories.tsv`.                                                 |
+| `claim_id`             | Claim identifier used in `manuscript_tables/claim_audit.tsv`; blank for static or optional curated tables. |
+| `manuscript_section`   | Manuscript or supplement area using the artifact.                                                          |
+| `claim`                | Human-readable claim supported by the artifact.                                                            |
+| `required_input`       | Semicolon-separated upstream outputs that must already exist. Globs are allowed.                           |
+| `generated_artifact`   | Curated manuscript output path expected after export.                                                      |
+| `manuscript_artifact`  | Manuscript table or figure filename.                                                                       |
+| `producer_target`      | Make target(s) expected to generate the upstream input.                                                    |
+| `producer_workflow`    | Snakemake workflow/target or script responsible for the upstream input.                                    |
+| `required_for_release` | Whether missing inputs should fail a strict release check.                                                 |
+| `notes`                | Scope or interpretation notes.                                                                             |
 
 ## Routine checks
 

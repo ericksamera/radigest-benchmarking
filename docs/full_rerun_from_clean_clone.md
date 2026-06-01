@@ -98,6 +98,8 @@ make validate-radigest \
 make audit
 make benchmark-categories
 make check-benchmark-categories
+make scenarios
+make check-scenarios
 ```
 
 ## 4. Reference metadata

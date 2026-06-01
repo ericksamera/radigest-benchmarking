@@ -1,0 +1,46 @@
+scenario_id	parameter	value	description
+nonempirical	reference_datasets	yeast_small,moderate_genome,sockeye_reference,trichoderma_reference	Public reference datasets downloaded or checked by reference-data targets.
+nonempirical	empirical_datasets	sockeye_ddrad,trichoderma_ddrad	Empirical datasets used by optional empirical-recovery workflow.
+nonempirical	matched_reference	data/reference/yeast.fa.gz	Default gzipped yeast reference for lightweight matched-tool benchmark wrappers.
+nonempirical	matched_dataset	yeast_small	Dataset label for lightweight matched-tool benchmark wrappers.
+nonempirical	matched_condition	B1	Default matched digest benchmark condition.
+nonempirical	matched_enzymes	EcoRI,MseI	Default enzyme pair for matched digest benchmark tasks.
+nonempirical	matched_enzyme_pair_label	EcoRI+MseI	Human-readable enzyme-pair label used by binned comparator workflows.
+nonempirical	matched_min_size	100	Minimum fragment size for matched digest benchmark tasks.
+nonempirical	matched_max_size	300	Maximum fragment size for matched digest benchmark tasks.
+nonempirical	matched_runs	5	Replicate count for matched digest benchmark tasks.
+nonempirical	digest_comparison_reference	data/reference/yeast.fa	Plain yeast reference for reviewer-facing digest-tool comparison.
+nonempirical	digest_comparison_dataset	yeast_small_plain	Dataset label for reviewer-facing digest-tool comparison.
+nonempirical	digest_comparison_condition	B1	Condition label for reviewer-facing digest-tool comparison.
+nonempirical	digital_rads_path	external/Digital_RADs/Digital_RADs.py	Digital_RADs.py checkout path.
+nonempirical	ddgrader_repo	external/ddRadSeqWebTool	ddgRADer/ddRadSeqWebTool checkout path.
+nonempirical	simrad_warm_reference	data/reference/yeast.fa.gz	Reference used by legacy SimRAD warm-session benchmark target.
+nonempirical	screening_reference	data/reference/yeast.fa	Reference used by screening-throughput comparison.
+nonempirical	screening_dataset	yeast_small_plain	Dataset label for screening-throughput comparison.
+nonempirical	screening_enzymes	config/candidate_enzymes.txt	Candidate enzyme list for screening-throughput comparison.
+nonempirical	screening_min_size	300	Minimum fragment size for screening-throughput comparison.
+nonempirical	screening_max_size	600	Maximum fragment size for screening-throughput comparison.
+nonempirical	screening_score_min	1	Minimum score for radigest-screen-pairs screening-throughput comparison.
+nonempirical	screening_score_max	2000	Maximum score for radigest-screen-pairs screening-throughput comparison.
+nonempirical	screening_size_model	hard	Size model for screening-throughput comparison.
+nonempirical	screening_runs	5	Replicate count for screening-throughput comparison.
+nonempirical	screening_jobs	2	Job count for radigest-screen-pairs in screening-throughput comparison.
+nonempirical	screening_radigest_threads	1	Threads per radigest call in screening-throughput comparison.
+nonempirical	input_format_workflow_config	workflow/config.yeast_input_formats.yml	Workflow config for gzipped-vs-plain FASTA input-format benchmark.
+nonempirical	moderate_plain_ref	data/reference/moderate.fa	Plain moderate-genome FASTA for scaling benchmarks.
+nonempirical	scaling_dataset	cannabis_pink_pepper_plain	Dataset label for moderate-genome scaling benchmarks.
+nonempirical	scaling_snakemake_cores	1	Snakemake cores for scaling workflow dispatch.
+nonempirical	thread_scaling_conditions	B1,B2	Conditions included in radigest thread-scaling benchmark.
+nonempirical	thread_scaling_modes	json,fragments_tsv	Output modes included in radigest thread-scaling benchmark.
+nonempirical	thread_scaling_threads	1,2,4,8	Thread counts included in radigest thread-scaling benchmark.
+nonempirical	thread_scaling_runs	7	Replicate count for radigest thread-scaling benchmark.
+nonempirical	pair_screen_stem_prefix	cannabis	Filename stem prefix for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_enzymes	config/candidate_enzymes.txt	Candidate enzyme list for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_min_size	300	Minimum fragment size for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_max_size	600	Maximum fragment size for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_score_min	1	Minimum score for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_score_max	2000	Maximum score for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_size_model	hard	Size model for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_runs	3	Replicate count for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_jobs	1 2 4 8	Job counts for pair-screen job-scaling benchmark.
+nonempirical	pair_screen_radigest_threads	1	Threads per radigest call in pair-screen job-scaling benchmark.

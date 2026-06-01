@@ -63,7 +63,7 @@ make figures RADIGEST=.local/bin/radigest THREADS=4
 
 Benchmark claims should use medians and Q1-Q3 intervals, not single runs.
 
-## 5. Benchmark categories
+## 5. Benchmark categories and scenarios
 
 Claim-oriented benchmark categories are declared in `config/benchmark_categories.tsv`:
 
@@ -72,9 +72,22 @@ make benchmark-categories
 make check-benchmark-categories
 ```
 
+Benchmark parameter defaults are declared in `config/scenarios/nonempirical.tsv`:
+
+```bash
+make scenarios
+make check-scenarios
+```
+
 Use `make benchmark-nonempirical` after references and external comparator
 checkouts are already available. Use `make reviewer-rerun-nonempirical` for the
 reviewer-facing path that also runs preparation steps.
+
+Override scenario-derived defaults with normal Make assignments when needed:
+
+```bash
+make benchmark-screening-speed SCREENING_RUNS=3 SCREENING_JOBS=4
+```
 
 ## 6. Non-empirical scaling benchmarks
 

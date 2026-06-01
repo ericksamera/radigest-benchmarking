@@ -24,3 +24,5 @@ Use category targets such as `benchmark-validation`, `benchmark-comparators`,
 claim family.
 
 Artifact and claim contracts are declared in `config/artifacts.tsv` and can be checked with `make check-artifacts`.
+
+Scenario defaults are declared in `config/scenarios/nonempirical.tsv` and can be inspected with `make scenarios`.
