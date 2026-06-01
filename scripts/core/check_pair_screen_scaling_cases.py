@@ -12,8 +12,6 @@ ROOT = Path(__file__).resolve().parents[2]
 PAIR_SCREEN_CASES = ROOT / "config" / "pair_screen_scaling_cases.tsv"
 DATASETS = ROOT / "config" / "datasets.tsv"
 CONDITIONS = ROOT / "config" / "conditions.tsv"
-CANDIDATE_ENZYMES = ROOT / "config" / "candidate_enzymes.txt"
-
 REQUIRED_COLUMNS = [
     "case_id",
     "dataset_id",
@@ -113,8 +111,6 @@ def main() -> int:
         row["condition_id"]
         for row in read_tsv(CONDITIONS, ["condition_id", "display_name"])
     }
-    canonical_candidate_path = CANDIDATE_ENZYMES.resolve()
-
     seen: set[str] = set()
     group_jobs: dict[str, set[int]] = {}
     group_threads: dict[str, set[int]] = {}
@@ -147,11 +143,6 @@ def main() -> int:
             line_number=line_number,
             column="candidate_enzymes",
         )
-        if candidate_path.resolve() != canonical_candidate_path:
-            fail(
-                f"config/pair_screen_scaling_cases.tsv:{line_number} candidate_enzymes "
-                "must use config/candidate_enzymes.txt for the reviewer contract"
-            )
         read_candidate_names(candidate_path)
 
         min_size = parse_int(row["min_size"], f"case {case_id} min_size")

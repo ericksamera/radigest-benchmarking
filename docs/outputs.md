@@ -101,3 +101,15 @@ results/performance/pair_screen_scaling/raw/*/logs/*.log
 ```
 
 The Stage 5d claim is limited to intra-tool `radigest-screen-pairs-cached` job scaling on the moderate public cannabis Pink Pepper reference. Candidate-pair evaluation and reported JSON coverage must agree within each job-scaling comparison group before speedups are interpreted. The default reviewer tier uses 1, 2, and 4 jobs so `make performance-pair-screen-scaling THREADS=4` can run without Snakemake thread downscaling.
+
+Stage 5e large-reference performance outputs are:
+
+```text
+results/performance/large_genome/large_genome_summary.tsv
+results/manuscript/tables/table_s04_large_genome.tsv
+benchmark/logs/performance/large_genome/*.log
+results/performance/large_genome/raw/*.runs.tsv
+results/performance/large_genome/raw/*/*.json
+```
+
+The Stage 5e claim is limited to radigest JSON timing on the moderate public cannabis Pink Pepper reference. It is a large-reference performance check, not a cross-tool equivalence or empirical recovery claim.

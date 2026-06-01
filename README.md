@@ -26,6 +26,7 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -129,6 +130,7 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -151,3 +153,10 @@ Primary contracts live in:
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
+
+
+Stage 5e large-reference timing can be run with:
+
+```bash
+make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+```

@@ -56,6 +56,7 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -71,4 +72,11 @@ results/manuscript/tables/table_06_input_format.tsv
 results/manuscript/tables/table_05_screening_speed.tsv
 results/manuscript/tables/table_s02_radigest_thread_scaling.tsv
 results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv
+```
+
+
+Stage 5e large-reference timing can be run with:
+
+```bash
+make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 ```

@@ -13,7 +13,7 @@ SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
 SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" ddgrader_repo="$(DDGRADER_REPO)"
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 
-.PHONY: help smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -33,6 +33,7 @@ help:
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest' \
 	  '  make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest' \
+	  '  make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest' \
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
@@ -67,6 +68,9 @@ performance-thread-scaling:
 
 performance-pair-screen-scaling:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_pair_screen_scaling_all $(SNAKEMAKE_CONFIG_ARGS) $(PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS)
+
+performance-large-genome:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_large_genome_all $(SNAKEMAKE_CONFIG_ARGS)
 
 performance:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -105,6 +109,7 @@ check-manifests:
 	python3 scripts/core/check_screening_speed_cases.py
 	python3 scripts/core/check_thread_scaling_cases.py
 	python3 scripts/core/check_pair_screen_scaling_cases.py
+	python3 scripts/core/check_large_genome_cases.py
 
 check: check-manifests
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)

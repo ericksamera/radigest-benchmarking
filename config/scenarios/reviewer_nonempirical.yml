@@ -41,6 +41,20 @@ thread_scaling:
   runs: 7
   claim_note: Intra-tool radigest thread scaling only; output modes are interpreted separately.
 
+large_genome:
+  cases: config/large_genome_cases.tsv
+  target: performance_large_genome_all
+  dataset: moderate_cannabis_pink-pepper_plain
+  reference: data/reference/moderate_cannabis_pink-pepper.fa
+  condition: B2
+  enzymes: [EcoRI, MseI]
+  min_size: 300
+  max_size: 600
+  output_mode: json
+  threads: 4
+  runs: 3
+  claim_note: Large-reference radigest timing only; no cross-tool equivalence or empirical recovery claim.
+
 pair_screen_scaling:
   cases: config/pair_screen_scaling_cases.tsv
   target: performance_pair_screen_scaling_all

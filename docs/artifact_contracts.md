@@ -25,3 +25,12 @@ results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv
 ```
 
 The input-format table is generated from `config/performance_cases.tsv`. The screening-speed table is generated from `config/screening_speed_cases.tsv` and measures cached `radigest-screen-pairs-cached` candidate-pair screening throughput only. The thread-scaling table is generated from `config/thread_scaling_cases.tsv` and measures intra-tool radigest scaling across 1, 2, and 4 threads on the moderate public reference. The pair-screen job-scaling table is generated from `config/pair_screen_scaling_cases.tsv` and measures cached pair-screen job scaling across 1, 2, and 4 jobs on the moderate public reference.
+
+Stage 5e implements artifact `C17`:
+
+```text
+results/performance/large_genome/large_genome_summary.tsv
+results/manuscript/tables/table_s04_large_genome.tsv
+```
+
+The table is generated from `config/large_genome_cases.tsv` and is limited to a radigest large-reference timing claim.
