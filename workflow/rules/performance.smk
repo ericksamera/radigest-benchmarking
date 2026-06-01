@@ -540,6 +540,8 @@ rule run_radigest_pair_screen_scaling_case:
         "benchmark/logs/performance/pair_screen_scaling/{case_id}.timing.log"
     threads:
         lambda wc: pair_screen_scaling_int(wc, "jobs")
+    resources:
+        pair_screen_benchmark=1
     params:
         screen_binary=lambda wildcards: config.get(
             "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"
