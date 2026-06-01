@@ -1,11 +1,16 @@
 THREADS ?= 4
 RADIGEST ?= radigest
+ifeq ($(dir $(RADIGEST)),./)
+RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
+else
+RADIGEST_SCREEN_PAIRS_CACHED ?= $(dir $(RADIGEST))radigest-screen-pairs-cached
+endif
 DDGRADER_REPO ?= external/ddRadSeqWebTool
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
-SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" ddgrader_repo="$(DDGRADER_REPO)"
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" ddgrader_repo="$(DDGRADER_REPO)"
 
 .PHONY: help smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
@@ -24,6 +29,7 @@ help:
 	  '  make comparators RADIGEST=/path/to/radigest' \
 	  '  make performance-input-format RADIGEST=/path/to/radigest' \
 	  '  make performance-screening-speed RADIGEST=/path/to/radigest' \
+	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance RADIGEST=/path/to/radigest' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \

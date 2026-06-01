@@ -54,9 +54,13 @@ results/manuscript/tables/table_03_comparator_semantics.tsv
 ```bash
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+# Optional when the cached binary is not next to RADIGEST or on PATH:
+make performance-screening-speed THREADS=4 \
+  RADIGEST=/path/to/radigest \
+  RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
-The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks native radigest candidate-pair screening using `config/screening_speed_cases.tsv`.
+The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`.
 
 Expected manuscript-facing tables are:
 

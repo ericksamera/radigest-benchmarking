@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Benchmark native radigest candidate-pair screening cases."""
+"""Benchmark radigest-screen-pairs-cached candidate-pair screening cases."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import json
-import math
 import shlex
 import shutil
 import subprocess
@@ -34,6 +33,7 @@ RUN_COLUMNS = [
     "wall_seconds",
     "exit_code",
     "candidate_pairs_reported",
+    "screening_binary",
     "screening_output",
     "json_output",
     "stdout_log",
@@ -42,66 +42,7 @@ RUN_COLUMNS = [
     "command",
 ]
 
-TEMPLATE_FIELDS = {
-    "radigest",
-    "reference",
-    "candidate_enzymes",
-    "min_size",
-    "max_size",
-    "score_min",
-    "score_max",
-    "size_model",
-    "jobs",
-    "radigest_threads",
-    "screening_output",
-    "out_tsv",
-    "json_output",
-    "stdout_log",
-    "stderr_log",
-}
-
-AUTO_TEMPLATES = [
-    (
-        "{radigest} -screen -fasta {reference} -candidate-enzymes "
-        "{candidate_enzymes} -min {min_size} -max {max_size} "
-        "-score-min {score_min} -score-max {score_max} -size-model "
-        "{size_model} -jobs {jobs} -threads {radigest_threads} "
-        "-out-tsv {screening_output} -json {json_output}"
-    ),
-    (
-        "{radigest} -screen -fasta {reference} -candidates {candidate_enzymes} "
-        "-min {min_size} -max {max_size} -score-min {score_min} "
-        "-score-max {score_max} -size-model {size_model} -jobs {jobs} "
-        "-threads {radigest_threads} -out-tsv {screening_output} "
-        "-json {json_output}"
-    ),
-    (
-        "{radigest} screen -fasta {reference} -candidate-enzymes "
-        "{candidate_enzymes} -min {min_size} -max {max_size} "
-        "-score-min {score_min} -score-max {score_max} -size-model "
-        "{size_model} -jobs {jobs} -threads {radigest_threads} "
-        "-out-tsv {screening_output} -json {json_output}"
-    ),
-    (
-        "{radigest} screen --fasta {reference} --candidate-enzymes "
-        "{candidate_enzymes} --min {min_size} --max {max_size} "
-        "--score-min {score_min} --score-max {score_max} --size-model "
-        "{size_model} --jobs {jobs} --threads {radigest_threads} "
-        "--out-tsv {screening_output} --json {json_output}"
-    ),
-    (
-        "{radigest} -screen -fasta {reference} -candidate-enzymes "
-        "{candidate_enzymes} -min {min_size} -max {max_size} "
-        "-score-min {score_min} -score-max {score_max} -size-model "
-        "{size_model} -jobs {jobs} -threads {radigest_threads}"
-    ),
-    (
-        "{radigest} screen -fasta {reference} -candidate-enzymes "
-        "{candidate_enzymes} -min {min_size} -max {max_size} "
-        "-score-min {score_min} -score-max {score_max} -size-model "
-        "{size_model} -jobs {jobs} -threads {radigest_threads}"
-    ),
-]
+ALLOWED_BACKENDS = {"radigest-screen-pairs-cached", "cached"}
 
 
 def fail(message: str) -> NoReturn:
@@ -109,21 +50,22 @@ def fail(message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def resolve_executable(executable: str) -> str:
+def resolve_executable(executable: str, *, label: str) -> str:
+    env_name = label.upper().replace("-", "_")
     candidate = Path(executable)
     if candidate.parent != Path(".") or candidate.is_absolute():
         if candidate.exists() and candidate.is_file():
             return str(candidate)
         fail(
-            f"radigest executable does not exist: {executable}. "
-            "Set RADIGEST=/path/to/radigest or install radigest on PATH."
+            f"{label} executable does not exist: {executable}. "
+            f"Set {env_name}=/path/to/{label} or install it on PATH."
         )
 
     resolved = shutil.which(executable)
     if resolved is None:
         fail(
-            f"radigest executable not found on PATH: {executable}. "
-            "Set RADIGEST=/path/to/radigest or install radigest on PATH."
+            f"{label} executable not found on PATH: {executable}. "
+            f"Set {env_name}=/path/to/{label} or install it on PATH."
         )
     return resolved
 
@@ -161,108 +103,22 @@ def read_candidate_enzymes(path: Path) -> list[str]:
     return names
 
 
-def format_template(template: str, values: dict[str, str]) -> list[str]:
-    try:
-        rendered = template.format(**values)
-    except KeyError as exc:
-        field = str(exc).strip("'")
-        allowed = ", ".join(sorted(TEMPLATE_FIELDS))
-        fail(f"unknown command_template field {{{field}}}; allowed fields: {allowed}")
-    return shlex.split(rendered)
-
-
-def count_tsv_like_rows(path: Path) -> int | None:
-    if not path.exists() or path.stat().st_size == 0:
+def count_valid_json_files(json_dir: Path) -> int | None:
+    if not json_dir.exists() or not json_dir.is_dir():
         return None
-    raw_lines = [
-        line.strip()
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-    if not raw_lines:
+    json_files = sorted(json_dir.glob("*.json"))
+    if not json_files:
         return None
-
-    data_lines = raw_lines
-    first = raw_lines[0].lower()
-    header_tokens = {
-        "enzyme",
-        "enzyme1",
-        "enzyme_1",
-        "enzyme2",
-        "enzyme_2",
-        "pair",
-        "score",
-        "fragments",
-        "count",
-    }
-    first_tokens = {
-        token.strip().lower()
-        for token in first.replace(",", "\t").split("\t")
-        if token.strip()
-    }
-    if first_tokens & header_tokens:
-        data_lines = raw_lines[1:]
-    return len(data_lines)
-
-
-def json_candidate_count(value: object) -> int | None:
-    if isinstance(value, list):
-        if value and all(isinstance(item, dict) for item in value):
-            return len(value)
-        nested = [json_candidate_count(item) for item in value]
-        nested_counts = [item for item in nested if item is not None]
-        return max(nested_counts) if nested_counts else None
-    if isinstance(value, dict):
-        direct_count_keys = [
-            "candidate_pairs",
-            "pairs_evaluated",
-            "pairs_scored",
-            "retained_pairs",
-            "pair_count",
-            "count",
-        ]
-        for key in direct_count_keys:
-            raw = value.get(key)
-            if isinstance(raw, int) and raw >= 0:
-                return raw
-            if isinstance(raw, float) and raw >= 0 and math.isfinite(raw):
-                return int(raw)
-        list_keys = [
-            "results",
-            "pairs",
-            "candidate_pairs",
-            "screening_results",
-            "enzyme_pairs",
-            "records",
-        ]
-        for key in list_keys:
-            raw = value.get(key)
-            if isinstance(raw, list):
-                return len(raw)
-        nested = [json_candidate_count(item) for item in value.values()]
-        nested_counts = [item for item in nested if item is not None]
-        return max(nested_counts) if nested_counts else None
-    return None
-
-
-def count_json_rows(path: Path) -> int | None:
-    if not path.exists() or path.stat().st_size == 0:
-        return None
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-    return json_candidate_count(value)
-
-
-def detected_candidate_count(
-    *, screening_output: Path, json_output: Path, stdout_log: Path
-) -> int | None:
-    for path in [screening_output, stdout_log]:
-        count = count_tsv_like_rows(path)
-        if count is not None:
-            return count
-    return count_json_rows(json_output)
+    count = 0
+    for json_file in json_files:
+        try:
+            value = json.loads(json_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(value, dict):
+            return None
+        count += 1
+    return count
 
 
 def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
@@ -273,46 +129,10 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-def command_values(
-    *,
-    radigest: str,
-    reference: Path,
-    candidate_enzymes: Path,
-    min_size: int,
-    max_size: int,
-    score_min: int,
-    score_max: int,
-    size_model: str,
-    jobs: int,
-    radigest_threads: int,
-    screening_output: Path,
-    json_output: Path,
-    stdout_log: Path,
-    stderr_log: Path,
-) -> dict[str, str]:
-    return {
-        "radigest": radigest,
-        "reference": str(reference),
-        "candidate_enzymes": str(candidate_enzymes),
-        "min_size": str(min_size),
-        "max_size": str(max_size),
-        "score_min": str(score_min),
-        "score_max": str(score_max),
-        "size_model": size_model,
-        "jobs": str(jobs),
-        "radigest_threads": str(radigest_threads),
-        "screening_output": str(screening_output),
-        "out_tsv": str(screening_output),
-        "json_output": str(json_output),
-        "stdout_log": str(stdout_log),
-        "stderr_log": str(stderr_log),
-    }
-
-
-def clean_paths(paths: list[Path]) -> None:
-    for path in paths:
-        if path.exists():
-            path.unlink()
+def clean_run_dir(run_dir: Path) -> None:
+    if run_dir.exists():
+        shutil.rmtree(run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
 
 
 def execute_command(
@@ -336,9 +156,49 @@ def execute_command(
     return proc.returncode, elapsed
 
 
+def build_cached_command(
+    *,
+    screen_binary: str,
+    reference: Path,
+    candidate_enzymes: Path,
+    min_size: int,
+    max_size: int,
+    score_min: int,
+    score_max: int,
+    size_model: str,
+    jobs: int,
+    radigest_threads: int,
+    run_dir: Path,
+) -> list[str]:
+    return [
+        screen_binary,
+        "--fasta",
+        str(reference),
+        "--enzymes",
+        str(candidate_enzymes),
+        "--min",
+        str(min_size),
+        "--max",
+        str(max_size),
+        "--score-min",
+        str(score_min),
+        "--score-max",
+        str(score_max),
+        "--size-model",
+        size_model,
+        "--jobs",
+        str(jobs),
+        "--threads",
+        str(radigest_threads),
+        "--out-dir",
+        str(run_dir),
+        "--force",
+    ]
+
+
 def run_once(
     *,
-    radigest: str,
+    screen_binary: str,
     reference: Path,
     candidate_enzymes: Path,
     candidate_enzyme_count: int,
@@ -355,18 +215,16 @@ def run_once(
     condition_id: str,
     run_index: int,
     raw_dir: Path,
-    command_template: str,
-    selected_template: str | None,
-) -> tuple[dict[str, str], str | None]:
-    prefix = raw_dir / f"{case_id}.run_{run_index:02d}"
-    screening_output = raw_dir / f"{prefix.name}.screening.tsv"
-    json_output = raw_dir / f"{prefix.name}.json"
-    stdout_log = raw_dir / f"{prefix.name}.stdout.log"
-    stderr_log = raw_dir / f"{prefix.name}.stderr.log"
-    clean_paths([screening_output, json_output, stdout_log, stderr_log])
+) -> dict[str, str]:
+    run_label = f"{case_id}.run_{run_index:02d}"
+    run_dir = raw_dir / run_label
+    clean_run_dir(run_dir)
+    json_dir = run_dir / "json"
+    stdout_log = run_dir / f"{run_label}.stdout.log"
+    stderr_log = run_dir / f"{run_label}.stderr.log"
 
-    values = command_values(
-        radigest=radigest,
+    cmd = build_cached_command(
+        screen_binary=screen_binary,
         reference=reference,
         candidate_enzymes=candidate_enzymes,
         min_size=min_size,
@@ -376,44 +234,19 @@ def run_once(
         size_model=size_model,
         jobs=jobs,
         radigest_threads=radigest_threads,
-        screening_output=screening_output,
-        json_output=json_output,
-        stdout_log=stdout_log,
-        stderr_log=stderr_log,
+        run_dir=run_dir,
+    )
+    exit_code, elapsed = execute_command(
+        cmd=cmd, stdout_log=stdout_log, stderr_log=stderr_log
+    )
+    reported_count = count_valid_json_files(json_dir)
+    status = (
+        "PASS"
+        if exit_code == 0 and reported_count == candidate_pairs_evaluated
+        else "FAIL"
     )
 
-    templates = AUTO_TEMPLATES if command_template == "auto" else [command_template]
-    if selected_template is not None:
-        templates = [selected_template]
-
-    last_cmd: list[str] = []
-    last_exit_code = 1
-    last_elapsed = 0.0
-    last_count: int | None = None
-    successful_template = selected_template
-
-    for template_index, template in enumerate(templates, start=1):
-        if template_index > 1:
-            clean_paths([screening_output, json_output, stdout_log, stderr_log])
-        cmd = format_template(template, values)
-        exit_code, elapsed = execute_command(
-            cmd=cmd, stdout_log=stdout_log, stderr_log=stderr_log
-        )
-        count = detected_candidate_count(
-            screening_output=screening_output,
-            json_output=json_output,
-            stdout_log=stdout_log,
-        )
-        last_cmd = cmd
-        last_exit_code = exit_code
-        last_elapsed = elapsed
-        last_count = count
-        if exit_code == 0 and count is not None:
-            successful_template = template
-            break
-
-    status = "PASS" if last_exit_code == 0 and last_count is not None else "FAIL"
-    row = {
+    return {
         "case_id": case_id,
         "dataset_id": dataset_id,
         "condition_id": condition_id,
@@ -429,22 +262,24 @@ def run_once(
         "jobs": str(jobs),
         "radigest_threads": str(radigest_threads),
         "run_index": str(run_index),
-        "wall_seconds": f"{last_elapsed:.6f}",
-        "exit_code": str(last_exit_code),
-        "candidate_pairs_reported": "NA" if last_count is None else str(last_count),
-        "screening_output": str(screening_output),
-        "json_output": str(json_output),
+        "wall_seconds": f"{elapsed:.6f}",
+        "exit_code": str(exit_code),
+        "candidate_pairs_reported": "NA"
+        if reported_count is None
+        else str(reported_count),
+        "screening_binary": screen_binary,
+        "screening_output": str(run_dir),
+        "json_output": str(json_dir),
         "stdout_log": str(stdout_log),
         "stderr_log": str(stderr_log),
         "status": status,
-        "command": shlex.join(last_cmd),
+        "command": shlex.join(cmd),
     }
-    return row, successful_template
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--radigest", default="radigest")
+    parser.add_argument("--screen-binary", default="radigest-screen-pairs-cached")
     parser.add_argument("--reference", required=True, type=Path)
     parser.add_argument("--case-id", required=True)
     parser.add_argument("--dataset-id", required=True)
@@ -470,21 +305,27 @@ def main() -> int:
         fail("--max must be greater than --min")
     if args.score_max <= args.score_min:
         fail("--score-max must be greater than --score-min")
+    if args.command_template not in ALLOWED_BACKENDS:
+        fail(
+            "Stage 5b uses radigest-screen-pairs-cached; "
+            "set command_template=radigest-screen-pairs-cached in "
+            "config/screening_speed_cases.tsv"
+        )
     if not args.reference.exists():
         fail(f"reference does not exist: {args.reference}")
     if not args.candidate_enzymes.exists():
         fail(f"candidate enzyme file does not exist: {args.candidate_enzymes}")
 
-    radigest = resolve_executable(args.radigest)
+    screen_binary = resolve_executable(
+        args.screen_binary, label="radigest-screen-pairs-cached"
+    )
     candidate_names = read_candidate_enzymes(args.candidate_enzymes)
     candidate_pairs_evaluated = len(candidate_names) * (len(candidate_names) - 1) // 2
     args.raw_dir.mkdir(parents=True, exist_ok=True)
 
-    selected_template: str | None = None
-    rows: list[dict[str, str]] = []
-    for run_index in range(1, args.runs + 1):
-        row, selected_template = run_once(
-            radigest=radigest,
+    rows = [
+        run_once(
+            screen_binary=screen_binary,
             reference=args.reference,
             candidate_enzymes=args.candidate_enzymes,
             candidate_enzyme_count=len(candidate_names),
@@ -501,25 +342,21 @@ def main() -> int:
             condition_id=args.condition_id,
             run_index=run_index,
             raw_dir=args.raw_dir,
-            command_template=args.command_template,
-            selected_template=selected_template,
         )
-        rows.append(row)
+        for run_index in range(1, args.runs + 1)
+    ]
 
     write_rows(args.out, rows)
     failed = [row for row in rows if row["status"] != "PASS"]
     if failed:
         print(
-            f"{len(failed)} of {len(rows)} radigest screening runs failed; "
-            f"see {args.out}",
+            f"Wrote {len(rows)} screening timing rows to {args.out}; "
+            f"{len(failed)} failed and will be rejected by the summary rule.",
             file=sys.stderr,
         )
-        return 1
+        return 0
 
     print(f"Wrote {len(rows)} screening timing rows to {args.out}")
-    if args.command_template == "auto" and selected_template is not None:
-        print("Selected radigest screening template:")
-        print(selected_template)
     return 0
 
 

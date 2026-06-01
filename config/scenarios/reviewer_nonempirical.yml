@@ -28,7 +28,7 @@ screening_speed:
   runs: 5
   jobs: 2
   radigest_threads: 1
-  command_template: auto
+  command_template: radigest-screen-pairs-cached
 
 thread_scaling:
   dataset: moderate_cannabis_pink-pepper_plain

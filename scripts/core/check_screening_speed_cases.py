@@ -33,6 +33,7 @@ REQUIRED_COLUMNS = [
     "notes",
 ]
 VALID_SIZE_MODELS = {"hard"}
+VALID_COMMAND_TEMPLATES = {"radigest-screen-pairs-cached", "cached"}
 
 
 def fail(message: str) -> NoReturn:
@@ -183,10 +184,10 @@ def main() -> int:
             )
         if row["required_for_nonempirical"].lower() == "true":
             required_count += 1
-        if not row["command_template"].strip():
+        if row["command_template"] not in VALID_COMMAND_TEMPLATES:
             fail(
-                f"config/screening_speed_cases.tsv:{line_number} "
-                "command_template must be 'auto' or an explicit template"
+                f"config/screening_speed_cases.tsv:{line_number} command_template "
+                "must be radigest-screen-pairs-cached"
             )
 
     if required_count < 1:

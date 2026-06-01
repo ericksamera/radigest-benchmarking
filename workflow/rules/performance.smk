@@ -1,6 +1,6 @@
 # Stage 5 performance rules.
-# Stage 5a covers radigest input-format timing. Stage 5b adds native
-# candidate-pair screening speed. Later Stage 5 patches should add
+# Stage 5a covers radigest input-format timing. Stage 5b adds cached
+# radigest-screen-pairs-cached candidate-pair screening speed. Later Stage 5 patches should add
 # thread_scaling, pair_screen_scaling, and large_genome outputs to
 # PERFORMANCE_ALL_OUTPUTS.
 
@@ -242,7 +242,9 @@ rule run_radigest_screening_speed_case:
     log:
         "benchmark/logs/performance/screening_speed/{case_id}.timing.log"
     params:
-        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        screen_binary=lambda wildcards: config.get(
+            "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"
+        ),
         dataset=lambda wc: screening_value(wc, "dataset_id"),
         condition=lambda wc: screening_value(wc, "condition_id"),
         min_size=lambda wc: screening_int(wc, "min_size"),
@@ -261,7 +263,7 @@ rule run_radigest_screening_speed_case:
         r"""
         mkdir -p results/performance/screening_speed/raw benchmark/logs/performance/screening_speed
         python3 scripts/performance/run_radigest_screening.py \
-          --radigest {params.radigest:q} \
+          --screen-binary {params.screen_binary:q} \
           --reference {input.ref:q} \
           --case-id {wildcards.case_id:q} \
           --dataset-id {params.dataset:q} \

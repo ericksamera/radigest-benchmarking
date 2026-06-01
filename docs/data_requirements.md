@@ -31,4 +31,4 @@ data/reference/small_yeast_s288c.fa
 config/candidate_enzymes.txt
 ```
 
-The screening command template is declared in `config/screening_speed_cases.tsv`; the default `auto` template probes native radigest screening command forms and then reuses the first successful form for subsequent runs in the same case.
+Stage 5b uses the `radigest-screen-pairs-cached` binary. The Makefile derives `RADIGEST_SCREEN_PAIRS_CACHED` from `RADIGEST` when `RADIGEST` is a path, or uses `radigest-screen-pairs-cached` from `PATH`; override it explicitly when needed.

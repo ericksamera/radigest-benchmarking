@@ -15,12 +15,14 @@ OUTPUT_COLUMNS = [
     "condition_id",
     "candidate_enzyme_count",
     "candidate_pairs_evaluated",
+    "screening_binary",
     "jobs",
     "radigest_threads",
     "runs",
     "median_wall_seconds",
     "candidate_pairs_per_second_median",
     "reported_pair_consistency",
+    "reported_pair_coverage",
     "status",
     "claim_boundary",
 ]
@@ -31,12 +33,14 @@ REQUIRED_SUMMARY_COLUMNS = [
     "condition_id",
     "candidate_enzyme_count",
     "candidate_pairs_evaluated",
+    "screening_binary",
     "jobs",
     "radigest_threads",
     "configured_runs",
     "wall_seconds_median",
     "candidate_pairs_per_second_median",
     "reported_pair_consistency",
+    "reported_pair_coverage",
     "status",
 ]
 
@@ -80,6 +84,7 @@ def make_rows(summary_rows: list[dict[str, str]]) -> list[dict[str, str]]:
                 "condition_id": row["condition_id"],
                 "candidate_enzyme_count": row["candidate_enzyme_count"],
                 "candidate_pairs_evaluated": row["candidate_pairs_evaluated"],
+                "screening_binary": row["screening_binary"],
                 "jobs": row["jobs"],
                 "radigest_threads": row["radigest_threads"],
                 "runs": row["configured_runs"],
@@ -88,10 +93,11 @@ def make_rows(summary_rows: list[dict[str, str]]) -> list[dict[str, str]]:
                     "candidate_pairs_per_second_median"
                 ],
                 "reported_pair_consistency": row["reported_pair_consistency"],
+                "reported_pair_coverage": row["reported_pair_coverage"],
                 "status": row["status"],
                 "claim_boundary": (
-                    "Native radigest screening-throughput timing only; not a "
-                    "cross-tool coordinate-equivalence claim."
+                    "Cached radigest-screen-pairs-cached throughput timing only; "
+                    "not a cross-tool coordinate-equivalence claim."
                 ),
             }
         )

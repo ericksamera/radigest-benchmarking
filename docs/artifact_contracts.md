@@ -20,4 +20,4 @@ results/performance/screening_speed/screening_speed_summary.tsv
 results/manuscript/tables/table_05_screening_speed.tsv
 ```
 
-The input-format table is generated from `config/performance_cases.tsv`. The screening-speed table is generated from `config/screening_speed_cases.tsv` and measures native radigest candidate-pair screening throughput only.
+The input-format table is generated from `config/performance_cases.tsv`. The screening-speed table is generated from `config/screening_speed_cases.tsv` and measures cached `radigest-screen-pairs-cached` candidate-pair screening throughput only.

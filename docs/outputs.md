@@ -70,8 +70,8 @@ results/performance/screening_speed/screening_speed_summary.tsv
 results/manuscript/tables/table_05_screening_speed.tsv
 benchmark/logs/performance/screening_speed/*.log
 results/performance/screening_speed/raw/*.runs.tsv
-results/performance/screening_speed/raw/*/*.screening.tsv
-results/performance/screening_speed/raw/*/*.json
+results/performance/screening_speed/raw/*/json/*.json
+results/performance/screening_speed/raw/*/logs/*.log
 ```
 
-The Stage 5b claim is limited to native radigest candidate-pair screening throughput. It does not compare coordinates against external tools and it does not make a cross-tool equivalence claim.
+The Stage 5b claim is limited to cached radigest candidate-pair screening throughput from `radigest-screen-pairs-cached`. It does not compare coordinates against external tools and it does not make a cross-tool equivalence claim.

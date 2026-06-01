@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize native radigest screening-speed timing rows."""
+"""Summarize radigest-screen-pairs-cached screening-speed timing rows."""
 
 from __future__ import annotations
 
@@ -31,6 +31,8 @@ SUMMARY_COLUMNS = [
     "successful_runs",
     "candidate_pairs_reported",
     "reported_pair_consistency",
+    "reported_pair_coverage",
+    "screening_binary",
     "wall_seconds_min",
     "wall_seconds_median",
     "wall_seconds_mean",
@@ -67,6 +69,7 @@ RUN_COLUMNS = [
     "exit_code",
     "candidate_pairs_reported",
     "candidate_pairs_evaluated",
+    "screening_binary",
     "status",
 ]
 
@@ -164,6 +167,13 @@ def summarize_case(
 
     evaluated_unique = sorted(set(evaluated_counts))
     reported_unique = sorted(set(reported_counts))
+    screening_binaries = sorted(
+        {
+            row.get("screening_binary", "")
+            for row in successes
+            if row.get("screening_binary", "")
+        }
+    )
     evaluated_value = (
         parse_int(case.get("candidate_pairs_evaluated", "0"), path_label=case_id)
         if not evaluated_unique
@@ -171,6 +181,14 @@ def summarize_case(
     )
     reported_consistency = "PASS" if len(reported_unique) == 1 else "FAIL"
     reported_value = str(reported_unique[0]) if len(reported_unique) == 1 else "NA"
+    reported_coverage = (
+        "PASS"
+        if len(reported_unique) == 1 and reported_unique[0] == evaluated_value
+        else "FAIL"
+    )
+    screening_binary = (
+        ";".join(screening_binaries) if len(screening_binaries) == 1 else "NA"
+    )
 
     wall_min: float | None = None
     wall_median: float | None = None
@@ -197,7 +215,13 @@ def summarize_case(
         notes += " Candidate-pair evaluation counts differ across runs."
     if reported_consistency != "PASS":
         status = "FAIL"
-        notes += " Reported screening row counts differ across runs."
+        notes += " Reported screening pair counts differ across runs."
+    if reported_coverage != "PASS":
+        status = "FAIL"
+        notes += " Reported screening pair count does not match candidate-pair count."
+    if len(screening_binaries) != 1:
+        status = "FAIL"
+        notes += " Screening binary path is missing or inconsistent across runs."
 
     return {
         "case_id": case_id,
@@ -219,6 +243,8 @@ def summarize_case(
         "successful_runs": str(len(successes)),
         "candidate_pairs_reported": reported_value,
         "reported_pair_consistency": reported_consistency,
+        "reported_pair_coverage": reported_coverage,
+        "screening_binary": screening_binary,
         "wall_seconds_min": fmt_float(wall_min),
         "wall_seconds_median": fmt_float(wall_median),
         "wall_seconds_mean": fmt_float(wall_mean),

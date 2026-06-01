@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 5b now extends the performance port with native radigest screening-speed timing after the Stage 5a input-format workflow. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
+Stage 5b now extends the performance port with cached `radigest-screen-pairs-cached` screening-speed timing after the Stage 5a input-format workflow. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
 
 ```bash
 make check
@@ -24,6 +24,10 @@ make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
+# Optional when the cached binary is not next to RADIGEST or on PATH:
+make performance-screening-speed THREADS=4 \
+  RADIGEST=/path/to/radigest \
+  RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
 SimRAD is installed into the Snakemake conda environment through `workflow/envs/simrad.post-deploy.sh`. `make install-simrad` is available for a manual active R environment.
@@ -75,8 +79,8 @@ results/performance/screening_speed/screening_speed_summary.tsv
 results/manuscript/tables/table_05_screening_speed.tsv
 benchmark/logs/performance/screening_speed/*.log
 results/performance/screening_speed/raw/*.runs.tsv
-results/performance/screening_speed/raw/*/*.screening.tsv
-results/performance/screening_speed/raw/*/*.json
+results/performance/screening_speed/raw/*/json/*.json
+results/performance/screening_speed/raw/*/logs/*.log
 ```
 
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
@@ -124,7 +128,7 @@ Primary contracts live in:
 - `config/comparator_cases.tsv` for normalized interval-equivalence comparator cases.
 - `config/noncoordinate_comparator_cases.tsv` for count-only and binned-screening comparator cases.
 - `config/performance_cases.tsv` for Stage 5 input-format performance cases and run counts.
-- `config/screening_speed_cases.tsv` for Stage 5b native screening-speed cases and command templates.
+- `config/screening_speed_cases.tsv` for Stage 5b cached screening-speed cases using `radigest-screen-pairs-cached`.
 - `config/artifacts.tsv` for manuscript claim outputs and release requirements.
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
