@@ -113,3 +113,17 @@ results/performance/large_genome/raw/*/*.json
 ```
 
 The Stage 5e claim is limited to radigest JSON timing on the large public Triticum aestivum Chinese Spring wheat reference. The moderate cannabis case remains optional as a guardrail. This is a large-reference performance check, not a cross-tool equivalence or empirical recovery claim.
+
+
+Stage 5f matched-tool timing outputs are:
+
+```text
+results/performance/matched_tools/tool_timing_runs.tsv
+results/performance/matched_tools/tool_timing_summary.tsv
+results/performance/matched_tools/tool_timing_interpretation.tsv
+results/manuscript/tables/table_04_matched_timing.tsv
+benchmark/logs/performance/matched_tools/*.log
+results/performance/matched_tools/raw/*/*.runs.tsv
+```
+
+The Stage 5f claim is semantics-aware matched timing across small yeast and medium cannabis. It records each tool path's comparison level, primary output type, and allowed claim so that interval, count-only, and binned-screening timings are not treated as identical evidence.

@@ -161,4 +161,5 @@ Stage 5e large-reference timing can be run with:
 ```bash
 make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 ```

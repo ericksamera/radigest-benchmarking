@@ -123,6 +123,21 @@ TSV_SPECS = {
         "required_for_nonempirical",
         "notes",
     ],
+    "config/matched_tool_timing_cases.tsv": [
+        "case_id",
+        "tool_id",
+        "dataset_id",
+        "condition_id",
+        "reference_path",
+        "enzyme_1",
+        "enzyme_2",
+        "min_size",
+        "max_size",
+        "runs",
+        "timing_scope",
+        "required_for_nonempirical",
+        "notes",
+    ],
     "config/artifacts.tsv": [
         "claim_id",
         "category",
@@ -142,6 +157,7 @@ SCENARIO_SPECS = {
         "screening_speed",
         "thread_scaling",
         "pair_screen_scaling",
+        "matched_tool_timing",
     },
     "config/scenarios/reviewer_empirical.yml": {"empirical"},
     "config/scenarios/reviewer_all.yml": {"include_scenarios", "release_contract"},
@@ -170,9 +186,12 @@ EXTRA_REQUIRED_FILES = [
     "scripts/performance/run_radigest_screening.py",
     "scripts/performance/summarize_screening_speed.py",
     "scripts/performance/summarize_thread_scaling.py",
+    "scripts/performance/run_matched_tool_timing.py",
+    "scripts/performance/summarize_matched_tool_timing.py",
     "scripts/manuscript/make_input_format_table.py",
     "scripts/manuscript/make_screening_speed_table.py",
     "scripts/manuscript/make_thread_scaling_table.py",
+    "scripts/manuscript/make_matched_tool_timing_table.py",
     "workflow/Snakefile",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
@@ -190,6 +209,7 @@ BOOL_COLUMNS = {
     "config/comparator_cases.tsv": ["required_for_nonempirical"],
     "config/screening_speed_cases.tsv": ["required_for_nonempirical"],
     "config/thread_scaling_cases.tsv": ["required_for_nonempirical"],
+    "config/matched_tool_timing_cases.tsv": ["required_for_nonempirical"],
 }
 
 DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
@@ -399,6 +419,41 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                 fail(f"{path}: case {case} has invalid size interval")
             if threads < 1 or runs < 1:
                 fail(f"{path}: case {case} threads/runs must be >= 1")
+
+
+    if path == "config/matched_tool_timing_cases.tsv":
+        valid_tools = {"radigest", "digital_rads", "ddradseqtools", "simrad", "ddgrader"}
+        valid_scopes = {
+            "native_digest",
+            "raw_tool_wrapper",
+            "count_only_wrapper",
+            "binned_screening_wrapper",
+        }
+        for row in rows:
+            case = row["case_id"]
+            if row["tool_id"] not in valid_tools:
+                fail(f"{path}: case {case} has invalid tool_id {row['tool_id']!r}")
+            if row["timing_scope"] not in valid_scopes:
+                fail(
+                    f"{path}: case {case} has invalid timing_scope "
+                    f"{row['timing_scope']!r}"
+                )
+            ref_path = row["reference_path"]
+            if ref_path == "NA" or ref_path.startswith("/"):
+                fail(
+                    f"{path}: case {case} reference_path must be a relative "
+                    "repository path"
+                )
+            try:
+                min_size = int(row["min_size"])
+                max_size = int(row["max_size"])
+                runs = int(row["runs"])
+            except ValueError:
+                fail(f"{path}: case {case} min/max/runs must be integers")
+            if min_size < 0 or max_size <= min_size:
+                fail(f"{path}: case {case} has invalid size interval")
+            if runs < 1:
+                fail(f"{path}: case {case} runs must be >= 1")
 
     if path == "config/artifacts.tsv":
         for row in rows:

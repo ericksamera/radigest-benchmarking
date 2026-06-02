@@ -22,3 +22,6 @@ Stage 5c thread-scaling outputs are intra-tool radigest performance measurements
 Stage 5d pair-screen job-scaling outputs are intra-tool `radigest-screen-pairs-cached` performance measurements. They support a scaling claim for cached candidate-pair screening across configured job counts only. Candidate-pair evaluation and reported JSON coverage must be consistent across job counts before speedups are interpreted. These outputs do not support cross-tool equivalence or empirical recovery claims.
 
 Stage 5e large-reference outputs support a radigest-only timing claim on the Triticum aestivum Chinese Spring wheat reference. They do not support cross-tool equivalence, screening scaling, or empirical recovery claims. The required wheat row uses JSON output to avoid turning the claim into a fragment-TSV disk-output stress test. Cannabis Pink Pepper rows are retained only as optional moderate-reference guardrails.
+
+
+Stage 5f matched-tool timing outputs are semantics-aware timing interpretations. They support a matched timing table across small yeast and medium cannabis, but they do not collapse all tools into a shared coordinate-equivalence claim. Each row carries the tool's comparison level, primary output type, and allowed claim.

@@ -2,8 +2,8 @@
 # Stage 5a covers radigest input-format timing. Stage 5b adds cached
 # radigest-screen-pairs-cached candidate-pair screening speed. Stage 5c adds
 # intra-tool radigest thread scaling. Stage 5d adds cached pair-screen job
-# scaling. Stage 5e adds large-reference timing. Later Stage 5 patches should
-# add optional extended large-genome outputs to PERFORMANCE_ALL_OUTPUTS.
+# scaling. Stage 5e adds large-reference timing. Stage 5f adds semantics-aware
+# matched-tool timing. Later patches should add audit outputs.
 
 import csv
 
@@ -12,6 +12,7 @@ SCREENING_SPEED_CASE_MANIFEST = "config/screening_speed_cases.tsv"
 THREAD_SCALING_CASE_MANIFEST = "config/thread_scaling_cases.tsv"
 PAIR_SCREEN_SCALING_CASE_MANIFEST = "config/pair_screen_scaling_cases.tsv"
 LARGE_GENOME_CASE_MANIFEST = "config/large_genome_cases.tsv"
+MATCHED_TOOL_TIMING_CASE_MANIFEST = "config/matched_tool_timing_cases.tsv"
 PERFORMANCE_INPUT_FORMAT_SUMMARY = (
     "results/performance/input_format/radigest_input_format_comparison.tsv"
 )
@@ -32,6 +33,12 @@ LARGE_GENOME_SUMMARY = (
     "results/performance/large_genome/large_genome_summary.tsv"
 )
 LARGE_GENOME_TABLE = "results/manuscript/tables/table_s04_large_genome.tsv"
+MATCHED_TOOL_TIMING_RUNS = "results/performance/matched_tools/tool_timing_runs.tsv"
+MATCHED_TOOL_TIMING_SUMMARY = "results/performance/matched_tools/tool_timing_summary.tsv"
+MATCHED_TOOL_TIMING_INTERPRETATION = (
+    "results/performance/matched_tools/tool_timing_interpretation.tsv"
+)
+MATCHED_TOOL_TIMING_TABLE = "results/manuscript/tables/table_04_matched_timing.tsv"
 
 
 def _read_tsv_rows(path):
@@ -133,12 +140,34 @@ LARGE_GENOME_OUTPUTS = [
     LARGE_GENOME_SUMMARY,
     LARGE_GENOME_TABLE,
 ]
+
+MATCHED_TOOL_TIMING_CASE_ROWS = _read_tsv_rows(MATCHED_TOOL_TIMING_CASE_MANIFEST)
+MATCHED_TOOL_TIMING_CASE_BY_ID = {
+    row["case_id"]: row for row in MATCHED_TOOL_TIMING_CASE_ROWS
+}
+MATCHED_TOOL_TIMING_CASES = [
+    row["case_id"]
+    for row in MATCHED_TOOL_TIMING_CASE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() == "true"
+]
+MATCHED_TOOL_TIMING_RUN_OUTPUTS = [
+    f"results/performance/matched_tools/raw/{row['tool_id']}/{row['case_id']}.runs.tsv"
+    for row in MATCHED_TOOL_TIMING_CASE_ROWS
+    if row.get("required_for_nonempirical", "false").lower() == "true"
+]
+MATCHED_TOOL_TIMING_OUTPUTS = [
+    MATCHED_TOOL_TIMING_RUNS,
+    MATCHED_TOOL_TIMING_SUMMARY,
+    MATCHED_TOOL_TIMING_INTERPRETATION,
+    MATCHED_TOOL_TIMING_TABLE,
+]
 PERFORMANCE_ALL_OUTPUTS = (
     PERFORMANCE_INPUT_FORMAT_OUTPUTS
     + SCREENING_SPEED_OUTPUTS
     + THREAD_SCALING_OUTPUTS
     + PAIR_SCREEN_SCALING_OUTPUTS
     + LARGE_GENOME_OUTPUTS
+    + MATCHED_TOOL_TIMING_OUTPUTS
 )
 
 
@@ -175,6 +204,13 @@ def large_genome_case(case_id):
         return LARGE_GENOME_CASE_BY_ID[case_id]
     except KeyError as exc:
         raise ValueError(f"unknown large_genome case_id: {case_id}") from exc
+
+
+def matched_tool_timing_case(case_id):
+    try:
+        return MATCHED_TOOL_TIMING_CASE_BY_ID[case_id]
+    except KeyError as exc:
+        raise ValueError(f"unknown matched_tool_timing case_id: {case_id}") from exc
 
 
 def performance_reference(wc):
@@ -281,6 +317,18 @@ def large_genome_enzymes(wc):
     return f"{row['enzyme_1']},{enzyme2}"
 
 
+def matched_tool_timing_reference(wc):
+    return matched_tool_timing_case(wc.case_id)["reference_path"]
+
+
+def matched_tool_timing_value(wc, column):
+    return matched_tool_timing_case(wc.case_id)[column]
+
+
+def matched_tool_timing_int(wc, column):
+    return int(matched_tool_timing_case(wc.case_id)[column])
+
+
 rule performance_all:
     input:
         PERFORMANCE_ALL_OUTPUTS
@@ -309,6 +357,11 @@ rule performance_pair_screen_scaling_all:
 rule performance_large_genome_all:
     input:
         LARGE_GENOME_OUTPUTS
+
+
+rule performance_matched_tools_all:
+    input:
+        MATCHED_TOOL_TIMING_OUTPUTS
 
 
 rule run_radigest_input_format_case:
@@ -770,6 +823,306 @@ rule make_large_genome_table:
           --summary {input.summary:q} \
           --datasets {input.datasets:q} \
           --conditions {input.conditions:q} \
+          --out {output:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+rule run_matched_tool_timing_radigest:
+    input:
+        ref=matched_tool_timing_reference,
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
+    output:
+        "results/performance/matched_tools/raw/radigest/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/matched_tools/radigest/{case_id}.timing.log"
+    resources:
+        matched_tool_benchmark=1
+    params:
+        tool_id="radigest",
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        ddgrader_repo=lambda wildcards: config.get("ddgrader_repo", "external/ddRadSeqWebTool"),
+        dataset=lambda wc: matched_tool_timing_value(wc, "dataset_id"),
+        condition=lambda wc: matched_tool_timing_value(wc, "condition_id"),
+        enzyme_1=lambda wc: matched_tool_timing_value(wc, "enzyme_1"),
+        enzyme_2=lambda wc: matched_tool_timing_value(wc, "enzyme_2"),
+        min_size=lambda wc: matched_tool_timing_int(wc, "min_size"),
+        max_size=lambda wc: matched_tool_timing_int(wc, "max_size"),
+        runs=lambda wc: matched_tool_timing_int(wc, "runs"),
+        timing_scope=lambda wc: matched_tool_timing_value(wc, "timing_scope"),
+        notes=lambda wc: matched_tool_timing_value(wc, "notes"),
+        raw_dir=lambda wc: f"results/performance/matched_tools/raw/radigest/{wc.case_id}"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools/raw/radigest benchmark/logs/performance/matched_tools/radigest
+        python3 scripts/performance/run_matched_tool_timing.py \
+          --case-id {wildcards.case_id:q} \
+          --tool-id {params.tool_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --reference {input.ref:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --runs {params.runs} \
+          --timing-scope {params.timing_scope:q} \
+          --notes {params.notes:q} \
+          --radigest {params.radigest:q} \
+          --ddgrader-repo {params.ddgrader_repo:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule run_matched_tool_timing_digital_rads:
+    input:
+        ref=matched_tool_timing_reference,
+        tool="external/Digital_RADs/Digital_RADs.py",
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
+    output:
+        "results/performance/matched_tools/raw/digital_rads/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/matched_tools/digital_rads/{case_id}.timing.log"
+    resources:
+        matched_tool_benchmark=1
+    params:
+        tool_id="digital_rads",
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        ddgrader_repo=lambda wildcards: config.get("ddgrader_repo", "external/ddRadSeqWebTool"),
+        dataset=lambda wc: matched_tool_timing_value(wc, "dataset_id"),
+        condition=lambda wc: matched_tool_timing_value(wc, "condition_id"),
+        enzyme_1=lambda wc: matched_tool_timing_value(wc, "enzyme_1"),
+        enzyme_2=lambda wc: matched_tool_timing_value(wc, "enzyme_2"),
+        min_size=lambda wc: matched_tool_timing_int(wc, "min_size"),
+        max_size=lambda wc: matched_tool_timing_int(wc, "max_size"),
+        runs=lambda wc: matched_tool_timing_int(wc, "runs"),
+        timing_scope=lambda wc: matched_tool_timing_value(wc, "timing_scope"),
+        notes=lambda wc: matched_tool_timing_value(wc, "notes"),
+        raw_dir=lambda wc: f"results/performance/matched_tools/raw/digital_rads/{wc.case_id}"
+    conda:
+        "../envs/comparators.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools/raw/digital_rads benchmark/logs/performance/matched_tools/digital_rads
+        python3 scripts/performance/run_matched_tool_timing.py \
+          --case-id {wildcards.case_id:q} \
+          --tool-id {params.tool_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --reference {input.ref:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --runs {params.runs} \
+          --timing-scope {params.timing_scope:q} \
+          --notes {params.notes:q} \
+          --radigest {params.radigest:q} \
+          --ddgrader-repo {params.ddgrader_repo:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule run_matched_tool_timing_ddradseqtools:
+    input:
+        ref=matched_tool_timing_reference,
+        tool="external/ddRADseqTools/Package/rsitesearch.py",
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
+    output:
+        "results/performance/matched_tools/raw/ddradseqtools/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/matched_tools/ddradseqtools/{case_id}.timing.log"
+    resources:
+        matched_tool_benchmark=1
+    params:
+        tool_id="ddradseqtools",
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        ddgrader_repo=lambda wildcards: config.get("ddgrader_repo", "external/ddRadSeqWebTool"),
+        dataset=lambda wc: matched_tool_timing_value(wc, "dataset_id"),
+        condition=lambda wc: matched_tool_timing_value(wc, "condition_id"),
+        enzyme_1=lambda wc: matched_tool_timing_value(wc, "enzyme_1"),
+        enzyme_2=lambda wc: matched_tool_timing_value(wc, "enzyme_2"),
+        min_size=lambda wc: matched_tool_timing_int(wc, "min_size"),
+        max_size=lambda wc: matched_tool_timing_int(wc, "max_size"),
+        runs=lambda wc: matched_tool_timing_int(wc, "runs"),
+        timing_scope=lambda wc: matched_tool_timing_value(wc, "timing_scope"),
+        notes=lambda wc: matched_tool_timing_value(wc, "notes"),
+        raw_dir=lambda wc: f"results/performance/matched_tools/raw/ddradseqtools/{wc.case_id}"
+    conda:
+        "../envs/comparators.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools/raw/ddradseqtools benchmark/logs/performance/matched_tools/ddradseqtools
+        python3 scripts/performance/run_matched_tool_timing.py \
+          --case-id {wildcards.case_id:q} \
+          --tool-id {params.tool_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --reference {input.ref:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --runs {params.runs} \
+          --timing-scope {params.timing_scope:q} \
+          --notes {params.notes:q} \
+          --radigest {params.radigest:q} \
+          --ddgrader-repo {params.ddgrader_repo:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule run_matched_tool_timing_simrad:
+    input:
+        ref=matched_tool_timing_reference,
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
+    output:
+        "results/performance/matched_tools/raw/simrad/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/matched_tools/simrad/{case_id}.timing.log"
+    resources:
+        matched_tool_benchmark=1
+    params:
+        tool_id="simrad",
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        ddgrader_repo=lambda wildcards: config.get("ddgrader_repo", "external/ddRadSeqWebTool"),
+        dataset=lambda wc: matched_tool_timing_value(wc, "dataset_id"),
+        condition=lambda wc: matched_tool_timing_value(wc, "condition_id"),
+        enzyme_1=lambda wc: matched_tool_timing_value(wc, "enzyme_1"),
+        enzyme_2=lambda wc: matched_tool_timing_value(wc, "enzyme_2"),
+        min_size=lambda wc: matched_tool_timing_int(wc, "min_size"),
+        max_size=lambda wc: matched_tool_timing_int(wc, "max_size"),
+        runs=lambda wc: matched_tool_timing_int(wc, "runs"),
+        timing_scope=lambda wc: matched_tool_timing_value(wc, "timing_scope"),
+        notes=lambda wc: matched_tool_timing_value(wc, "notes"),
+        raw_dir=lambda wc: f"results/performance/matched_tools/raw/simrad/{wc.case_id}"
+    conda:
+        "../envs/simrad.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools/raw/simrad benchmark/logs/performance/matched_tools/simrad
+        python3 scripts/performance/run_matched_tool_timing.py \
+          --case-id {wildcards.case_id:q} \
+          --tool-id {params.tool_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --reference {input.ref:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --runs {params.runs} \
+          --timing-scope {params.timing_scope:q} \
+          --notes {params.notes:q} \
+          --radigest {params.radigest:q} \
+          --ddgrader-repo {params.ddgrader_repo:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule run_matched_tool_timing_ddgrader:
+    input:
+        ref=matched_tool_timing_reference,
+        tool="external/ddRadSeqWebTool/backend/service/DigestSequence.py",
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
+    output:
+        "results/performance/matched_tools/raw/ddgrader/{case_id}.runs.tsv"
+    log:
+        "benchmark/logs/performance/matched_tools/ddgrader/{case_id}.timing.log"
+    resources:
+        matched_tool_benchmark=1
+    params:
+        tool_id="ddgrader",
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        ddgrader_repo=lambda wildcards: config.get("ddgrader_repo", "external/ddRadSeqWebTool"),
+        dataset=lambda wc: matched_tool_timing_value(wc, "dataset_id"),
+        condition=lambda wc: matched_tool_timing_value(wc, "condition_id"),
+        enzyme_1=lambda wc: matched_tool_timing_value(wc, "enzyme_1"),
+        enzyme_2=lambda wc: matched_tool_timing_value(wc, "enzyme_2"),
+        min_size=lambda wc: matched_tool_timing_int(wc, "min_size"),
+        max_size=lambda wc: matched_tool_timing_int(wc, "max_size"),
+        runs=lambda wc: matched_tool_timing_int(wc, "runs"),
+        timing_scope=lambda wc: matched_tool_timing_value(wc, "timing_scope"),
+        notes=lambda wc: matched_tool_timing_value(wc, "notes"),
+        raw_dir=lambda wc: f"results/performance/matched_tools/raw/ddgrader/{wc.case_id}"
+    conda:
+        "../envs/ddgrader.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools/raw/ddgrader benchmark/logs/performance/matched_tools/ddgrader
+        python3 scripts/performance/run_matched_tool_timing.py \
+          --case-id {wildcards.case_id:q} \
+          --tool-id {params.tool_id:q} \
+          --dataset-id {params.dataset:q} \
+          --condition-id {params.condition:q} \
+          --reference {input.ref:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min {params.min_size} \
+          --max {params.max_size} \
+          --runs {params.runs} \
+          --timing-scope {params.timing_scope:q} \
+          --notes {params.notes:q} \
+          --radigest {params.radigest:q} \
+          --ddgrader-repo {params.ddgrader_repo:q} \
+          --raw-dir {params.raw_dir:q} \
+          --out {output:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule summarize_matched_tool_timing:
+    input:
+        runs=MATCHED_TOOL_TIMING_RUN_OUTPUTS,
+        cases=MATCHED_TOOL_TIMING_CASE_MANIFEST,
+        comparators="config/comparators.tsv"
+    output:
+        merged_runs=MATCHED_TOOL_TIMING_RUNS,
+        summary=MATCHED_TOOL_TIMING_SUMMARY,
+        interpretation=MATCHED_TOOL_TIMING_INTERPRETATION
+    log:
+        "benchmark/logs/performance/matched_tools/matched_tool_timing_summary.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/performance/matched_tools benchmark/logs/performance/matched_tools
+        python3 scripts/performance/summarize_matched_tool_timing.py \
+          --cases {input.cases:q} \
+          --comparators {input.comparators:q} \
+          --runs {input.runs:q} \
+          --merged-runs {output.merged_runs:q} \
+          --summary {output.summary:q} \
+          --interpretation {output.interpretation:q} \
+          --require-pass \
+          > {log:q} 2>&1
+        """
+
+
+rule make_matched_tool_timing_table:
+    input:
+        interpretation=MATCHED_TOOL_TIMING_INTERPRETATION
+    output:
+        MATCHED_TOOL_TIMING_TABLE
+    log:
+        "benchmark/logs/performance/matched_tools/matched_tool_timing_table.log"
+    conda:
+        "../envs/benchmark.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/performance/matched_tools
+        python3 scripts/manuscript/make_matched_tool_timing_table.py \
+          --interpretation {input.interpretation:q} \
           --out {output:q} \
           --require-pass \
           > {log:q} 2>&1

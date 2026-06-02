@@ -34,3 +34,13 @@ results/manuscript/tables/table_s04_large_genome.tsv
 ```
 
 The table is generated from `config/large_genome_cases.tsv` and is limited to a radigest wheat large-reference timing claim. Optional cannabis rows remain guardrails and are not the release-required large-reference claim.
+
+
+Stage 5f implements artifact `C04`:
+
+```text
+results/performance/matched_tools/tool_timing_interpretation.tsv
+results/manuscript/tables/table_04_matched_timing.tsv
+```
+
+The table is generated from `config/matched_tool_timing_cases.tsv`. It is intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only.

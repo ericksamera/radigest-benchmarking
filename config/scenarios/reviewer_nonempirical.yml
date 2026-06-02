@@ -69,6 +69,16 @@ pair_screen_scaling:
   command_template: radigest-screen-pairs-cached
   claim_note: Cached pair-screen job scaling only; candidate-pair coverage is enforced before speedups are interpreted.
 
+matched_tool_timing:
+  cases: config/matched_tool_timing_cases.tsv
+  target: performance_matched_tools_all
+  datasets: [small_yeast_s288c_plain, moderate_cannabis_pink-pepper_plain]
+  conditions: [B1, B2]
+  tools: [radigest, digital_rads, ddradseqtools, simrad, ddgrader]
+  runs: 3
+  resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination.
+  claim_note: Semantics-aware raw timing interpretation only; output resolutions and allowed claims differ by tool.
+
 input_format:
   cases: config/performance_cases.tsv
   comparison_group: small_yeast_s288c_B1
