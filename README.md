@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 7a adds artifact, claim, and environment audit tables on top of the implemented validation, comparator, and performance workflows. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
+Stage 7b adds artifact, claim, environment, output-index, and release-checklist audit tables on top of the implemented validation, comparator, and performance workflows. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
 
 ```bash
 make check
@@ -170,6 +170,8 @@ Expected audit outputs:
 results/manuscript/tables/artifact_status.tsv
 results/manuscript/tables/claim_audit.tsv
 results/manuscript/tables/environment.tsv
+results/manuscript/tables/release_checklist.tsv
+results/manuscript/tables/output_index.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 

@@ -44,17 +44,30 @@ results/manuscript/tables/table_04_matched_timing.tsv
 
 The table is generated from `config/matched_tool_timing_cases.tsv`. It is intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only.
 
-## Stage 7a audit contract
+## Stage 7a/7b audit contract
 
-Stage 7a makes `config/artifacts.tsv` executable as a release contract. The audit target generates:
+Stage 7 makes `config/artifacts.tsv` executable as a release contract. Stage 7a generates artifact, claim, and environment audit tables. Stage 7b adds a release checklist and output index. The audit target generates:
 
 ```text
 results/manuscript/tables/artifact_status.tsv
 results/manuscript/tables/claim_audit.tsv
 results/manuscript/tables/environment.tsv
+results/manuscript/tables/release_checklist.tsv
+results/manuscript/tables/output_index.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 
 `artifact_status.tsv` reports file existence, size, modification time, and PASS/WARN/FAIL status for every claim row. `claim_audit.tsv` adds a manuscript-facing claim boundary and release status. `environment.tsv` records Git, Python, Snakemake, radigest, cached-screening-binary, platform, and conda provenance.
 
-`audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure. Optional empirical artifacts can remain WARN while `C11 required_for_release=false`.
+`audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure and all required release-checklist rows pass. Optional empirical artifacts can remain WARN while `C11 required_for_release=false`.
+
+## Stage 7b release checklist and output index
+
+`make audit` generates two derived release-management tables:
+
+```text
+results/manuscript/tables/output_index.tsv
+results/manuscript/tables/release_checklist.tsv
+```
+
+These files are not individual manuscript claim artifacts. They summarize and enforce the release contract declared in `config/artifacts.tsv`. The output index is generated from `artifact_status.tsv`, `claim_audit.tsv`, and `environment.tsv`; the release checklist is generated from artifact status, claim audit, environment metadata, and the output index.

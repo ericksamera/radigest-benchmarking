@@ -43,7 +43,7 @@ SimRAD             retained-fragment count agreement only
 ddgRADer backend   binned fragment-count distribution agreement only
 ```
 
-Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 7a adds full audit products from `config/artifacts.tsv`. Later stages will add empirical recovery and release-index refinements.
+Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 7a adds artifact, claim, and environment audit products from `config/artifacts.tsv`. Stage 7b adds the release checklist and output index. Later stages will add empirical recovery.
 
 Stage 5e large-reference timing can be run with:
 
@@ -67,7 +67,27 @@ Audit outputs are:
 results/manuscript/tables/artifact_status.tsv
 results/manuscript/tables/claim_audit.tsv
 results/manuscript/tables/environment.tsv
+results/manuscript/tables/release_checklist.tsv
+results/manuscript/tables/output_index.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 
 `make audit` fails if any `required_for_release=true` artifact is missing or zero bytes. Optional empirical artifacts remain nonblocking while `required_for_release=false`.
+
+## Stage 7b release checklist
+
+`make audit` now also writes:
+
+```text
+results/manuscript/tables/output_index.tsv
+results/manuscript/tables/release_checklist.tsv
+```
+
+The release gate fails if a required claim fails or if any blocking checklist item fails.
+
+After `make audit`, inspect the release-checklist and output-index tables:
+
+```bash
+column -t -s $'\t' results/manuscript/tables/release_checklist.tsv | less -S
+column -t -s $'\t' results/manuscript/tables/output_index.tsv | less -S
+```
