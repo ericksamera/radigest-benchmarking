@@ -200,6 +200,7 @@ EXTRA_REQUIRED_FILES = [
     "workflow/rules/empirical.smk",
     "workflow/rules/manuscript.smk",
     "workflow/rules/audit.smk",
+    "workflow/envs/comparators.yml",
 ]
 
 BOOL_COLUMNS = {
