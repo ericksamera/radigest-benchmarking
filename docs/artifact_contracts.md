@@ -35,7 +35,6 @@ results/manuscript/tables/table_s04_large_genome.tsv
 
 The table is generated from `config/large_genome_cases.tsv` and is limited to a radigest wheat large-reference timing claim. Optional cannabis rows remain guardrails and are not the release-required large-reference claim.
 
-
 Stage 5f implements artifact `C04`:
 
 ```text

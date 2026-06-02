@@ -58,7 +58,9 @@ def read_tsv(path: Path) -> list[dict[str, str]]:
         fieldnames = reader.fieldnames
         if fieldnames is None:
             fail(f"{path}: missing header")
-        missing = [column for column in REQUIRED_COLUMNS if column not in set(fieldnames)]
+        missing = [
+            column for column in REQUIRED_COLUMNS if column not in set(fieldnames)
+        ]
         if missing:
             fail(f"{path}: missing columns: {', '.join(missing)}")
         rows: list[dict[str, str]] = []

@@ -51,7 +51,9 @@ def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
         fieldnames = reader.fieldnames
         if fieldnames is None:
             fail(f"{path.relative_to(ROOT)}: missing header")
-        missing = [column for column in required_columns if column not in set(fieldnames)]
+        missing = [
+            column for column in required_columns if column not in set(fieldnames)
+        ]
         if missing:
             fail(f"{path.relative_to(ROOT)}: missing columns: " + ", ".join(missing))
         rows: list[dict[str, str]] = []
@@ -142,7 +144,9 @@ def main() -> int:
                 "invalid size interval"
             )
         if runs < 1:
-            fail(f"config/matched_tool_timing_cases.tsv:{line_number} runs must be >= 1")
+            fail(
+                f"config/matched_tool_timing_cases.tsv:{line_number} runs must be >= 1"
+            )
         grouped_tools[(row["dataset_id"], row["condition_id"])].add(tool_id)
 
     for (dataset_id, condition_id), observed_tools in sorted(grouped_tools.items()):

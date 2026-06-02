@@ -107,7 +107,9 @@ def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
         fieldnames = reader.fieldnames
         if fieldnames is None:
             fail(f"{path}: missing header")
-        missing = [column for column in required_columns if column not in set(fieldnames)]
+        missing = [
+            column for column in required_columns if column not in set(fieldnames)
+        ]
         if missing:
             fail(f"{path}: missing columns: {', '.join(missing)}")
         rows: list[dict[str, str]] = []
@@ -160,11 +162,17 @@ def summarize_case(
     metadata = tool_metadata(registry, tool_id)
     configured_runs = int(case["runs"])
     successful = [row for row in runs if row["status"] == "PASS"]
-    wall_times = [numeric(row["wall_seconds"], f"{case_id} wall_seconds") for row in successful]
-    primary_counts = [row["primary_count"] for row in successful if row["primary_count"] != "NA"]
+    wall_times = [
+        numeric(row["wall_seconds"], f"{case_id} wall_seconds") for row in successful
+    ]
+    primary_counts = [
+        row["primary_count"] for row in successful if row["primary_count"] != "NA"
+    ]
     unique_counts = sorted(set(primary_counts))
     primary_count = unique_counts[0] if len(unique_counts) == 1 else "NA"
-    primary_consistency = "PASS" if len(unique_counts) == 1 and bool(successful) else "FAIL"
+    primary_consistency = (
+        "PASS" if len(unique_counts) == 1 and bool(successful) else "FAIL"
+    )
 
     status = "PASS"
     if len(runs) != configured_runs or len(successful) != configured_runs:
@@ -193,11 +201,17 @@ def summarize_case(
         "primary_count": primary_count,
         "primary_count_consistency": primary_consistency,
         "wall_seconds_min": fmt_float(min(wall_times) if wall_times else None),
-        "wall_seconds_median": fmt_float(statistics.median(wall_times) if wall_times else None),
-        "wall_seconds_mean": fmt_float(statistics.fmean(wall_times) if wall_times else None),
+        "wall_seconds_median": fmt_float(
+            statistics.median(wall_times) if wall_times else None
+        ),
+        "wall_seconds_mean": fmt_float(
+            statistics.fmean(wall_times) if wall_times else None
+        ),
         "wall_seconds_max": fmt_float(max(wall_times) if wall_times else None),
         "wall_seconds_stdev": fmt_float(
-            statistics.stdev(wall_times) if len(wall_times) > 1 else 0.0 if wall_times else None
+            statistics.stdev(wall_times)
+            if len(wall_times) > 1
+            else 0.0 if wall_times else None
         ),
         "relative_to_radigest_median": "NA",
         "status": status,
@@ -211,7 +225,9 @@ def add_radigest_relative_timings(rows: list[dict[str, str]]) -> None:
         grouped[row["comparison_group"]].append(row)
     for group, group_rows in grouped.items():
         radigest = [
-            row for row in group_rows if row["tool_id"] == "radigest" and row["status"] == "PASS"
+            row
+            for row in group_rows
+            if row["tool_id"] == "radigest" and row["status"] == "PASS"
         ]
         if len(radigest) != 1 or radigest[0]["wall_seconds_median"] == "NA":
             for row in group_rows:
@@ -266,7 +282,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     cases = index_rows(read_tsv(args.cases, ["case_id", "tool_id", "runs"]), "case_id")
-    registry = index_rows(read_tsv(args.comparators, ["tool_id", "display_name"]), "tool_id")
+    registry = index_rows(
+        read_tsv(args.comparators, ["tool_id", "display_name"]), "tool_id"
+    )
     run_rows: list[dict[str, str]] = []
     for path in args.runs:
         run_rows.extend(read_tsv(path, RUN_COLUMNS))

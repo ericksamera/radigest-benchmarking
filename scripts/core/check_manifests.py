@@ -420,9 +420,14 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
             if threads < 1 or runs < 1:
                 fail(f"{path}: case {case} threads/runs must be >= 1")
 
-
     if path == "config/matched_tool_timing_cases.tsv":
-        valid_tools = {"radigest", "digital_rads", "ddradseqtools", "simrad", "ddgrader"}
+        valid_tools = {
+            "radigest",
+            "digital_rads",
+            "ddradseqtools",
+            "simrad",
+            "ddgrader",
+        }
         valid_scopes = {
             "native_digest",
             "raw_tool_wrapper",

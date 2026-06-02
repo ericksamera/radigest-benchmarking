@@ -133,7 +133,9 @@ def execute(cmd: list[str], stdout_log: Path, stderr_log: Path) -> tuple[int, fl
     return proc.returncode, time.perf_counter() - start
 
 
-def build_radigest_command(args: argparse.Namespace, run_dir: Path) -> tuple[list[str], Path, str]:
+def build_radigest_command(
+    args: argparse.Namespace, run_dir: Path
+) -> tuple[list[str], Path, str]:
     output = run_dir / "radigest.fragments.tsv"
     json_output = run_dir / "radigest.json"
     cmd = [
@@ -230,7 +232,9 @@ def build_ddradseqtools_command(
     return cmd, output, "interval_set"
 
 
-def build_simrad_command(args: argparse.Namespace, run_dir: Path) -> tuple[list[str], Path, str]:
+def build_simrad_command(
+    args: argparse.Namespace, run_dir: Path
+) -> tuple[list[str], Path, str]:
     output = run_dir / "simrad.tsv"
     cmd = [
         "Rscript",
@@ -255,7 +259,9 @@ def build_simrad_command(args: argparse.Namespace, run_dir: Path) -> tuple[list[
     return cmd, output, "aggregate_count"
 
 
-def build_ddgrader_command(args: argparse.Namespace, run_dir: Path) -> tuple[list[str], Path, str]:
+def build_ddgrader_command(
+    args: argparse.Namespace, run_dir: Path
+) -> tuple[list[str], Path, str]:
     output = run_dir / "ddgrader.summary.tsv"
     cmd = [
         "python3",
@@ -294,7 +300,9 @@ def primary_count(tool_id: str, output: Path) -> str:
     return "NA"
 
 
-def build_command(args: argparse.Namespace, run_dir: Path) -> tuple[list[str], Path, str]:
+def build_command(
+    args: argparse.Namespace, run_dir: Path
+) -> tuple[list[str], Path, str]:
     builders = {
         "radigest": build_radigest_command,
         "digital_rads": build_digital_rads_command,
@@ -380,7 +388,10 @@ def main() -> int:
     write_rows(args.out, rows)
     failed = [row for row in rows if row["status"] != "PASS"]
     if failed:
-        print(f"{len(failed)} of {len(rows)} matched-tool timing runs failed", file=sys.stderr)
+        print(
+            f"{len(failed)} of {len(rows)} matched-tool timing runs failed",
+            file=sys.stderr,
+        )
         print(f"see {args.out}", file=sys.stderr)
         return 1
     print(f"Wrote {len(rows)} matched-tool timing rows to {args.out}")
