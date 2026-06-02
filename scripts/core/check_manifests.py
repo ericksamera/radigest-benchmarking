@@ -201,6 +201,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/audit/check_audit_release.py",
     "scripts/audit/check_release_checklist.py",
     "workflow/Snakefile",
+    "workflow/rules/radigest.smk",
     "workflow/rules/validation.smk",
     "workflow/rules/references.smk",
     "workflow/rules/comparators.smk",
@@ -209,6 +210,7 @@ EXTRA_REQUIRED_FILES = [
     "workflow/rules/manuscript.smk",
     "workflow/rules/audit.smk",
     "workflow/envs/comparators.yml",
+    "workflow/envs/radigest-build.yml",
 ]
 
 BOOL_COLUMNS = {

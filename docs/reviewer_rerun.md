@@ -5,10 +5,11 @@ The intended nonempirical reviewer path is:
 ```bash
 mamba env create -f workflow/envs/driver.yml
 mamba activate radigest-benchmark-driver
+make install-radigest
 make install-digital-rads
 make install-ddradseqtools
 make install-ddgrader
-make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
+make reviewer-nonempirical THREADS=4
 make audit
 ```
 
@@ -91,3 +92,14 @@ After `make audit`, inspect the release-checklist and output-index tables:
 column -t -s $'\t' results/manuscript/tables/release_checklist.tsv | less -S
 column -t -s $'\t' results/manuscript/tables/output_index.tsv | less -S
 ```
+
+## Local radigest build
+
+Run once before reviewer commands:
+
+```bash
+make install-radigest
+make show-radigest
+```
+
+After this, `RADIGEST` and `RADIGEST_SCREEN_PAIRS_CACHED` default to `.local/bin/` paths.

@@ -18,6 +18,7 @@ venv/
 .snakemake/log/
 
 # Local tool checkouts and private inputs
+.local/
 external/
 data/empirical/
 

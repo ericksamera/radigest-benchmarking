@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python >=3.11
-  - cmake
+  - git
+  - go >=1.22
   - make
-  - cxx-compiler
+  - ca-certificates

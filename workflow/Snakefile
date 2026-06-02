@@ -1,6 +1,7 @@
 # Clean v2 scaffold Snakefile.
 # Stage 0 contains only target names and file contracts. Analysis rules are ported in later commits.
 
+include: "rules/radigest.smk"
 include: "rules/validation.smk"
 include: "rules/references.smk"
 include: "rules/comparators.smk"
@@ -63,6 +64,10 @@ rule scaffold_all:
     input:
         MANIFESTS,
         SCAFFOLD_PLACEHOLDERS
+
+rule radigest_build_all:
+    input:
+        RADIGEST_BUILD_OUTPUTS
 
 rule smoke_all:
     input:

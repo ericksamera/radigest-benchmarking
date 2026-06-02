@@ -14,20 +14,21 @@ Stage 7b adds artifact, claim, environment, output-index, and release-checklist 
 
 ```bash
 make check
-make smoke RADIGEST=/path/to/radigest
+make install-radigest
+make smoke
 make references THREADS=4
 make install-digital-rads
 make install-ddradseqtools
 make install-ddgrader
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
-make comparators THREADS=4 RADIGEST=/path/to/radigest
-make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
-make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
-make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make comparators THREADS=4
+make performance-input-format THREADS=4
+make performance-screening-speed THREADS=4
+make performance-thread-scaling THREADS=4
+make performance-pair-screen-scaling THREADS=4
 make references-large THREADS=4
-make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make performance-large-genome THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -127,12 +128,12 @@ These targets remain dispatch shims while later stages are ported.
 make smoke RADIGEST=/path/to/radigest
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
-make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
-make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
-make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
+make performance-input-format THREADS=4
+make performance-screening-speed THREADS=4
+make performance-thread-scaling THREADS=4
+make performance-pair-screen-scaling THREADS=4
 make references-large THREADS=4
-make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make performance-large-genome THREADS=4
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -176,3 +177,32 @@ results/manuscript/tables/audit_passed.txt
 ```
 
 `make audit` reads `config/artifacts.tsv` and fails when a release-required artifact is missing or empty.
+
+## Building radigest locally
+
+To avoid passing `RADIGEST=/path/to/radigest` to every command, build the local benchmark copy once:
+
+```bash
+make install-radigest
+make show-radigest
+```
+
+This clones `https://github.com/ericksamera/radigest.git` into `external/radigest` and builds:
+
+```text
+.local/bin/radigest
+.local/bin/radigest-screen-pairs-cached
+.local/radigest/build_info.tsv
+```
+
+The Makefile then uses those binaries by default. Pin the source for a release with:
+
+```bash
+make install-radigest RADIGEST_REF=<tag-or-commit>
+```
+
+Manual overrides still work:
+
+```bash
+make smoke RADIGEST=/path/to/radigest
+```

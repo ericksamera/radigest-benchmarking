@@ -6,7 +6,8 @@ This document tracks the reviewer-oriented entry points for the clean v2 reposit
 
 ```bash
 make check
-make smoke RADIGEST=/path/to/radigest
+make install-radigest
+make smoke
 ```
 
 The smoke run writes:
@@ -16,7 +17,7 @@ results/validation/synthetic_validation_results.tsv
 results/manuscript/tables/table_02_synthetic_validation.tsv
 ```
 
-If `radigest` is on `PATH`, the explicit `RADIGEST=` assignment can be omitted.
+After `make install-radigest`, the explicit `RADIGEST=` assignment can be omitted. Manual `RADIGEST=/path/to/radigest` overrides still work.
 
 ## References
 
@@ -81,4 +82,25 @@ Stage 5e large-reference timing can be run with:
 make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+```
+
+## Build radigest locally
+
+```bash
+make install-radigest
+make show-radigest
+```
+
+This writes:
+
+```text
+.local/bin/radigest
+.local/bin/radigest-screen-pairs-cached
+.local/radigest/build_info.tsv
+```
+
+Use a pinned release or commit with:
+
+```bash
+make install-radigest RADIGEST_REF=<tag-or-commit>
 ```

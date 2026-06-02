@@ -57,3 +57,29 @@ large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz an
 ```
 
 This reference is not downloaded by `make references` because it is large. Use `make references-large THREADS=4` or run `make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest`, which will materialize the wheat FASTA through Snakemake before timing.
+
+## Radigest source and local binaries
+
+The benchmark can clone and build radigest locally:
+
+```bash
+make install-radigest
+```
+
+Defaults:
+
+```text
+RADIGEST_REPO=https://github.com/ericksamera/radigest.git
+RADIGEST_REF=main
+RADIGEST_SRC=external/radigest
+LOCAL_BIN=.local/bin
+```
+
+Generated local binaries are ignored by Git:
+
+```text
+.local/bin/radigest
+.local/bin/radigest-screen-pairs-cached
+```
+
+For a release, pin `RADIGEST_REF` to a tag or commit and record `results/manuscript/tables/environment.tsv` from `make audit`.
