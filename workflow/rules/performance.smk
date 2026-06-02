@@ -40,6 +40,15 @@ MATCHED_TOOL_TIMING_INTERPRETATION = (
 )
 MATCHED_TOOL_TIMING_TABLE = "results/manuscript/tables/table_04_matched_timing.tsv"
 
+PERFORMANCE_FIGURE_OUTPUTS = [
+    "results/manuscript/figures/figure_04_matched_tool_timing.pdf",
+    "results/manuscript/figures/figure_05_screening_speed.pdf",
+    "results/manuscript/figures/figure_06_input_format.pdf",
+    "results/manuscript/figures/figure_s02_thread_scaling.pdf",
+    "results/manuscript/figures/figure_s03_pair_screen_job_scaling.pdf",
+    "results/manuscript/figures/figure_s04_large_genome.pdf",
+]
+
 
 def _read_tsv_rows(path):
     with open(path, newline="") as handle:
@@ -1127,3 +1136,38 @@ rule make_matched_tool_timing_table:
           --require-pass \
           > {log:q} 2>&1
         """
+
+rule performance_manuscript_figures:
+    input:
+        input_format=PERFORMANCE_INPUT_FORMAT_TABLE,
+        screening_speed=SCREENING_SPEED_TABLE,
+        thread_scaling=THREAD_SCALING_TABLE,
+        pair_screen_scaling=PAIR_SCREEN_SCALING_TABLE,
+        large_genome=LARGE_GENOME_TABLE,
+        matched_timing=MATCHED_TOOL_TIMING_TABLE
+    output:
+        PERFORMANCE_FIGURE_OUTPUTS
+    log:
+        "benchmark/logs/manuscript/performance_figures.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --input-format {input.input_format:q} \
+          --screening-speed {input.screening_speed:q} \
+          --thread-scaling {input.thread_scaling:q} \
+          --pair-screen-scaling {input.pair_screen_scaling:q} \
+          --large-genome {input.large_genome:q} \
+          --matched-timing {input.matched_timing:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule manuscript_figures_all:
+    input:
+        PERFORMANCE_FIGURE_OUTPUTS
+

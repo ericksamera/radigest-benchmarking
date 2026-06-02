@@ -191,6 +191,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/manuscript/make_input_format_table.py",
     "scripts/manuscript/make_screening_speed_table.py",
     "scripts/manuscript/make_thread_scaling_table.py",
+    "scripts/manuscript/make_performance_figures.R",
     "scripts/manuscript/make_matched_tool_timing_table.py",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
@@ -210,6 +211,7 @@ EXTRA_REQUIRED_FILES = [
     "workflow/rules/manuscript.smk",
     "workflow/rules/audit.smk",
     "workflow/envs/comparators.yml",
+    "workflow/envs/figures.yml",
     "workflow/envs/radigest-build.yml",
 ]
 

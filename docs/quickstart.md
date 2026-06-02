@@ -76,6 +76,14 @@ results/manuscript/tables/table_s02_radigest_thread_scaling.tsv
 results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv
 ```
 
+Generate ggplot2-based starter performance figures with:
+
+```bash
+make figures
+```
+
+The figures are written under `results/manuscript/figures/`.
+
 Stage 5e large-reference timing can be run with:
 
 ```bash

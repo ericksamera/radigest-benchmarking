@@ -24,7 +24,7 @@ PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references references-large comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance-matched-tools performance reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references references-large comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -51,6 +51,7 @@ help:
 	  '  make performance-matched-tools THREADS=4' \
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance THREADS=8' \
+	  '  make figures' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
 	  '  make reviewer-all THREADS=4' \
@@ -106,6 +107,9 @@ performance-matched-tools: $(RADIGEST_BUILD_PREREQ)
 
 performance: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
+
+figures:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS)
 
 install-digital-rads:
 	bash scripts/comparators/install_digital_rads.sh

@@ -118,6 +118,7 @@ rule manuscript_all:
         THREAD_SCALING_TABLE,
         PAIR_SCREEN_SCALING_TABLE,
         LARGE_GENOME_TABLE,
+        PERFORMANCE_FIGURE_OUTPUTS,
         "results/manuscript/figures/.gitkeep"
 
 rule audit_all:
