@@ -121,6 +121,7 @@ check-manifests:
 	python3 scripts/core/check_pair_screen_scaling_cases.py
 	python3 scripts/core/check_large_genome_cases.py
 	python3 scripts/core/check_matched_tool_timing_cases.py
+	python3 scripts/core/check_artifacts.py
 
 check: check-manifests
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)

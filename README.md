@@ -10,7 +10,7 @@ scaffold -> validators -> synthetic validation -> references -> comparators -> p
 
 ## Current stage
 
-Stage 5d now extends the performance port with cached pair-screen job scaling after the Stage 5a input-format, Stage 5b screening-speed, and Stage 5c thread-scaling workflows. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
+Stage 7a adds artifact, claim, and environment audit tables on top of the implemented validation, comparator, and performance workflows. Stage 4 remains the comparator baseline: Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` support normalized interval-equivalence checks, while SimRAD and ddgRADer remain lower-resolution comparator checks.
 
 ```bash
 make check
@@ -163,3 +163,14 @@ make references-large THREADS=4
 make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
 make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 ```
+
+Expected audit outputs:
+
+```text
+results/manuscript/tables/artifact_status.tsv
+results/manuscript/tables/claim_audit.tsv
+results/manuscript/tables/environment.tsv
+results/manuscript/tables/audit_passed.txt
+```
+
+`make audit` reads `config/artifacts.tsv` and fails when a release-required artifact is missing or empty.

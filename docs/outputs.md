@@ -126,3 +126,15 @@ results/performance/matched_tools/raw/*/*.runs.tsv
 ```
 
 The Stage 5f claim is semantics-aware matched timing across small yeast and medium cannabis. It records each tool path's comparison level, primary output type, and allowed claim so that interval, count-only, and binned-screening timings are not treated as identical evidence.
+
+Stage 7a audit outputs are:
+
+```text
+results/manuscript/tables/artifact_status.tsv
+results/manuscript/tables/claim_audit.tsv
+results/manuscript/tables/environment.tsv
+results/manuscript/tables/audit_passed.txt
+benchmark/logs/audit/*.log
+```
+
+`artifact_status.tsv` and `claim_audit.tsv` are generated from `config/artifacts.tsv`. `audit_passed.txt` is written only when all `required_for_release=true` artifacts are present and non-empty.

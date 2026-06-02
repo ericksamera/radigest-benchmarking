@@ -118,5 +118,4 @@ rule manuscript_all:
 rule audit_all:
     input:
         MANIFESTS,
-        "benchmark/logs/.gitkeep",
-        "benchmark/memory/.gitkeep"
+        AUDIT_OUTPUTS

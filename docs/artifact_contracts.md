@@ -43,3 +43,18 @@ results/manuscript/tables/table_04_matched_timing.tsv
 ```
 
 The table is generated from `config/matched_tool_timing_cases.tsv`. It is intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only.
+
+## Stage 7a audit contract
+
+Stage 7a makes `config/artifacts.tsv` executable as a release contract. The audit target generates:
+
+```text
+results/manuscript/tables/artifact_status.tsv
+results/manuscript/tables/claim_audit.tsv
+results/manuscript/tables/environment.tsv
+results/manuscript/tables/audit_passed.txt
+```
+
+`artifact_status.tsv` reports file existence, size, modification time, and PASS/WARN/FAIL status for every claim row. `claim_audit.tsv` adds a manuscript-facing claim boundary and release status. `environment.tsv` records Git, Python, Snakemake, radigest, cached-screening-binary, platform, and conda provenance.
+
+`audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure. Optional empirical artifacts can remain WARN while `C11 required_for_release=false`.
