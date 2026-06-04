@@ -127,7 +127,6 @@ results/performance/matched_tools/raw/*/*.runs.tsv
 
 The Stage 5f claim is semantics-aware matched timing across small yeast and medium cannabis. It records each tool path's comparison level, primary output type, and allowed claim so that interval, count-only, and binned-screening timings are not treated as identical evidence.
 
-
 Stage 5 manuscript figures are generated from manuscript-facing performance tables with R/ggplot2:
 
 ```text
