@@ -45,7 +45,7 @@ thread_scaling:
 
 large_genome:
   cases: config/large_genome_cases.tsv
-  target: performance_large_genome_all
+  target: performance_matched_tools_all
   dataset: large_wheat_chinese-spring_plain
   reference: data/reference/large_wheat_chinese-spring.fa
   condition: B2
@@ -55,7 +55,7 @@ large_genome:
   output_mode: json
   threads: 4
   runs: 3
-  claim_note: True large-reference wheat timing only; no cross-tool equivalence or empirical recovery claim. The wheat reference is optional for make references and is fetched only when large-genome targets are requested.
+  claim_note: True large-reference wheat timing only; no cross-tool equivalence or empirical recovery claim. The wheat reference is required for make references and the large-reference timing artifact is included in the matched-tool performance entry point.
 
 pair_screen_scaling:
   cases: config/pair_screen_scaling_cases.tsv
@@ -76,7 +76,7 @@ matched_tool_timing:
   conditions: [B1, B2]
   tools: [radigest, digital_rads, ddradseqtools, simrad, ddgrader]
   runs: 3
-  resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination.
+  resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination, including the folded-in large-reference timing case.
   claim_note: Semantics-aware raw timing interpretation only; output resolutions and allowed claims differ by tool.
 
 input_format:

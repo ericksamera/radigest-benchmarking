@@ -50,13 +50,13 @@ config/candidate_enzymes.txt
 
 The default reviewer pair-screen job-scaling tier uses 1, 2, and 4 `radigest-screen-pairs-cached` jobs with one radigest thread per pair. Run it with `make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest` to avoid Snakemake job downscaling.
 
-Stage 5e true large-reference timing uses an optional wheat reference:
+Stage 5e true large-reference timing uses the required wheat reference:
 
 ```text
 large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz and data/reference/large_wheat_chinese-spring.fa
 ```
 
-This reference is not downloaded by `make references` because it is large. Use `make references-large THREADS=4` or run `make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest`, which will materialize the wheat FASTA through Snakemake before timing.
+`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact is included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`.
 
 ## Radigest source and local binaries
 

@@ -57,15 +57,14 @@ make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
 make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
 make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
 make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
-make references-large THREADS=4
-make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
-The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`.
+The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target now also includes the large-reference wheat timing artifact.
 
 Expected manuscript-facing tables are:
 
@@ -84,11 +83,10 @@ make figures
 
 The figures are written under `results/manuscript/figures/`.
 
-Stage 5e large-reference timing can be run with:
+Stage 5e large-reference timing is part of the required reference and matched-tools path:
 
 ```bash
-make references-large THREADS=4
-make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make references THREADS=4
 make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 ```
 

@@ -2,8 +2,9 @@
 # Stage 5a covers radigest input-format timing. Stage 5b adds cached
 # radigest-screen-pairs-cached candidate-pair screening speed. Stage 5c adds
 # intra-tool radigest thread scaling. Stage 5d adds cached pair-screen job
-# scaling. Stage 5e adds large-reference timing. Stage 5f adds semantics-aware
-# matched-tool timing. Later patches should add audit outputs.
+# scaling. Stage 5e adds large-reference timing, now folded into the
+# matched-tool timing entry point. Stage 5f adds semantics-aware matched-tool
+# timing. Later patches should add audit outputs.
 
 import csv
 
@@ -363,14 +364,9 @@ rule performance_pair_screen_scaling_all:
         PAIR_SCREEN_SCALING_OUTPUTS
 
 
-rule performance_large_genome_all:
-    input:
-        LARGE_GENOME_OUTPUTS
-
-
 rule performance_matched_tools_all:
     input:
-        MATCHED_TOOL_TIMING_OUTPUTS
+        MATCHED_TOOL_TIMING_OUTPUTS + LARGE_GENOME_OUTPUTS
 
 
 rule run_radigest_input_format_case:
@@ -756,6 +752,8 @@ rule run_radigest_large_genome_case:
         "benchmark/logs/performance/large_genome/{case_id}.timing.log"
     threads:
         lambda wc: large_genome_int(wc, "threads")
+    resources:
+        matched_tool_benchmark=1
     params:
         radigest=lambda wildcards: config.get("radigest", "radigest"),
         dataset=lambda wc: large_genome_value(wc, "dataset_id"),

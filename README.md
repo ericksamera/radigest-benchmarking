@@ -27,8 +27,7 @@ make performance-input-format THREADS=4
 make performance-screening-speed THREADS=4
 make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
-make references-large THREADS=4
-make performance-large-genome THREADS=4
+make performance-matched-tools THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -132,8 +131,7 @@ make performance-input-format THREADS=4
 make performance-screening-speed THREADS=4
 make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
-make references-large THREADS=4
-make performance-large-genome THREADS=4
+make performance-matched-tools THREADS=4
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -157,11 +155,10 @@ Primary contracts live in:
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
 
-Stage 5e large-reference timing can be run with:
+Stage 5e large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference timing artifact:
 
 ```bash
-make references-large THREADS=4
-make performance-large-genome THREADS=4 RADIGEST=/path/to/radigest
+make references THREADS=4
 make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 ```
 

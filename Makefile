@@ -24,7 +24,7 @@ PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references references-large comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-large-genome performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -34,7 +34,6 @@ help:
 	  '  make show-radigest' \
 	  '  make smoke' \
 	  '  make references' \
-	  '  make references-large' \
 	  '  make install-digital-rads' \
 	  '  make install-ddradseqtools' \
 	  '  make install-simrad' \
@@ -47,7 +46,6 @@ help:
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance-thread-scaling THREADS=4' \
 	  '  make performance-pair-screen-scaling THREADS=4' \
-	  '  make performance-large-genome THREADS=4' \
 	  '  make performance-matched-tools THREADS=4' \
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance THREADS=8' \
@@ -75,9 +73,6 @@ smoke: $(RADIGEST_BUILD_PREREQ)
 references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
 
-references-large:
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_optional_all $(SNAKEMAKE_CONFIG_ARGS)
-
 comparator-smoke: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_smoke_all $(SNAKEMAKE_CONFIG_ARGS)
 
@@ -98,9 +93,6 @@ performance-thread-scaling: $(RADIGEST_BUILD_PREREQ)
 
 performance-pair-screen-scaling: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_pair_screen_scaling_all $(SNAKEMAKE_CONFIG_ARGS) $(PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS)
-
-performance-large-genome: $(RADIGEST_BUILD_PREREQ)
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_large_genome_all $(SNAKEMAKE_CONFIG_ARGS)
 
 performance-matched-tools: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_matched_tools_all $(SNAKEMAKE_CONFIG_ARGS) $(MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS)
