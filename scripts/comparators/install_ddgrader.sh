@@ -50,14 +50,49 @@ done
 
 mkdir -p "$(dirname "$DEST")"
 
-if [[ -d "$DEST/.git" ]]; then
+backup_existing_dest() {
+  if [[ ! -e "$DEST" ]]; then
+    return
+  fi
+
+  local stamp backup suffix
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  backup="${DEST}.bak.${stamp}"
+  suffix=1
+
+  while [[ -e "$backup" ]]; do
+    backup="${DEST}.bak.${stamp}.${suffix}"
+    suffix=$((suffix + 1))
+  done
+
+  echo "Moving existing non-reusable path aside: $DEST -> $backup" >&2
+  mv "$DEST" "$backup"
+}
+
+clone_fresh() {
+  echo "Cloning ddRadSeqWebTool into: $DEST" >&2
+  git clone --branch "$BRANCH" "$REPO" "$DEST"
+}
+
+update_existing_checkout() {
   echo "Updating existing ddRadSeqWebTool checkout: $DEST" >&2
   git -C "$DEST" fetch --all --tags --prune
   git -C "$DEST" checkout "$BRANCH"
-  git -C "$DEST" pull --ff-only || true
+  git -C "$DEST" pull --ff-only
+}
+
+if [[ -d "$DEST/.git" ]]; then
+  if ! update_existing_checkout; then
+    echo "WARNING: existing ddRadSeqWebTool checkout could not be updated; recloning." >&2
+    backup_existing_dest
+    clone_fresh
+  fi
+elif [[ -e "$DEST" ]]; then
+  echo "WARNING: $DEST exists but is not a Git checkout; recloning." >&2
+  backup_existing_dest
+  clone_fresh
 else
-  echo "Cloning ddRadSeqWebTool into: $DEST" >&2
-  git clone --branch "$BRANCH" "$REPO" "$DEST"
+  clone_fresh
 fi
 
 echo "ddRadSeqWebTool path: $DEST"

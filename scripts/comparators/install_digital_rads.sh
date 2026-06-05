@@ -34,12 +34,47 @@ done
 
 mkdir -p "$(dirname "$DEST")"
 
-if [[ -d "$DEST/.git" ]]; then
-  echo "Updating existing Digital_RADs checkout: $DEST" >&2
-  git -C "$DEST" fetch --all --tags --prune
-else
+backup_existing_dest() {
+  if [[ ! -e "$DEST" ]]; then
+    return
+  fi
+
+  local stamp backup suffix
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  backup="${DEST}.bak.${stamp}"
+  suffix=1
+
+  while [[ -e "$backup" ]]; do
+    backup="${DEST}.bak.${stamp}.${suffix}"
+    suffix=$((suffix + 1))
+  done
+
+  echo "Moving existing non-reusable path aside: $DEST -> $backup" >&2
+  mv "$DEST" "$backup"
+}
+
+clone_fresh() {
   echo "Cloning Digital_RADs into: $DEST" >&2
   git clone "$REPO" "$DEST"
+}
+
+update_existing_checkout() {
+  echo "Updating existing Digital_RADs checkout: $DEST" >&2
+  git -C "$DEST" fetch --all --tags --prune
+}
+
+if [[ -d "$DEST/.git" ]]; then
+  if ! update_existing_checkout; then
+    echo "WARNING: existing Digital_RADs checkout could not be updated; recloning." >&2
+    backup_existing_dest
+    clone_fresh
+  fi
+elif [[ -e "$DEST" ]]; then
+  echo "WARNING: $DEST exists but is not a Git checkout; recloning." >&2
+  backup_existing_dest
+  clone_fresh
+else
+  clone_fresh
 fi
 
 echo "Digital_RADs path: $DEST"
