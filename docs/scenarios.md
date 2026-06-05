@@ -10,6 +10,7 @@ Scenario files live under `config/scenarios/`.
 Useful comparator-specific execution targets are:
 
 ```bash
+make install-comparators
 make comparator-smoke RADIGEST=/path/to/radigest
 make references THREADS=4
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
@@ -34,7 +35,7 @@ make performance-screening-speed THREADS=4 \
 make performance THREADS=4 RADIGEST=/path/to/radigest
 ```
 
-The input-format tier compares plain and gzip FASTA inputs for `small_yeast_s288c_B1` using `config/performance_cases.tsv`. The screening-speed tier measures cached `radigest-screen-pairs-cached` candidate-pair screening on `small_yeast_s288c_plain` using `config/screening_speed_cases.tsv`. The thread-scaling tier measures radigest JSON-summary and fragment-TSV output modes on `moderate_cannabis_pink-pepper_plain` using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling tier measures cached screening across 1, 2, and 4 jobs on `moderate_cannabis_pink-pepper_plain` using `config/pair_screen_scaling_cases.tsv`. The matched-tools tier includes the large-reference wheat timing artifact.
+The input-format tier compares plain and gzip FASTA inputs for `small_yeast_s288c_B1` using `config/performance_cases.tsv`. The screening-speed tier measures cached `radigest-screen-pairs-cached` candidate-pair screening on `small_yeast_s288c_plain` using `config/screening_speed_cases.tsv`. The thread-scaling tier measures radigest JSON-summary and fragment-TSV output modes on `moderate_cannabis_pink-pepper_plain` using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling tier measures cached screening across 1, 2, and 4 jobs on `moderate_cannabis_pink-pepper_plain` using `config/pair_screen_scaling_cases.tsv`. The matched-tools tier includes the large-reference wheat timing artifact. `make reviewer-nonempirical` runs `make install-all`, `make check`, the nonempirical workflow, and figure generation in one entry point.
 
 Stage 5e large-reference timing is included in the required reference and matched-tools path:
 

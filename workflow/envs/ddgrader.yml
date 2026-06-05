@@ -12,5 +12,6 @@ dependencies:
   - matplotlib
   - apscheduler
   - pip
+  - git
   - pip:
       - django-chunked-upload

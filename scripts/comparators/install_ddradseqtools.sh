@@ -56,14 +56,24 @@ test -s "$DEST/Package/restrictionsites.txt"
 
 python3 - <<'PY'
 import importlib.util
+import sys
+
 missing = []
 for pkg in ["numpy", "matplotlib"]:
     if importlib.util.find_spec(pkg) is None:
         missing.append(pkg)
+
 if missing:
-    raise SystemExit(
-        "Missing Python packages for DDRADSEQTOOLS: " + ", ".join(missing)
-        + "\nInstall with: python3 -m pip install numpy matplotlib"
+    print(
+        "WARNING: active Python is missing DDRADSEQTOOLS runtime package(s): "
+        + ", ".join(missing),
+        file=sys.stderr,
     )
-print("DDRADSEQTOOLS Python dependencies available")
+    print(
+        "Snakemake comparator targets run DDRADSEQTOOLS inside "
+        "workflow/envs/comparators.yml, which declares these packages.",
+        file=sys.stderr,
+    )
+else:
+    print("DDRADSEQTOOLS Python dependencies available")
 PY

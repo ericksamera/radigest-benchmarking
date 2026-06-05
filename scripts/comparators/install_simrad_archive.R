@@ -32,6 +32,8 @@ if (!all(available)) {
   message("  mamba install -n radigest-simrad -c conda-forge -c bioconda -y \\")
   message("    zlib libzlib r-seqinr \\")
   message("    bioconductor-biostrings bioconductor-shortread bioconductor-zlibbioc")
+  message("")
+  message("Or run `make install-simrad`, which executes this installer inside workflow/envs/simrad.yml through Snakemake.")
   quit(status = 2)
 }
 

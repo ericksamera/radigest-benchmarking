@@ -37,11 +37,18 @@ The coverage matrix is written to:
 results/comparators/comparator_case_matrix.tsv
 ```
 
-Install or update external checkouts with:
+Install or update comparator tools with:
+
+```bash
+make install-comparators
+```
+
+This target runs the installer scripts through Snakemake conda environments. The individual targets remain available for focused setup or debugging:
 
 ```bash
 make install-digital-rads
 make install-ddradseqtools
+make install-simrad
 make install-ddgrader
 ```
 
@@ -54,11 +61,7 @@ external/ddRADseqTools/Package/restrictionsites.txt
 external/ddRadSeqWebTool/backend/service/DigestSequence.py
 ```
 
-SimRAD is an R package, not an external checkout. Snakemake installs it into `workflow/envs/simrad.yml` via `workflow/envs/simrad.post-deploy.sh`. For manual testing in an active R environment, run:
-
-```bash
-make install-simrad
-```
+SimRAD is an R package, not an external checkout. `make install-simrad` now runs the archived SimRAD installer inside `workflow/envs/simrad.yml`, so the active shell no longer needs `seqinr`, `Biostrings`, `ShortRead`, or `zlibbioc` preinstalled.
 
 The manuscript-facing comparator tables are:
 

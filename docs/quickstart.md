@@ -29,13 +29,15 @@ This downloads the public references declared in `config/references.tsv`, writes
 
 ## Comparators
 
-Install or update external comparator checkouts first:
+Install or update comparator tools first:
 
 ```bash
-make install-digital-rads
-make install-ddradseqtools
-make install-ddgrader
+make install-comparators
+# or, for radigest plus all comparator tools when using the default local binary path:
+make install-all
 ```
+
+The individual installer targets still exist: `make install-digital-rads`, `make install-ddradseqtools`, `make install-simrad`, and `make install-ddgrader`.
 
 Then run:
 
@@ -89,6 +91,14 @@ Stage 5e large-reference timing is part of the required reference and matched-to
 make references THREADS=4
 make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 ```
+
+## Full nonempirical reviewer run
+
+```bash
+make reviewer-nonempirical THREADS=4
+```
+
+This target runs `make install-all`, `make check`, the nonempirical reviewer workflow, and the manuscript performance figures.
 
 ## Build radigest locally
 

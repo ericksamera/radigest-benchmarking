@@ -939,7 +939,8 @@ rule run_matched_tool_timing_digital_rads:
 rule run_matched_tool_timing_ddradseqtools:
     input:
         ref=matched_tool_timing_reference,
-        tool="external/ddRADseqTools/Package/rsitesearch.py",
+        tool=DDRADSEQTOOLS_TOOL,
+        restrictionsites=DDRADSEQTOOLS_RESTRICTIONSITES,
         cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
     output:
         "results/performance/matched_tools/raw/ddradseqtools/{case_id}.runs.tsv"
@@ -990,6 +991,7 @@ rule run_matched_tool_timing_ddradseqtools:
 rule run_matched_tool_timing_simrad:
     input:
         ref=matched_tool_timing_reference,
+        simrad=SIMRAD_INSTALL_MARKER,
         cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
     output:
         "results/performance/matched_tools/raw/simrad/{case_id}.runs.tsv"
@@ -1040,7 +1042,8 @@ rule run_matched_tool_timing_simrad:
 rule run_matched_tool_timing_ddgrader:
     input:
         ref=matched_tool_timing_reference,
-        tool="external/ddRadSeqWebTool/backend/service/DigestSequence.py",
+        tool=DDGRADER_TOOL,
+        enzyme_db=DDGRADER_ENZYME_DB,
         cases=MATCHED_TOOL_TIMING_CASE_MANIFEST
     output:
         "results/performance/matched_tools/raw/ddgrader/{case_id}.runs.tsv"

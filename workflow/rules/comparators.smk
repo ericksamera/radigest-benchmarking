@@ -14,6 +14,22 @@ COMPARATOR_SEMANTICS_TABLE = "results/manuscript/tables/table_03_comparator_sema
 COMPARATOR_CASE_MATRIX = "results/comparators/comparator_case_matrix.tsv"
 COMPARATOR_SMOKE_DATASET = "comparator_smoke_single"
 COMPARATOR_SMALL_YEAST_DATASET = "small_yeast_s288c_plain"
+DIGITAL_RADS_TOOL = "external/Digital_RADs/Digital_RADs.py"
+DDRADSEQTOOLS_TOOL = "external/ddRADseqTools/Package/rsitesearch.py"
+DDRADSEQTOOLS_RESTRICTIONSITES = "external/ddRADseqTools/Package/restrictionsites.txt"
+DDGRADER_REPO_PATH = str(config.get("ddgrader_repo", "external/ddRadSeqWebTool"))
+DDGRADER_TOOL = f"{DDGRADER_REPO_PATH}/backend/service/DigestSequence.py"
+DDGRADER_ENZYME_DB = f"{DDGRADER_REPO_PATH}/resources/restrictionEnzymes/newEnglandEnzymeList.csv"
+DIGITAL_RADS_INSTALL_MARKER = ".local/comparators/digital_rads.ready"
+DDRADSEQTOOLS_INSTALL_MARKER = ".local/comparators/ddradseqtools.ready"
+SIMRAD_INSTALL_MARKER = ".local/comparators/simrad.ready"
+DDGRADER_INSTALL_MARKER = ".local/comparators/ddgrader.ready"
+COMPARATOR_TOOL_INSTALL_OUTPUTS = [
+    DIGITAL_RADS_INSTALL_MARKER,
+    DDRADSEQTOOLS_INSTALL_MARKER,
+    SIMRAD_INSTALL_MARKER,
+    DDGRADER_INSTALL_MARKER,
+]
 
 
 def _read_rows(path):
@@ -169,6 +185,13 @@ def condition_for_case(case_id):
 
 
 def comparator_required_path(tool_id):
+    declared_paths = {
+        "digital_rads": DIGITAL_RADS_TOOL,
+        "ddradseqtools": DDRADSEQTOOLS_TOOL,
+        "ddgrader": DDGRADER_TOOL,
+    }
+    if tool_id in declared_paths:
+        return declared_paths[tool_id]
     try:
         value = COMPARATOR_BY_TOOL[tool_id]["required_paths"]
     except KeyError as exc:
@@ -264,7 +287,81 @@ def noncoordinate_radigest_max_size(wc):
 
 
 def ddgrader_repo(_wc):
-    return str(config.get("ddgrader_repo", "external/ddRadSeqWebTool"))
+    return DDGRADER_REPO_PATH
+
+
+rule comparator_tools_all:
+    input:
+        COMPARATOR_TOOL_INSTALL_OUTPUTS
+
+
+rule comparator_digital_rads_install:
+    output:
+        tool=DIGITAL_RADS_TOOL,
+        marker=touch(DIGITAL_RADS_INSTALL_MARKER)
+    log:
+        "benchmark/logs/install/digital_rads.log"
+    conda:
+        "../envs/comparators.yml"
+    shell:
+        r"""
+        mkdir -p .local/comparators benchmark/logs/install
+        bash scripts/comparators/install_digital_rads.sh > {log:q} 2>&1
+        test -s {output.tool:q}
+        """
+
+
+rule comparator_ddradseqtools_install:
+    output:
+        tool=DDRADSEQTOOLS_TOOL,
+        restrictionsites=DDRADSEQTOOLS_RESTRICTIONSITES,
+        marker=touch(DDRADSEQTOOLS_INSTALL_MARKER)
+    log:
+        "benchmark/logs/install/ddradseqtools.log"
+    conda:
+        "../envs/comparators.yml"
+    shell:
+        r"""
+        mkdir -p .local/comparators benchmark/logs/install
+        bash scripts/comparators/install_ddradseqtools.sh > {log:q} 2>&1
+        test -s {output.tool:q}
+        test -s {output.restrictionsites:q}
+        """
+
+
+rule comparator_simrad_install:
+    output:
+        marker=touch(SIMRAD_INSTALL_MARKER)
+    log:
+        "benchmark/logs/install/simrad.log"
+    conda:
+        "../envs/simrad.yml"
+    shell:
+        r"""
+        mkdir -p .local/comparators benchmark/logs/install
+        Rscript scripts/comparators/install_simrad_archive.R > {log:q} 2>&1
+        Rscript -e 'stopifnot(requireNamespace("SimRAD", quietly = TRUE)); cat(as.character(utils::packageVersion("SimRAD")), "\n")' >> {log:q} 2>&1
+        """
+
+
+rule comparator_ddgrader_install:
+    output:
+        tool=DDGRADER_TOOL,
+        enzyme_db=DDGRADER_ENZYME_DB,
+        marker=touch(DDGRADER_INSTALL_MARKER)
+    log:
+        "benchmark/logs/install/ddgrader.log"
+    params:
+        dest=DDGRADER_REPO_PATH
+    conda:
+        "../envs/ddgrader.yml"
+    shell:
+        r"""
+        mkdir -p .local/comparators benchmark/logs/install
+        bash scripts/comparators/install_ddgrader.sh --dest {params.dest:q} > {log:q} 2>&1
+        test -s {output.tool:q}
+        test -s {output.enzyme_db:q}
+        """
 
 
 rule comparators_all:
@@ -634,6 +731,7 @@ rule radigest_for_simrad_count:
 rule run_simrad_count:
     input:
         ref=noncoordinate_reference,
+        simrad=SIMRAD_INSTALL_MARKER,
         cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
         enzymes="config/enzymes.tsv"
     output:
@@ -751,6 +849,7 @@ rule run_ddgrader_backend_binned:
     input:
         ref=noncoordinate_reference,
         digest_sequence=lambda wc: str(Path(ddgrader_repo(wc)) / "backend" / "service" / "DigestSequence.py"),
+        enzyme_db=DDGRADER_ENZYME_DB,
         cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST
     output:
         raw_csv="results/comparators/ddgrader/raw/{case_id}.ddgrader.raw.csv",

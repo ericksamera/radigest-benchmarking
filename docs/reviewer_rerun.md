@@ -5,19 +5,18 @@ The intended nonempirical reviewer path is:
 ```bash
 mamba env create -f workflow/envs/driver.yml
 mamba activate radigest-benchmark-driver
-make install-radigest
-make install-digital-rads
-make install-ddradseqtools
-make install-ddgrader
 make reviewer-nonempirical THREADS=4
 make audit
 ```
 
-At Stage 5e/7b, the concrete executable pieces are:
+Run `make install-all` separately only when you want to prefetch or refresh tool installations without running the reviewer workflow.
+
+At Stage 5e/7b, `make reviewer-nonempirical` wraps setup, checks, the nonempirical workflow, and figure generation. The concrete executable pieces remain available for debugging:
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
 make references THREADS=4
+make install-comparators
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest

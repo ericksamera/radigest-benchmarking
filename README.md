@@ -14,12 +14,10 @@ Stage 7b adds artifact, claim, environment, output-index, and release-checklist 
 
 ```bash
 make check
-make install-radigest
+make install-all
 make smoke
 make references THREADS=4
-make install-digital-rads
-make install-ddradseqtools
-make install-ddgrader
+make install-comparators
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4
@@ -34,7 +32,7 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
-SimRAD is installed into the Snakemake conda environment through `workflow/envs/simrad.post-deploy.sh`. `make install-simrad` is available for a manual active R environment.
+Comparator installers are run through Snakemake conda environments. `make install-comparators` installs or updates Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer; `make install-all` also builds the local radigest binaries when the default `RADIGEST=.local/bin/radigest` is in use.
 
 Expected smoke outputs:
 
@@ -121,12 +119,14 @@ data/synthetic/comparator_ecori_msei_smoke.fa
 
 ## Reviewer entry points
 
-These targets remain dispatch shims while later stages are ported.
+`make reviewer-nonempirical` now performs the complete nonempirical rerun path: comparator/radigest setup through `make install-all`, `make check`, the reviewer workflow, and performance figure generation.
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
 make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
+make install-comparators
+make install-all
 make performance-input-format THREADS=4
 make performance-screening-speed THREADS=4
 make performance-thread-scaling THREADS=4

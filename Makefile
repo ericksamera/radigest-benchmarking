@@ -23,8 +23,9 @@ SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_c
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
+COMPARATOR_INSTALL_MARKERS ?= .local/comparators/digital_rads.ready .local/comparators/ddradseqtools.ready .local/comparators/simrad.ready .local/comparators/ddgrader.ready
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -34,6 +35,8 @@ help:
 	  '  make show-radigest' \
 	  '  make smoke' \
 	  '  make references' \
+	  '  make install-comparators' \
+	  '  make install-all' \
 	  '  make install-digital-rads' \
 	  '  make install-ddradseqtools' \
 	  '  make install-simrad' \
@@ -73,6 +76,12 @@ smoke: $(RADIGEST_BUILD_PREREQ)
 references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
 
+install-comparators:
+	rm -f $(COMPARATOR_INSTALL_MARKERS)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_tools_all $(SNAKEMAKE_CONFIG_ARGS)
+
+install-all: $(RADIGEST_BUILD_PREREQ) install-comparators
+
 comparator-smoke: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_smoke_all $(SNAKEMAKE_CONFIG_ARGS)
 
@@ -104,25 +113,31 @@ figures: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 install-digital-rads:
-	bash scripts/comparators/install_digital_rads.sh
+	rm -f .local/comparators/digital_rads.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_digital_rads_install $(SNAKEMAKE_CONFIG_ARGS)
 
 install-ddradseqtools:
-	bash scripts/comparators/install_ddradseqtools.sh
+	rm -f .local/comparators/ddradseqtools.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_ddradseqtools_install $(SNAKEMAKE_CONFIG_ARGS)
 
 install-simrad:
-	Rscript scripts/comparators/install_simrad_archive.R
+	rm -f .local/comparators/simrad.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_simrad_install $(SNAKEMAKE_CONFIG_ARGS)
 
 install-ddgrader:
-	bash scripts/comparators/install_ddgrader.sh
+	rm -f .local/comparators/ddgrader.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_ddgrader_install $(SNAKEMAKE_CONFIG_ARGS)
 
-reviewer-nonempirical: $(RADIGEST_BUILD_PREREQ)
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all $(SNAKEMAKE_CONFIG_ARGS)
+reviewer-nonempirical: install-all
+	$(MAKE) check
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 reviewer-empirical:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
-reviewer-all: $(RADIGEST_BUILD_PREREQ)
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_all $(SNAKEMAKE_CONFIG_ARGS)
+reviewer-all: install-all
+	$(MAKE) check
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 manuscript: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) manuscript_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
