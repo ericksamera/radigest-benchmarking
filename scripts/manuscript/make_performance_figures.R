@@ -95,6 +95,14 @@ TOOL_LABELS <- c(
   ddgrader = "ddgRADer"
 )
 
+TOOL_ORDER <- c(
+  "radigest",
+  "digital_rads",
+  "ddradseqtools",
+  "simrad",
+  "ddgrader"
+)
+
 read_table <- function(path) {
   if (is.null(path) || !file.exists(path)) {
     return(NULL)
@@ -238,8 +246,12 @@ benchmark_levels <- function(df) {
   unique(order_df$label)
 }
 
-benchmark_factor <- function(df) {
-  factor(benchmark_label(df), levels = benchmark_levels(df))
+benchmark_factor <- function(df, reverse = FALSE) {
+  levels <- benchmark_levels(df)
+  if (isTRUE(reverse)) {
+    levels <- rev(levels)
+  }
+  factor(benchmark_label(df), levels = levels)
 }
 
 format_seconds <- function(x) {
@@ -349,10 +361,10 @@ plot_screening_speed <- function(path) {
   df <- df |>
     require_pass_rows("screening-speed figure") |>
     mutate(candidate_pairs_per_second_median = safe_numeric(candidate_pairs_per_second_median))
-  df$benchmark <- benchmark_factor(df)
+  df$benchmark <- benchmark_factor(df, reverse = TRUE)
   df$value_label <- paste0(format_rate(df$candidate_pairs_per_second_median), " pairs/s")
 
-  p <- ggplot(df, aes(x = candidate_pairs_per_second_median, y = fct_reorder(benchmark, candidate_pairs_per_second_median))) +
+  p <- ggplot(df, aes(x = candidate_pairs_per_second_median, y = benchmark)) +
     geom_col(width = 0.55, fill = SEABORN[["blue"]]) +
     geom_text(aes(label = value_label), hjust = -0.12, size = 3.0) +
     scale_x_continuous(labels = format_rate, expand = expansion(mult = c(0, 0.22))) +
@@ -435,8 +447,10 @@ plot_pair_screen_scaling <- function(path) {
   plot_df <- bind_rows(observed, ideal) |>
     mutate(series = factor(series, levels = c("Observed", "Ideal linear")))
 
-  max_jobs <- max(df$jobs, df$speedup_vs_1_job_median, na.rm = TRUE)
-  y_limits <- if (max_jobs <= 1) c(0.95, 1.05) else c(1, max_jobs)
+  min_speedup <- min(plot_df$speedup, na.rm = TRUE)
+  max_speedup <- max(plot_df$speedup, na.rm = TRUE)
+  y_min <- min(0.95, min_speedup * 0.98)
+  y_max <- if (max_speedup <= 1) 1.05 else max_speedup * 1.03
 
   p <- ggplot(plot_df, aes(x = jobs, y = speedup, color = series, linetype = series, group = series)) +
     geom_line(linewidth = 0.75) +
@@ -448,7 +462,7 @@ plot_pair_screen_scaling <- function(path) {
     scale_y_continuous(
       breaks = sort(unique(c(1, df$jobs))),
       labels = label_number(accuracy = 1, suffix = "x"),
-      limits = y_limits,
+      limits = c(y_min, y_max),
       expand = expansion(mult = c(0.02, 0.05))
     ) +
     labs(x = "Screening jobs", y = "Median speedup vs. 1 job") +
@@ -467,14 +481,14 @@ plot_large_genome <- function(path) {
   df <- df |>
     require_pass_rows("large-genome figure") |>
     mutate(median_wall_seconds = safe_numeric(median_wall_seconds))
-  df$benchmark <- benchmark_factor(df)
+  df$benchmark <- benchmark_factor(df, reverse = TRUE)
   df$output_mode_label <- factor(
     label_output_mode(df$output_mode),
     levels = c("JSON summary", "Fragment TSV")
   )
   df$value_label <- paste0(format_seconds(df$median_wall_seconds), " s")
 
-  p <- ggplot(df, aes(x = median_wall_seconds, y = fct_reorder(benchmark, median_wall_seconds), fill = output_mode_label)) +
+  p <- ggplot(df, aes(x = median_wall_seconds, y = benchmark, fill = output_mode_label)) +
     geom_col(width = 0.55) +
     geom_text(aes(label = value_label), hjust = -0.12, size = 3.0) +
     scale_fill_manual(
@@ -509,22 +523,23 @@ plot_matched_timing <- function(path) {
         if_else(tool_id == "radigest", "radigest", "Comparator"),
         levels = c("radigest", "Comparator")
       ),
-      relative_label = if_else(tool_id == "radigest", "1x", format_xfold(relative_to_radigest_median))
+      relative_label = if_else(tool_id == "radigest", "1x", format_xfold(relative_to_radigest_median)),
+      label_x = median_wall_seconds * if_else(tool_id == "radigest", 1.22, 1.18)
     ) |>
     require_positive("median_wall_seconds", "matched-tool timing figure")
   df$benchmark <- benchmark_factor(df)
-  df$tool_label <- fct_reorder(
-    label_tool(df),
-    df$median_wall_seconds,
-    .fun = median,
-    .na_rm = TRUE
-  )
+  tool_levels <- df |>
+    transmute(tool_label = label_tool(df), tool_rank = rank_with_fallback(tool_id, TOOL_ORDER)) |>
+    distinct(tool_label, tool_rank) |>
+    arrange(tool_rank) |>
+    pull(tool_label)
+  df$tool_label <- factor(label_tool(df), levels = rev(tool_levels))
 
   p <- ggplot(df, aes(x = median_wall_seconds, y = tool_label, color = tool_group)) +
     geom_point(size = 2.6) +
     geom_text(
-      aes(label = relative_label),
-      hjust = -0.16,
+      aes(x = label_x, label = relative_label),
+      hjust = 0,
       size = 2.5,
       color = SEABORN[["dark_gray"]],
       show.legend = FALSE
@@ -537,7 +552,7 @@ plot_matched_timing <- function(path) {
     scale_x_log10(
       breaks = breaks_log(n = 6),
       labels = format_seconds,
-      expand = expansion(mult = c(0.02, 0.26))
+      expand = expansion(mult = c(0.02, 0.30))
     ) +
     coord_cartesian(clip = "off") +
     labs(x = "Median wall time (s, log scale)", y = NULL) +
