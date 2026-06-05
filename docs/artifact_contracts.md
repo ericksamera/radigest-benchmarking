@@ -45,6 +45,13 @@ results/manuscript/figures/figure_04_matched_tool_timing.pdf
 
 The table and R/ggplot2 figure are generated from `config/matched_tool_timing_cases.tsv`. They are intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only. The required matched-tool set includes complete small-yeast and moderate-cannabis groups plus a large-wheat subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits.
 
+## Stage 6 empirical scaffold
+
+Optional empirical recovery remains artifact `C11`. The current empirical stage
+declares the local/private input contract in `config/empirical_libraries.tsv` and
+keeps `C11 required_for_release=false` until TLEN extraction and public input
+provenance are wired.
+
 ## Stage 7a/7b audit contract
 
 Stage 7 makes `config/artifacts.tsv` executable as a release contract. Stage 7a generates artifact, claim, and environment audit tables. Stage 7b adds a release checklist and output index. The audit target generates:

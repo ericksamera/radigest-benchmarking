@@ -1,0 +1,8 @@
+name: radigest-empirical
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python >=3.11
+  - pysam
+  - samtools

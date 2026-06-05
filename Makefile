@@ -25,7 +25,7 @@ MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
 COMPARATOR_INSTALL_MARKERS ?= .local/comparators/digital_rads.ready .local/comparators/ddradseqtools.ready .local/comparators/simrad.ready .local/comparators/ddgrader.ready
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -53,6 +53,8 @@ help:
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance THREADS=8' \
 	  '  make figures THREADS=4' \
+	  '  make empirical-check' \
+	  '  make empirical THREADS=4' \
 	  '  make reviewer-nonempirical THREADS=4' \
 	  '  make reviewer-empirical THREADS=4' \
 	  '  make reviewer-all THREADS=4' \
@@ -132,7 +134,15 @@ reviewer-nonempirical: install-all
 	$(MAKE) check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-reviewer-empirical:
+empirical-check:
+	python3 scripts/core/check_empirical_libraries.py
+
+empirical: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
+
+reviewer-empirical: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
 reviewer-all: install-all
@@ -154,6 +164,7 @@ check-manifests:
 	python3 scripts/core/check_pair_screen_scaling_cases.py
 	python3 scripts/core/check_large_genome_cases.py
 	python3 scripts/core/check_matched_tool_timing_cases.py
+	python3 scripts/core/check_empirical_libraries.py
 	python3 scripts/core/check_artifacts.py
 
 check: check-manifests

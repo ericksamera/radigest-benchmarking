@@ -122,3 +122,18 @@ Use a pinned release or commit with:
 ```bash
 make install-radigest RADIGEST_REF=<tag-or-commit>
 ```
+
+## Empirical scaffold
+
+Declare optional local empirical libraries in `config/empirical_libraries.tsv`.
+Private BAMs and alignment references should be copied or symlinked under
+`data/empirical/`, which is ignored by Git.
+
+```bash
+make empirical-check
+make empirical THREADS=4
+```
+
+With the default manifest, no empirical library is enabled and these commands
+validate only the input contract. Set `enabled=true` after local BAM/reference
+paths exist.

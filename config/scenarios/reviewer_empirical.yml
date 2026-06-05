@@ -1,8 +1,11 @@
 empirical:
   required: false
-  dataset: sockeye_ddrad
-  inputs:
-    bam: data/empirical/sockeye_ddrad/input.bam
-    reference: data/empirical/sockeye_ddrad/reference.fa
+  manifest: config/empirical_libraries.tsv
+  input_root: data/empirical
+  initial_source_type: local_bam
+  enabled_column: enabled
+  include_for_manuscript_column: include_for_manuscript
   outputs:
-    summary: results/empirical/sockeye_ddrad/empirical_recovery_summary.tsv
+    per_library_root: results/empirical/{library_id}
+    summary: results/empirical/empirical_recovery_summary.tsv
+    table: results/manuscript/tables/table_08_empirical_recovery.tsv

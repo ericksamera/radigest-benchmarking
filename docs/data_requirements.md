@@ -23,7 +23,28 @@ external/ddRADseqTools/Package/restrictionsites.txt
 external/ddRadSeqWebTool/backend/service/DigestSequence.py
 ```
 
-Install helpers live in `scripts/comparators/`. Version metadata is written into generated comparator outputs. Empirical BAM/CRAM inputs remain optional until their public input contract is finalized.
+Install helpers live in `scripts/comparators/`. Version metadata is written into generated comparator outputs.
+
+## Optional empirical inputs
+
+Empirical BAM/CRAM/FASTQ/SRA inputs are declared in `config/empirical_libraries.tsv`.
+The initial local-testing contract is BAM-first: put private files or symlinks under
+`data/empirical/`, keep those files out of Git, then set `enabled=true` for the
+corresponding manifest row.
+
+Example local setup:
+
+```bash
+mkdir -p data/empirical/sockeye_ddrad
+ln -s /absolute/path/to/library.bam data/empirical/sockeye_ddrad/input.bam
+ln -s /absolute/path/to/library.bam.bai data/empirical/sockeye_ddrad/input.bam.bai
+ln -s /absolute/path/to/alignment-reference.fa data/empirical/sockeye_ddrad/reference.fa
+make empirical-check
+```
+
+The `reference_path` entry must point to the exact reference build used for the
+BAM alignment. If the manifest row is enabled, `make empirical-check` requires
+the BAM and reference FASTA paths to exist.
 
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 

@@ -26,6 +26,7 @@ make performance-screening-speed THREADS=4
 make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
+make empirical-check
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -111,6 +112,21 @@ results/manuscript/figures/figure_s04_large_genome.pdf
 
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
 
+## Empirical input manifest
+
+Empirical inputs remain optional and private by default. Declare local test libraries in
+`config/empirical_libraries.tsv`, keep `enabled=false` until the BAM and reference
+FASTA are available under `data/empirical/`, and run:
+
+```bash
+make empirical-check
+make empirical THREADS=4
+```
+
+The first wired empirical source type is `local_bam`. The manifest also reserves
+columns for later CRAM, FASTQ, and SRA-backed ingestion without committing private
+sequence data to the repository.
+
 ## Comparator matrix boundaries
 
 All comparator tools can be exercised on the same smoke FASTA and on small yeast, but they are not all tested with the same assertion:
@@ -144,6 +160,8 @@ make performance-screening-speed THREADS=4
 make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
+make empirical-check
+make empirical THREADS=4
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4
 make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
@@ -163,6 +181,7 @@ Primary contracts live in:
 - `config/thread_scaling_cases.tsv` for Stage 5c intra-tool radigest thread-scaling cases.
 - `config/pair_screen_scaling_cases.tsv` for Stage 5d cached pair-screen job-scaling cases.
 - `config/artifacts.tsv` for manuscript claim outputs and release requirements.
+- `config/empirical_libraries.tsv` for optional local empirical BAM/CRAM/FASTQ/SRA library metadata.
 - `config/synthetic_expected.tsv` for synthetic validation cases.
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.

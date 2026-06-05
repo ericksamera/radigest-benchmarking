@@ -24,6 +24,7 @@ MANIFESTS = [
     "config/large_genome_cases.tsv",
     "config/matched_tool_timing_cases.tsv",
     "config/artifacts.tsv",
+    "config/empirical_libraries.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
     "config/references.tsv",
@@ -94,7 +95,7 @@ rule reviewer_empirical_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_empirical.yml",
-        "results/empirical/.gitkeep"
+        EMPIRICAL_ALL_OUTPUTS
 
 rule reviewer_all:
     input:
@@ -104,7 +105,7 @@ rule reviewer_all:
         REFERENCE_ALL_OUTPUTS,
         COMPARATOR_ALL_OUTPUTS,
         PERFORMANCE_ALL_OUTPUTS,
-        "results/empirical/.gitkeep"
+        EMPIRICAL_ALL_OUTPUTS
 
 rule manuscript_all:
     input:

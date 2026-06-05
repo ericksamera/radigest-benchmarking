@@ -138,6 +138,28 @@ TSV_SPECS = {
         "required_for_nonempirical",
         "notes",
     ],
+    "config/empirical_libraries.tsv": [
+        "library_id",
+        "display_name",
+        "enabled",
+        "include_for_manuscript",
+        "source_type",
+        "bam_path",
+        "bam_index_path",
+        "reference_id",
+        "reference_path",
+        "enzyme_1",
+        "enzyme_2",
+        "min_size",
+        "max_size",
+        "score_min",
+        "score_max",
+        "size_model",
+        "min_mapq",
+        "exclude_duplicates",
+        "max_tlen",
+        "notes",
+    ],
     "config/artifacts.tsv": [
         "claim_id",
         "category",
@@ -193,6 +215,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/manuscript/make_thread_scaling_table.py",
     "scripts/manuscript/make_performance_figures.R",
     "scripts/manuscript/make_matched_tool_timing_table.py",
+    "scripts/core/check_empirical_libraries.py",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
     "scripts/audit/build_claim_audit.py",
@@ -212,6 +235,7 @@ EXTRA_REQUIRED_FILES = [
     "workflow/rules/audit.smk",
     "workflow/envs/comparators.yml",
     "workflow/envs/figures.yml",
+    "workflow/envs/empirical.yml",
     "workflow/envs/radigest-build.yml",
 ]
 
@@ -223,6 +247,11 @@ BOOL_COLUMNS = {
     "config/screening_speed_cases.tsv": ["required_for_nonempirical"],
     "config/thread_scaling_cases.tsv": ["required_for_nonempirical"],
     "config/matched_tool_timing_cases.tsv": ["required_for_nonempirical"],
+    "config/empirical_libraries.tsv": [
+        "enabled",
+        "include_for_manuscript",
+        "exclude_duplicates",
+    ],
 }
 
 DNA_RE = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
