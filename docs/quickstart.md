@@ -66,7 +66,7 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
-The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target includes both the standalone large-reference wheat timing artifact and required large-reference matched-tool timing rows.
+The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target includes both the standalone large-reference wheat timing artifact and required large-reference matched-tool subset; SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
 Expected manuscript-facing performance tables are:
 
@@ -87,7 +87,7 @@ make figures
 
 The figures are written under `results/manuscript/figures/`; `figure_04_matched_tool_timing.pdf` is also built by `make performance-matched-tools`.
 
-Stage 5e/5f large-reference timing is part of the required reference and matched-tools path:
+Stage 5e/5f large-reference timing is part of the required reference and matched-tools path; the wheat matched-tool subset excludes SimRAD:
 
 ```bash
 make references THREADS=4

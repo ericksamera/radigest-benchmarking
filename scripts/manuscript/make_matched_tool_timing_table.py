@@ -47,7 +47,8 @@ REQUIRED_COLUMNS = [
 ]
 
 REQUIRED_LARGE_GROUP = ("large_wheat_chinese-spring_plain", "B2")
-REQUIRED_TOOLS = {"radigest", "digital_rads", "ddradseqtools", "simrad", "ddgrader"}
+REQUIRED_LARGE_TOOLS = {"radigest", "digital_rads", "ddradseqtools", "ddgrader"}
+EXCLUDED_LARGE_TOOLS = {"simrad"}
 
 
 def fail(message: str) -> NoReturn:
@@ -115,11 +116,17 @@ def require_large_genome(rows: list[dict[str, str]]) -> None:
         for row in rows
         if row["dataset_id"] == dataset_id and row["condition_id"] == condition_id
     }
-    missing = sorted(REQUIRED_TOOLS - observed_tools)
+    missing = sorted(REQUIRED_LARGE_TOOLS - observed_tools)
     if missing:
         fail(
             "matched-tool timing table is missing required large-reference "
             f"rows for {dataset_id}/{condition_id}: {', '.join(missing)}"
+        )
+    unexpected = sorted(EXCLUDED_LARGE_TOOLS & observed_tools)
+    if unexpected:
+        fail(
+            "matched-tool timing table contains excluded large-reference "
+            f"rows for {dataset_id}/{condition_id}: {', '.join(unexpected)}"
         )
 
 

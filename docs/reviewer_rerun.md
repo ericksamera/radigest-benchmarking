@@ -42,7 +42,7 @@ SimRAD             retained-fragment count agreement only
 ddgRADer backend   binned fragment-count distribution agreement only
 ```
 
-Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 5e/5f large-reference timing is included in the required reference and matched-tools path, including the large wheat matched-tool timing group. Stage 7a adds artifact, claim, and environment audit products from `config/artifacts.tsv`. Stage 7b adds the release checklist and output index. Later stages will add empirical recovery.
+Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 5e/5f large-reference timing is included in the required reference and matched-tools path, including a large wheat matched-tool subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits. Stage 7a adds artifact, claim, and environment audit products from `config/artifacts.tsv`. Stage 7b adds the release checklist and output index. Later stages will add empirical recovery.
 
 Stage 5e/5f large-reference timing is included in the required reference and matched-tools path:
 

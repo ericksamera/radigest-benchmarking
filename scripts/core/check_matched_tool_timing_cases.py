@@ -38,10 +38,18 @@ VALID_TIMING_SCOPES = {
     "count_only_wrapper",
     "binned_screening_wrapper",
 }
-REQUIRED_MATCHED_GROUPS = {
-    ("small_yeast_s288c_plain", "B1"),
-    ("moderate_cannabis_pink-pepper_plain", "B2"),
-    ("large_wheat_chinese-spring_plain", "B2"),
+REQUIRED_MATCHED_GROUP_TOOLS = {
+    ("small_yeast_s288c_plain", "B1"): VALID_TOOLS,
+    ("moderate_cannabis_pink-pepper_plain", "B2"): VALID_TOOLS,
+    ("large_wheat_chinese-spring_plain", "B2"): {
+        "radigest",
+        "digital_rads",
+        "ddradseqtools",
+        "ddgrader",
+    },
+}
+EXPECTEDLY_EXCLUDED_TOOLS = {
+    ("large_wheat_chinese-spring_plain", "B2"): {"simrad"},
 }
 
 
@@ -158,19 +166,30 @@ def main() -> int:
         if row["required_for_nonempirical"].lower() == "true":
             grouped_required_tools[group_key].add(tool_id)
 
-    for (dataset_id, condition_id), observed_tools in sorted(grouped_tools.items()):
-        missing = sorted(VALID_TOOLS - observed_tools)
+    for group_key, observed_tools in sorted(grouped_tools.items()):
+        expected_tools = REQUIRED_MATCHED_GROUP_TOOLS.get(group_key, VALID_TOOLS)
+        missing = sorted(expected_tools - observed_tools)
         if missing:
+            dataset_id, condition_id = group_key
             fail(
                 "config/matched_tool_timing_cases.tsv: dataset/condition group "
                 f"{dataset_id}/{condition_id} missing tools: {', '.join(missing)}"
             )
-
-    for dataset_id, condition_id in sorted(REQUIRED_MATCHED_GROUPS):
-        observed_required_tools = grouped_required_tools.get(
-            (dataset_id, condition_id), set()
+        unexpected = sorted(
+            EXPECTEDLY_EXCLUDED_TOOLS.get(group_key, set()) & observed_tools
         )
-        missing = sorted(VALID_TOOLS - observed_required_tools)
+        if unexpected:
+            dataset_id, condition_id = group_key
+            fail(
+                "config/matched_tool_timing_cases.tsv: dataset/condition group "
+                f"{dataset_id}/{condition_id} includes excluded tools: "
+                f"{', '.join(unexpected)}"
+            )
+
+    for group_key, expected_tools in sorted(REQUIRED_MATCHED_GROUP_TOOLS.items()):
+        dataset_id, condition_id = group_key
+        observed_required_tools = grouped_required_tools.get(group_key, set())
+        missing = sorted(expected_tools - observed_required_tools)
         if missing:
             fail(
                 "config/matched_tool_timing_cases.tsv: required matched-tool "

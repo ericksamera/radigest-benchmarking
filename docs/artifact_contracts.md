@@ -43,7 +43,7 @@ results/manuscript/tables/table_04_matched_timing.tsv
 results/manuscript/figures/figure_04_matched_tool_timing.pdf
 ```
 
-The table and R/ggplot2 figure are generated from `config/matched_tool_timing_cases.tsv`. They are intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only. The required matched-tool set includes small yeast, moderate cannabis, and the large wheat reference.
+The table and R/ggplot2 figure are generated from `config/matched_tool_timing_cases.tsv`. They are intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only. The required matched-tool set includes complete small-yeast and moderate-cannabis groups plus a large-wheat subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits.
 
 ## Stage 7a/7b audit contract
 

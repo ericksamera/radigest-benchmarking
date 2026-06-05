@@ -57,7 +57,7 @@ Stage 5e true large-reference timing uses the required wheat reference:
 large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz and data/reference/large_wheat_chinese-spring.fa
 ```
 
-`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing rows are included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`.
+`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing subset are included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`. SimRAD is intentionally excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
 ## Radigest source and local binaries
 

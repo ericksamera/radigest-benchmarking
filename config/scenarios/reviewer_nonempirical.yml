@@ -80,9 +80,11 @@ matched_tool_timing:
     ]
   conditions: [B1, B2]
   tools: [radigest, digital_rads, ddradseqtools, simrad, ddgrader]
+  large_reference_tools: [radigest, digital_rads, ddradseqtools, ddgrader]
+  large_reference_excluded_tools: [simrad]
   runs: 3
   resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination, including the folded-in large-reference timing case.
-  claim_note: Semantics-aware raw timing interpretation only across small yeast, moderate cannabis, and required large wheat; output resolutions and allowed claims differ by tool.
+  claim_note: Semantics-aware raw timing interpretation only across small yeast, moderate cannabis, and required large wheat; output resolutions and allowed claims differ by tool. SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
 input_format:
   cases: config/performance_cases.tsv

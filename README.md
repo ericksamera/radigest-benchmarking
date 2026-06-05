@@ -167,7 +167,7 @@ Primary contracts live in:
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
 
-Stage 5e/5f large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference matched-tool timing rows and figures:
+Stage 5e/5f large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference matched-tool subset and figures. The wheat subset excludes SimRAD because SimRAD concatenates FASTA records into an R string and cannot process the full wheat assembly:
 
 ```bash
 make references THREADS=4

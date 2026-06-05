@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import deque
 import shlex
 import shutil
 import subprocess
@@ -357,6 +358,54 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
+def tail_file(path: Path, *, max_lines: int = 40) -> list[str]:
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            return list(deque(handle, maxlen=max_lines))
+    except OSError as exc:
+        return [f"<unable to read {path}: {exc}>\n"]
+
+
+def print_log_tail(label: str, path: Path, *, max_lines: int = 40) -> None:
+    lines = tail_file(path, max_lines=max_lines)
+    print(f"{label}_tail_last_{max_lines}_lines={path}", file=sys.stderr)
+    if not lines:
+        print("<empty>", file=sys.stderr)
+        return
+    for line in lines:
+        print(line.rstrip("\n"), file=sys.stderr)
+
+
+def report_failed_runs(
+    *,
+    failed: list[dict[str, str]],
+    all_rows: list[dict[str, str]],
+    out: Path,
+    failure_out: Path,
+) -> None:
+    write_rows(failure_out, all_rows)
+    print(
+        f"{len(failed)} of {len(all_rows)} matched-tool timing runs failed",
+        file=sys.stderr,
+    )
+    print(f"primary run table: {out}", file=sys.stderr)
+    print(f"preserved failed-run sidecar: {failure_out}", file=sys.stderr)
+
+    for row in failed:
+        print("", file=sys.stderr)
+        print(
+            "FAILED matched-tool timing run "
+            f"case={row['case_id']} tool={row['tool_id']} "
+            f"run_index={row['run_index']} exit_code={row['exit_code']}",
+            file=sys.stderr,
+        )
+        print(f"command: {row['command']}", file=sys.stderr)
+        print(f"stdout_log: {row['stdout_log']}", file=sys.stderr)
+        print(f"stderr_log: {row['stderr_log']}", file=sys.stderr)
+        print(f"primary_output: {row['primary_output']}", file=sys.stderr)
+        print_log_tail("stderr", Path(row["stderr_log"]))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case-id", required=True)
@@ -388,11 +437,13 @@ def main() -> int:
     write_rows(args.out, rows)
     failed = [row for row in rows if row["status"] != "PASS"]
     if failed:
-        print(
-            f"{len(failed)} of {len(rows)} matched-tool timing runs failed",
-            file=sys.stderr,
+        failure_out = args.out.parent / f"{args.out.name}.failed"
+        report_failed_runs(
+            failed=failed,
+            all_rows=rows,
+            out=args.out,
+            failure_out=failure_out,
         )
-        print(f"see {args.out}", file=sys.stderr)
         return 1
     print(f"Wrote {len(rows)} matched-tool timing rows to {args.out}")
     return 0

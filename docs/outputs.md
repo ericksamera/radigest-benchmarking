@@ -126,7 +126,7 @@ benchmark/logs/performance/matched_tools/*.log
 results/performance/matched_tools/raw/*/*.runs.tsv
 ```
 
-The Stage 5f claim is semantics-aware matched timing across small yeast, medium cannabis, and the required large wheat reference. It records each tool path's comparison level, primary output type, and allowed claim so that interval, count-only, and binned-screening timings are not treated as identical evidence. The matched-tool figure uses the same manuscript table as the tabular artifact.
+The Stage 5f claim is semantics-aware matched timing across complete small-yeast and medium-cannabis groups plus the required large-wheat subset. SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits. The table records each tool path's comparison level, primary output type, and allowed claim so that interval, count-only, and binned-screening timings are not treated as identical evidence. The matched-tool figure uses the same manuscript table as the tabular artifact.
 
 Stage 5 manuscript figures are generated from manuscript-facing performance tables with R/ggplot2:
 
