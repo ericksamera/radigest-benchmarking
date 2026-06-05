@@ -66,26 +66,28 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
-The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target now also includes the large-reference wheat timing artifact.
+The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target includes both the standalone large-reference wheat timing artifact and required large-reference matched-tool timing rows.
 
-Expected manuscript-facing tables are:
+Expected manuscript-facing performance tables are:
 
 ```text
 results/manuscript/tables/table_06_input_format.tsv
 results/manuscript/tables/table_05_screening_speed.tsv
 results/manuscript/tables/table_s02_radigest_thread_scaling.tsv
 results/manuscript/tables/table_s03_pair_screen_job_scaling.tsv
+results/manuscript/tables/table_s04_large_genome.tsv
+results/manuscript/tables/table_04_matched_timing.tsv
 ```
 
-Generate ggplot2-based starter performance figures with:
+Generate ggplot2-based performance figures with:
 
 ```bash
 make figures
 ```
 
-The figures are written under `results/manuscript/figures/`.
+The figures are written under `results/manuscript/figures/`; `figure_04_matched_tool_timing.pdf` is also built by `make performance-matched-tools`.
 
-Stage 5e large-reference timing is part of the required reference and matched-tools path:
+Stage 5e/5f large-reference timing is part of the required reference and matched-tools path:
 
 ```bash
 make references THREADS=4

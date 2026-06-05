@@ -46,6 +46,8 @@ Expected reference outputs:
 ```text
 data/reference/small_yeast_s288c.fa.gz
 data/reference/small_yeast_s288c.fa
+data/reference/moderate_cannabis_pink-pepper.fa.gz
+data/reference/moderate_cannabis_pink-pepper.fa
 data/reference/large_wheat_chinese-spring.fa.gz
 data/reference/large_wheat_chinese-spring.fa
 results/references/reference_checksums.tsv
@@ -68,7 +70,7 @@ results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
 
-Expected Stage 5a/5b/5c/5d performance outputs:
+Expected Stage 5 performance outputs:
 
 ```text
 results/performance/input_format/radigest_input_format_comparison.tsv
@@ -95,6 +97,16 @@ benchmark/logs/performance/pair_screen_scaling/*.log
 results/performance/pair_screen_scaling/raw/*.runs.tsv
 results/performance/pair_screen_scaling/raw/*/json/*.json
 results/performance/pair_screen_scaling/raw/*/logs/*.log
+results/performance/large_genome/large_genome_summary.tsv
+results/manuscript/tables/table_s04_large_genome.tsv
+results/performance/matched_tools/tool_timing_interpretation.tsv
+results/manuscript/tables/table_04_matched_timing.tsv
+results/manuscript/figures/figure_04_matched_tool_timing.pdf
+results/manuscript/figures/figure_05_screening_speed.pdf
+results/manuscript/figures/figure_06_input_format.pdf
+results/manuscript/figures/figure_s02_thread_scaling.pdf
+results/manuscript/figures/figure_s03_pair_screen_job_scaling.pdf
+results/manuscript/figures/figure_s04_large_genome.pdf
 ```
 
 `make check` validates manifest shape and asks Snakemake to dry-run the smoke target. It does not execute radigest, download references, or require external comparator repositories.
@@ -155,7 +167,7 @@ Primary contracts live in:
 - `data/synthetic/comparator_ecori_msei_smoke.fa` for shared comparator smoke.
 - `config/references.tsv` for public reference accessions and derived FASTA outputs.
 
-Stage 5e large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference timing artifact:
+Stage 5e/5f large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference matched-tool timing rows and figures:
 
 ```bash
 make references THREADS=4

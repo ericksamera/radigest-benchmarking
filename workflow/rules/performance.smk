@@ -40,14 +40,25 @@ MATCHED_TOOL_TIMING_INTERPRETATION = (
     "results/performance/matched_tools/tool_timing_interpretation.tsv"
 )
 MATCHED_TOOL_TIMING_TABLE = "results/manuscript/tables/table_04_matched_timing.tsv"
-
+MATCHED_TOOL_TIMING_FIGURE = (
+    "results/manuscript/figures/figure_04_matched_tool_timing.pdf"
+)
+SCREENING_SPEED_FIGURE = "results/manuscript/figures/figure_05_screening_speed.pdf"
+PERFORMANCE_INPUT_FORMAT_FIGURE = (
+    "results/manuscript/figures/figure_06_input_format.pdf"
+)
+THREAD_SCALING_FIGURE = "results/manuscript/figures/figure_s02_thread_scaling.pdf"
+PAIR_SCREEN_SCALING_FIGURE = (
+    "results/manuscript/figures/figure_s03_pair_screen_job_scaling.pdf"
+)
+LARGE_GENOME_FIGURE = "results/manuscript/figures/figure_s04_large_genome.pdf"
 PERFORMANCE_FIGURE_OUTPUTS = [
-    "results/manuscript/figures/figure_04_matched_tool_timing.pdf",
-    "results/manuscript/figures/figure_05_screening_speed.pdf",
-    "results/manuscript/figures/figure_06_input_format.pdf",
-    "results/manuscript/figures/figure_s02_thread_scaling.pdf",
-    "results/manuscript/figures/figure_s03_pair_screen_job_scaling.pdf",
-    "results/manuscript/figures/figure_s04_large_genome.pdf",
+    MATCHED_TOOL_TIMING_FIGURE,
+    SCREENING_SPEED_FIGURE,
+    PERFORMANCE_INPUT_FORMAT_FIGURE,
+    THREAD_SCALING_FIGURE,
+    PAIR_SCREEN_SCALING_FIGURE,
+    LARGE_GENOME_FIGURE,
 ]
 
 
@@ -79,6 +90,7 @@ PERFORMANCE_INPUT_FORMAT_RUN_OUTPUTS = [
 PERFORMANCE_INPUT_FORMAT_OUTPUTS = [
     PERFORMANCE_INPUT_FORMAT_SUMMARY,
     PERFORMANCE_INPUT_FORMAT_TABLE,
+    PERFORMANCE_INPUT_FORMAT_FIGURE,
 ]
 
 SCREENING_SPEED_CASE_ROWS = _read_tsv_rows(SCREENING_SPEED_CASE_MANIFEST)
@@ -97,6 +109,7 @@ SCREENING_SPEED_RUN_OUTPUTS = [
 SCREENING_SPEED_OUTPUTS = [
     SCREENING_SPEED_SUMMARY,
     SCREENING_SPEED_TABLE,
+    SCREENING_SPEED_FIGURE,
 ]
 
 THREAD_SCALING_CASE_ROWS = _read_tsv_rows(THREAD_SCALING_CASE_MANIFEST)
@@ -115,6 +128,7 @@ THREAD_SCALING_RUN_OUTPUTS = [
 THREAD_SCALING_OUTPUTS = [
     THREAD_SCALING_SUMMARY,
     THREAD_SCALING_TABLE,
+    THREAD_SCALING_FIGURE,
 ]
 
 PAIR_SCREEN_SCALING_CASE_ROWS = _read_tsv_rows(PAIR_SCREEN_SCALING_CASE_MANIFEST)
@@ -133,6 +147,7 @@ PAIR_SCREEN_SCALING_RUN_OUTPUTS = [
 PAIR_SCREEN_SCALING_OUTPUTS = [
     PAIR_SCREEN_SCALING_SUMMARY,
     PAIR_SCREEN_SCALING_TABLE,
+    PAIR_SCREEN_SCALING_FIGURE,
 ]
 
 LARGE_GENOME_CASE_ROWS = _read_tsv_rows(LARGE_GENOME_CASE_MANIFEST)
@@ -149,6 +164,7 @@ LARGE_GENOME_RUN_OUTPUTS = [
 LARGE_GENOME_OUTPUTS = [
     LARGE_GENOME_SUMMARY,
     LARGE_GENOME_TABLE,
+    LARGE_GENOME_FIGURE,
 ]
 
 MATCHED_TOOL_TIMING_CASE_ROWS = _read_tsv_rows(MATCHED_TOOL_TIMING_CASE_MANIFEST)
@@ -170,6 +186,7 @@ MATCHED_TOOL_TIMING_OUTPUTS = [
     MATCHED_TOOL_TIMING_SUMMARY,
     MATCHED_TOOL_TIMING_INTERPRETATION,
     MATCHED_TOOL_TIMING_TABLE,
+    MATCHED_TOOL_TIMING_FIGURE,
 ]
 PERFORMANCE_ALL_OUTPUTS = (
     PERFORMANCE_INPUT_FORMAT_OUTPUTS
@@ -1135,33 +1152,124 @@ rule make_matched_tool_timing_table:
           --interpretation {input.interpretation:q} \
           --out {output:q} \
           --require-pass \
+          --require-large-genome \
           > {log:q} 2>&1
         """
 
-rule performance_manuscript_figures:
+rule make_matched_tool_timing_figure:
     input:
-        input_format=PERFORMANCE_INPUT_FORMAT_TABLE,
-        screening_speed=SCREENING_SPEED_TABLE,
-        thread_scaling=THREAD_SCALING_TABLE,
-        pair_screen_scaling=PAIR_SCREEN_SCALING_TABLE,
-        large_genome=LARGE_GENOME_TABLE,
-        matched_timing=MATCHED_TOOL_TIMING_TABLE
+        table=MATCHED_TOOL_TIMING_TABLE
     output:
-        PERFORMANCE_FIGURE_OUTPUTS
+        MATCHED_TOOL_TIMING_FIGURE
     log:
-        "benchmark/logs/manuscript/performance_figures.log"
+        "benchmark/logs/manuscript/figure_04_matched_tool_timing.log"
     conda:
         "../envs/figures.yml"
     shell:
         r"""
         mkdir -p results/manuscript/figures benchmark/logs/manuscript
         Rscript scripts/manuscript/make_performance_figures.R \
-          --input-format {input.input_format:q} \
-          --screening-speed {input.screening_speed:q} \
-          --thread-scaling {input.thread_scaling:q} \
-          --pair-screen-scaling {input.pair_screen_scaling:q} \
-          --large-genome {input.large_genome:q} \
-          --matched-timing {input.matched_timing:q} \
+          --matched-timing {input.table:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule make_screening_speed_figure:
+    input:
+        table=SCREENING_SPEED_TABLE
+    output:
+        SCREENING_SPEED_FIGURE
+    log:
+        "benchmark/logs/manuscript/figure_05_screening_speed.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --screening-speed {input.table:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule make_input_format_figure:
+    input:
+        table=PERFORMANCE_INPUT_FORMAT_TABLE
+    output:
+        PERFORMANCE_INPUT_FORMAT_FIGURE
+    log:
+        "benchmark/logs/manuscript/figure_06_input_format.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --input-format {input.table:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule make_thread_scaling_figure:
+    input:
+        table=THREAD_SCALING_TABLE
+    output:
+        THREAD_SCALING_FIGURE
+    log:
+        "benchmark/logs/manuscript/figure_s02_thread_scaling.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --thread-scaling {input.table:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule make_pair_screen_scaling_figure:
+    input:
+        table=PAIR_SCREEN_SCALING_TABLE
+    output:
+        PAIR_SCREEN_SCALING_FIGURE
+    log:
+        "benchmark/logs/manuscript/figure_s03_pair_screen_job_scaling.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --pair-screen-scaling {input.table:q} \
+          --out-dir results/manuscript/figures \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+
+rule make_large_genome_figure:
+    input:
+        table=LARGE_GENOME_TABLE
+    output:
+        LARGE_GENOME_FIGURE
+    log:
+        "benchmark/logs/manuscript/figure_s04_large_genome.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p results/manuscript/figures benchmark/logs/manuscript
+        Rscript scripts/manuscript/make_performance_figures.R \
+          --large-genome {input.table:q} \
           --out-dir results/manuscript/figures \
           --formats pdf \
           > {log:q} 2>&1

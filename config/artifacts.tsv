@@ -2,7 +2,7 @@ claim_id	category	required_output	manuscript_artifact	producer_rule	required_for
 C01	validation	results/validation/synthetic_validation_results.tsv	results/manuscript/tables/table_02_synthetic_validation.tsv	validation_all	true	Synthetic digest validation.
 C02	comparators	results/comparators/digital_rads/digital_rads_smoke_single__D1.summary.tsv	results/manuscript/tables/table_03_interval_comparisons.tsv	comparators_all	true	Digital_RADs normalized interval smoke comparison.
 C03	comparators	results/comparators/ddradseqtools/ddradseqtools_smoke_single__D1.interval_compare.summary.tsv	results/manuscript/tables/table_03_interval_comparisons.tsv	comparators_all	true	DDRADSEQTOOLS normalized interval smoke comparison.
-C04	performance	results/performance/matched_tools/tool_timing_interpretation.tsv	results/manuscript/tables/table_04_matched_timing.tsv	performance_all	true	Matched tool timing.
+C04	performance	results/performance/matched_tools/tool_timing_interpretation.tsv	results/manuscript/tables/table_04_matched_timing.tsv	performance_all	true	Matched tool timing interpretation including the required large-reference wheat comparison.
 C05	performance	results/performance/screening_speed/screening_speed_summary.tsv	results/manuscript/tables/table_05_screening_speed.tsv	performance_all	true	Screening speed.
 C06	performance	results/performance/input_format/radigest_input_format_comparison.tsv	results/manuscript/tables/table_06_input_format.tsv	performance_all	true	Input format comparison.
 C07	performance	results/performance/thread_scaling/radigest_thread_scaling_summary.tsv	results/manuscript/tables/table_s02_radigest_thread_scaling.tsv	performance_all	true	Thread scaling.
@@ -16,3 +16,4 @@ C14	comparators	results/comparators/ddgrader/ddgrader_binned_smoke_summary.tsv	r
 C15	comparators	results/comparators/simrad/simrad_small_yeast_s288c_B1.tsv	results/manuscript/tables/table_03_comparator_semantics.tsv	comparators_all	true	SimRAD public-yeast aggregate count-only digest comparison; does not support coordinate equivalence.
 C16	comparators	results/comparators/comparator_case_matrix.tsv	results/manuscript/tables/table_03_comparator_semantics.tsv	comparators_all	true	Comparator smoke and public-yeast coverage matrix with claim boundaries.
 C17	performance	results/performance/large_genome/large_genome_summary.tsv	results/manuscript/tables/table_s04_large_genome.tsv	performance_all	true	Large-reference radigest JSON timing on the Triticum aestivum Chinese Spring wheat reference.
+C18	performance	results/manuscript/figures/figure_04_matched_tool_timing.pdf	results/manuscript/figures/figure_04_matched_tool_timing.pdf	performance_all	true	R/ggplot2 matched-tool timing figure including the required large-reference wheat comparison.

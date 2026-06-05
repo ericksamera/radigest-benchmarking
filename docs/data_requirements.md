@@ -1,9 +1,10 @@
 # Data requirements
 
-Reference FASTA files are produced by the Stage 3 references workflow from `config/references.tsv`. The nonempirical reviewer run currently requires two public NCBI assemblies:
+Reference FASTA files are produced by the Stage 3 references workflow from `config/references.tsv`. The nonempirical reviewer run currently requires three public NCBI assemblies:
 
 - `small_yeast_s288c` -> `data/reference/small_yeast_s288c.fa.gz` and `data/reference/small_yeast_s288c.fa`
 - `moderate_cannabis_pink-pepper` -> `data/reference/moderate_cannabis_pink-pepper.fa.gz` and `data/reference/moderate_cannabis_pink-pepper.fa`
+- `large_wheat_chinese-spring` -> `data/reference/large_wheat_chinese-spring.fa.gz` and `data/reference/large_wheat_chinese-spring.fa`
 
 Reference IDs use underscores to delimit benchmark scale, organism or commodity, and source label. Hyphens preserve multi-word source labels, as in `moderate_cannabis_pink-pepper`. The workflow records SHA256 checksums and basic FASTA statistics in `results/references/reference_checksums.tsv`.
 
@@ -56,7 +57,7 @@ Stage 5e true large-reference timing uses the required wheat reference:
 large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz and data/reference/large_wheat_chinese-spring.fa
 ```
 
-`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact is included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`.
+`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing rows are included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`.
 
 ## Radigest source and local binaries
 

@@ -46,6 +46,9 @@ REQUIRED_COLUMNS = [
     "interpretation",
 ]
 
+REQUIRED_LARGE_GROUP = ("large_wheat_chinese-spring_plain", "B2")
+REQUIRED_TOOLS = {"radigest", "digital_rads", "ddradseqtools", "simrad", "ddgrader"}
+
 
 def fail(message: str) -> NoReturn:
     print(f"ERROR: {message}", file=sys.stderr)
@@ -105,17 +108,35 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
+def require_large_genome(rows: list[dict[str, str]]) -> None:
+    dataset_id, condition_id = REQUIRED_LARGE_GROUP
+    observed_tools = {
+        row["tool_id"]
+        for row in rows
+        if row["dataset_id"] == dataset_id and row["condition_id"] == condition_id
+    }
+    missing = sorted(REQUIRED_TOOLS - observed_tools)
+    if missing:
+        fail(
+            "matched-tool timing table is missing required large-reference "
+            f"rows for {dataset_id}/{condition_id}: {', '.join(missing)}"
+        )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--interpretation", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--require-pass", action="store_true")
+    parser.add_argument("--require-large-genome", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     rows = [table_row(row) for row in read_tsv(args.interpretation)]
+    if args.require_large_genome:
+        require_large_genome(rows)
     write_rows(args.out, rows)
     failed = [row for row in rows if row["status"] != "PASS"]
     if args.require_pass and failed:

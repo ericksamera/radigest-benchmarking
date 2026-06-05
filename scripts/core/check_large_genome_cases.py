@@ -34,6 +34,9 @@ REQUIRED_COLUMNS = [
 
 VALID_OUTPUT_MODES = {"json", "fragments_tsv", "both"}
 VALID_INPUT_FORMATS = {"plain", "gzip"}
+REQUIRED_LARGE_DATASET = "large_wheat_chinese-spring_plain"
+REQUIRED_LARGE_CONDITION = "B2"
+REQUIRED_LARGE_OUTPUT_MODE = "json"
 
 
 def fail(message: str) -> NoReturn:
@@ -83,6 +86,7 @@ def main() -> int:
     }
 
     seen: set[str] = set()
+    required_large_observed = False
     for line_number, row in enumerate(rows, start=2):
         case_id = row["case_id"]
         if case_id in seen:
@@ -137,6 +141,20 @@ def main() -> int:
                 f"config/large_genome_cases.tsv:{line_number} threads/runs "
                 "must be >= 1"
             )
+        if (
+            row["dataset_id"] == REQUIRED_LARGE_DATASET
+            and row["condition_id"] == REQUIRED_LARGE_CONDITION
+            and row["output_mode"] == REQUIRED_LARGE_OUTPUT_MODE
+            and row["required_for_nonempirical"].lower() == "true"
+        ):
+            required_large_observed = True
+
+    if not required_large_observed:
+        fail(
+            "config/large_genome_cases.tsv: missing required large-reference "
+            f"case for {REQUIRED_LARGE_DATASET}/{REQUIRED_LARGE_CONDITION}/"
+            f"{REQUIRED_LARGE_OUTPUT_MODE}"
+        )
 
     print("Large-genome performance case checks passed.")
     return 0

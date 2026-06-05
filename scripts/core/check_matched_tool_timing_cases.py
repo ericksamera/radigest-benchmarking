@@ -38,6 +38,11 @@ VALID_TIMING_SCOPES = {
     "count_only_wrapper",
     "binned_screening_wrapper",
 }
+REQUIRED_MATCHED_GROUPS = {
+    ("small_yeast_s288c_plain", "B1"),
+    ("moderate_cannabis_pink-pepper_plain", "B2"),
+    ("large_wheat_chinese-spring_plain", "B2"),
+}
 
 
 def fail(message: str) -> NoReturn:
@@ -94,6 +99,7 @@ def main() -> int:
 
     seen: set[str] = set()
     grouped_tools: dict[tuple[str, str], set[str]] = defaultdict(set)
+    grouped_required_tools: dict[tuple[str, str], set[str]] = defaultdict(set)
     for line_number, row in enumerate(rows, start=2):
         case_id = row["case_id"]
         if case_id in seen:
@@ -147,7 +153,10 @@ def main() -> int:
             fail(
                 f"config/matched_tool_timing_cases.tsv:{line_number} runs must be >= 1"
             )
-        grouped_tools[(row["dataset_id"], row["condition_id"])].add(tool_id)
+        group_key = (row["dataset_id"], row["condition_id"])
+        grouped_tools[group_key].add(tool_id)
+        if row["required_for_nonempirical"].lower() == "true":
+            grouped_required_tools[group_key].add(tool_id)
 
     for (dataset_id, condition_id), observed_tools in sorted(grouped_tools.items()):
         missing = sorted(VALID_TOOLS - observed_tools)
@@ -155,6 +164,18 @@ def main() -> int:
             fail(
                 "config/matched_tool_timing_cases.tsv: dataset/condition group "
                 f"{dataset_id}/{condition_id} missing tools: {', '.join(missing)}"
+            )
+
+    for dataset_id, condition_id in sorted(REQUIRED_MATCHED_GROUPS):
+        observed_required_tools = grouped_required_tools.get(
+            (dataset_id, condition_id), set()
+        )
+        missing = sorted(VALID_TOOLS - observed_required_tools)
+        if missing:
+            fail(
+                "config/matched_tool_timing_cases.tsv: required matched-tool "
+                f"group {dataset_id}/{condition_id} missing required tools: "
+                f"{', '.join(missing)}"
             )
 
     print("Matched-tool timing case checks passed.")

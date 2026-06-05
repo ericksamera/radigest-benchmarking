@@ -29,7 +29,7 @@ TABLE_COLUMNS = [
 ]
 
 CLAIM_BOUNDARY = (
-    "Radigest large-reference timing only. This table measures one public "
+    "Required radigest large-reference timing only. This table measures one public "
     "large/reference-scale digest configuration and does not support "
     "cross-tool equivalence or empirical recovery claims."
 )

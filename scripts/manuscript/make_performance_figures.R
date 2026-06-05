@@ -60,6 +60,17 @@ DATASET_LABELS <- c(
   `large_wheat_chinese-spring_gzip` = "T. aestivum Chinese Spring"
 )
 
+DATASET_ORDER <- c(
+  "small_yeast_s288c_plain",
+  "small_yeast_s288c_gzip",
+  "moderate_cannabis_pink-pepper_plain",
+  "moderate_cannabis_pink-pepper_gzip",
+  "large_wheat_chinese-spring_plain",
+  "large_wheat_chinese-spring_gzip"
+)
+
+CONDITION_ORDER <- c("D1", "B1", "B2")
+
 CONDITION_LABELS <- c(
   B1 = "EcoRI-MseI, 100-300 bp",
   B2 = "EcoRI-MseI, 300-600 bp",
@@ -196,6 +207,41 @@ benchmark_label <- function(df) {
   paste(label_dataset(df), label_condition(df), sep = "\n")
 }
 
+rank_with_fallback <- function(values, preferred_order) {
+  values <- as.character(values)
+  ranks <- match(values, preferred_order)
+  missing <- is.na(ranks)
+  if (any(missing)) {
+    ranks[missing] <- length(preferred_order) + seq_len(sum(missing))
+  }
+  ranks
+}
+
+benchmark_levels <- function(df) {
+  labels <- benchmark_label(df)
+  dataset_rank <- rank_with_fallback(
+    column_or(df, "dataset_id", rep("", nrow(df))),
+    DATASET_ORDER
+  )
+  condition_rank <- rank_with_fallback(
+    column_or(df, "condition_id", rep("", nrow(df))),
+    CONDITION_ORDER
+  )
+  order_df <- data.frame(
+    label = labels,
+    dataset_rank = dataset_rank,
+    condition_rank = condition_rank,
+    row_rank = seq_along(labels),
+    stringsAsFactors = FALSE
+  ) |>
+    arrange(dataset_rank, condition_rank, row_rank)
+  unique(order_df$label)
+}
+
+benchmark_factor <- function(df) {
+  factor(benchmark_label(df), levels = benchmark_levels(df))
+}
+
 format_seconds <- function(x) {
   case_when(
     is.na(x) ~ "",
@@ -267,7 +313,7 @@ plot_input_format <- function(path) {
       median_wall_seconds = safe_numeric(median_wall_seconds),
       relative_to_fastest_median = safe_numeric(relative_to_fastest_median)
     )
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
   df$input_format_label <- factor(
     label_input_format(df$input_format),
     levels = c("Plain FASTA", "gzip FASTA")
@@ -303,7 +349,7 @@ plot_screening_speed <- function(path) {
   df <- df |>
     require_pass_rows("screening-speed figure") |>
     mutate(candidate_pairs_per_second_median = safe_numeric(candidate_pairs_per_second_median))
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
   df$value_label <- paste0(format_rate(df$candidate_pairs_per_second_median), " pairs/s")
 
   p <- ggplot(df, aes(x = candidate_pairs_per_second_median, y = fct_reorder(benchmark, candidate_pairs_per_second_median))) +
@@ -331,7 +377,7 @@ plot_thread_scaling <- function(path) {
       threads = safe_numeric(threads),
       speedup_vs_1_thread_median = safe_numeric(speedup_vs_1_thread_median)
     )
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
   df$output_mode_label <- factor(
     label_output_mode(df$output_mode),
     levels = c("JSON summary", "Fragment TSV")
@@ -379,7 +425,7 @@ plot_pair_screen_scaling <- function(path) {
       jobs = safe_numeric(jobs),
       speedup_vs_1_job_median = safe_numeric(speedup_vs_1_job_median)
     )
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
 
   observed <- df |>
     transmute(benchmark, jobs, speedup = speedup_vs_1_job_median, series = "Observed")
@@ -421,7 +467,7 @@ plot_large_genome <- function(path) {
   df <- df |>
     require_pass_rows("large-genome figure") |>
     mutate(median_wall_seconds = safe_numeric(median_wall_seconds))
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
   df$output_mode_label <- factor(
     label_output_mode(df$output_mode),
     levels = c("JSON summary", "Fragment TSV")
@@ -459,11 +505,14 @@ plot_matched_timing <- function(path) {
     mutate(
       median_wall_seconds = safe_numeric(median_wall_seconds),
       relative_to_radigest_median = safe_numeric(relative_to_radigest_median),
-      tool_group = if_else(tool_id == "radigest", "radigest", "Comparator"),
+      tool_group = factor(
+        if_else(tool_id == "radigest", "radigest", "Comparator"),
+        levels = c("radigest", "Comparator")
+      ),
       relative_label = if_else(tool_id == "radigest", "1x", format_xfold(relative_to_radigest_median))
     ) |>
     require_positive("median_wall_seconds", "matched-tool timing figure")
-  df$benchmark <- benchmark_label(df)
+  df$benchmark <- benchmark_factor(df)
   df$tool_label <- fct_reorder(
     label_tool(df),
     df$median_wall_seconds,
@@ -481,7 +530,10 @@ plot_matched_timing <- function(path) {
       show.legend = FALSE
     ) +
     facet_wrap(vars(benchmark), ncol = 1) +
-    scale_color_manual(values = c("radigest" = SEABORN[["blue"]], "Comparator" = SEABORN[["gray"]])) +
+    scale_color_manual(
+      values = c("radigest" = SEABORN[["blue"]], "Comparator" = SEABORN[["gray"]]),
+      breaks = c("radigest", "Comparator")
+    ) +
     scale_x_log10(
       breaks = breaks_log(n = 6),
       labels = format_seconds,
@@ -491,7 +543,8 @@ plot_matched_timing <- function(path) {
     labs(x = "Median wall time (s, log scale)", y = NULL) +
     base_theme() +
     theme(panel.grid.major.y = element_blank())
-  write_plot(p, "figure_04_matched_tool_timing", width = 7.2, height = 5.2)
+  matched_height <- max(5.2, 2.35 * n_distinct(df$benchmark) + 0.65)
+  write_plot(p, "figure_04_matched_tool_timing", width = 7.2, height = matched_height)
 }
 
 plot_input_format(input_format_path)
