@@ -98,6 +98,7 @@ class LibraryConfig:
     score_min: int
     score_max: int
     size_edge_sd: float
+    protocol_prior_length_bias_beta_per_bp: float
 
     @property
     def center(self) -> float:
@@ -148,6 +149,14 @@ def read_manifest_row(path: Path, library_id: str) -> LibraryConfig:
                 raise ValueError(f"{path}: row {row_number}: score_max <= score_min")
             if size_edge_sd <= 0:
                 raise ValueError(f"{path}: row {row_number}: size_edge_sd must be > 0")
+            protocol_prior_length_bias_beta_per_bp = parse_float(
+                row.get("protocol_prior_length_bias_beta_per_bp", "0"),
+                f"{path}: row {row_number} protocol_prior_length_bias_beta_per_bp",
+            )
+            if protocol_prior_length_bias_beta_per_bp < 0:
+                raise ValueError(
+                    f"{path}: row {row_number}: protocol_prior_length_bias_beta_per_bp < 0"
+                )
             return LibraryConfig(
                 library_id=library_id,
                 display_name=row.get("display_name") or library_id,
@@ -156,6 +165,7 @@ def read_manifest_row(path: Path, library_id: str) -> LibraryConfig:
                 score_min=score_min,
                 score_max=score_max,
                 size_edge_sd=size_edge_sd,
+                protocol_prior_length_bias_beta_per_bp=protocol_prior_length_bias_beta_per_bp,
             )
     raise ValueError(f"{path}: library_id {library_id!r} not found")
 
@@ -260,14 +270,17 @@ def model_weight(
 
 def model_label(model: str, cfg: LibraryConfig, beta: float = 0.0) -> str:
     labels = {
-        "none": "No size selection",
+        "none": "Raw digest",
         "hard": f"Hard {cfg.min_size}-{cfg.max_size} bp",
         "soft-window": f"Soft-window {cfg.min_size}-{cfg.max_size} bp, edge {cfg.size_edge_sd:g}",
         "normal": f"Normal mean {cfg.center:g}, SD {cfg.size_edge_sd:g}",
         "triangular": f"Triangular peak {cfg.center:g}",
     }
     if model == "soft-window-short-bias":
-        return f"Soft-window + short-bias, beta {beta:g}/bp"
+        return (
+            f"Protocol prior {cfg.min_size}-{cfg.max_size} bp, edge {cfg.size_edge_sd:g}, "
+            f"beta {beta:g}/bp"
+        )
     return labels[model]
 
 
@@ -455,6 +468,7 @@ def write_curves(
     best_beta, bias_rows = fit_short_bias_grid(
         cfg=cfg, empirical=empirical, raw=raw, lengths=score_lengths
     )
+    protocol_prior_beta = cfg.protocol_prior_length_bias_beta_per_bp
     write_bias_grid(bias_grid_output, bias_rows)
     fit_js_by_beta = {
         parse_float(row["length_bias_beta_per_bp"], "beta"): row["js_read"]
@@ -468,7 +482,7 @@ def write_curves(
         )
         writer.writeheader()
         for model in VALID_MODELS:
-            beta = best_beta if model == "soft-window-short-bias" else 0.0
+            beta = protocol_prior_beta if model == "soft-window-short-bias" else 0.0
             weighted_counts = {
                 length: raw.get(length, 0) * model_weight(model, length, cfg, beta)
                 for length in range(min_length, max_length + 1)
@@ -479,6 +493,22 @@ def write_curves(
                 if model == "soft-window-short-bias"
                 else ""
             )
+            if model == "soft-window-short-bias" and model_fit_js == "":
+                empirical_density = normalized(
+                    {length: float(count) for length, count in empirical.items()},
+                    score_lengths,
+                )
+                pred_density = normalized(
+                    {
+                        length: raw.get(length, 0)
+                        * model_weight("soft-window-short-bias", length, cfg, beta)
+                        for length in score_lengths
+                    },
+                    score_lengths,
+                )
+                model_fit_js = (
+                    f"{jensen_shannon_distance(pred_density, empirical_density):.12g}"
+                )
             for length in range(min_length, max_length + 1):
                 empirical_count = empirical.get(length, 0)
                 empirical_unique_count = empirical_unique.get(length, 0)

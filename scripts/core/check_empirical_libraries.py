@@ -32,6 +32,7 @@ REQUIRED_COLUMNS = [
     "score_max",
     "size_model",
     "size_edge_sd",
+    "protocol_prior_length_bias_beta_per_bp",
     "min_mapq",
     "exclude_duplicates",
     "max_tlen",
@@ -100,6 +101,13 @@ def parse_int(value: str, label: str) -> int:
         return int(value)
     except ValueError:
         fail(f"{label} must be an integer")
+
+
+def parse_float(value: str, label: str) -> float:
+    try:
+        return float(value)
+    except ValueError:
+        fail(f"{label} must be numeric")
 
 
 def is_na(value: str) -> bool:
@@ -244,8 +252,12 @@ def main() -> int:
         max_size = parse_int(row["max_size"], f"library {library_id} max_size")
         score_min = parse_int(row["score_min"], f"library {library_id} score_min")
         score_max = parse_int(row["score_max"], f"library {library_id} score_max")
-        size_edge_sd = parse_int(
+        size_edge_sd = parse_float(
             row["size_edge_sd"], f"library {library_id} size_edge_sd"
+        )
+        protocol_prior_beta = parse_float(
+            row["protocol_prior_length_bias_beta_per_bp"],
+            f"library {library_id} protocol_prior_length_bias_beta_per_bp",
         )
         min_mapq = parse_int(row["min_mapq"], f"library {library_id} min_mapq")
         max_tlen = parse_int(row["max_tlen"], f"library {library_id} max_tlen")
@@ -262,6 +274,11 @@ def main() -> int:
             fail(
                 f"config/empirical_libraries.tsv:{line_number} "
                 "size_edge_sd must be > 0"
+            )
+        if protocol_prior_beta < 0:
+            fail(
+                f"config/empirical_libraries.tsv:{line_number} "
+                "protocol_prior_length_bias_beta_per_bp must be >= 0"
             )
         if min_mapq < 0:
             fail(f"config/empirical_libraries.tsv:{line_number} min_mapq must be >= 0")
