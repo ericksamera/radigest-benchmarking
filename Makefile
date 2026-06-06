@@ -25,7 +25,7 @@ MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
 COMPARATOR_INSTALL_MARKERS ?= .local/comparators/digital_rads.ready .local/comparators/ddradseqtools.ready .local/comparators/simrad.ready .local/comparators/ddgrader.ready
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-references empirical-tlens empirical-predictions empirical-curves empirical-figures empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-fit-ranking empirical-figures empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -58,6 +58,7 @@ help:
 	  '  make empirical-tlens THREADS=4' \
 	  '  make empirical-predictions THREADS=4' \
 	  '  make empirical-curves THREADS=4' \
+	  '  make empirical-model-fit-ranking THREADS=4' \
 	  '  make empirical-figures THREADS=4' \
 	  '  make empirical THREADS=4' \
 	  '  make reviewer-nonempirical THREADS=4' \
@@ -156,6 +157,10 @@ empirical-predictions: $(RADIGEST_BUILD_PREREQ)
 empirical-curves: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_curves_all $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-model-fit-ranking: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_model_fit_ranking_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-figures: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check

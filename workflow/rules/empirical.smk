@@ -170,10 +170,21 @@ for row in EMPIRICAL_ENABLED_ROWS:
             f"{prefix}/size_model_short_bias_grid.tsv",
         ]
     )
-EMPIRICAL_FIGURE_OUTPUTS = [
+EMPIRICAL_OVERLAY_FIGURE_OUTPUTS = [
     f"results/empirical/{row['library_id']}/figures/size_model_overlay.pdf"
     for row in EMPIRICAL_ENABLED_ROWS
 ]
+EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS = (
+    [
+        "results/empirical/size_model_fit_ranking.tsv",
+        "results/empirical/figures/size_model_fit_ranking.pdf",
+    ]
+    if EMPIRICAL_ENABLED_ROWS
+    else []
+)
+EMPIRICAL_FIGURE_OUTPUTS = (
+    EMPIRICAL_OVERLAY_FIGURE_OUTPUTS + EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
+)
 EMPIRICAL_ALL_OUTPUTS = (
     [EMPIRICAL_LIBRARY_MANIFEST]
     + EMPIRICAL_PLACEHOLDER_OUTPUTS
@@ -259,6 +270,13 @@ def _empirical_library_fragment_depth_qc_files(wildcards):
     ]
 
 
+def _empirical_curve_files():
+    return [
+        f"results/empirical/{row['library_id']}/size_model_curves.tsv"
+        for row in EMPIRICAL_ENABLED_ROWS
+    ]
+
+
 def _empirical_param(wildcards, name):
     return _empirical_bam_sample_row(wildcards)[name]
 
@@ -318,6 +336,11 @@ rule empirical_curves_all:
 rule empirical_figures_all:
     input:
         EMPIRICAL_FIGURE_OUTPUTS
+
+
+rule empirical_model_fit_ranking_all:
+    input:
+        EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
 
 
 rule empirical_all:
@@ -574,6 +597,27 @@ rule empirical_size_model_overlay_figure:
         Rscript scripts/empirical/plot_size_model_overlay.R \
           --curves {input.curves:q} \
           --out {output.figure:q} \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+rule empirical_size_model_fit_ranking_figure:
+    input:
+        curves=_empirical_curve_files
+    output:
+        table="results/empirical/size_model_fit_ranking.tsv",
+        figure="results/empirical/figures/size_model_fit_ranking.pdf"
+    log:
+        "benchmark/logs/empirical/size_model_fit_ranking.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/figures
+        Rscript scripts/empirical/plot_size_model_fit_ranking.R \
+          --curves {input.curves:q} \
+          --out-table {output.table:q} \
+          --out-figure {output.figure:q} \
           --formats pdf \
           > {log:q} 2>&1
         """
