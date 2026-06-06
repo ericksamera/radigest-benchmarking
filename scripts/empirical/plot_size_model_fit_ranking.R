@@ -226,20 +226,14 @@ p <- ggplot(ranking, aes(x = js_read, y = factor(y_key, levels = y_levels))) +
   ) +
   coord_cartesian(xlim = c(0, xmax), clip = "off") +
   labs(
-    title = "Soft recovery models better match empirical insert-size distributions",
-    subtitle = "Lower Jensen-Shannon distance indicates better agreement with empirical read-pair TLEN density",
     x = "Jensen-Shannon distance",
-    y = NULL,
-    caption = "Models are ranked independently within each empirical library. Short-bias is the best beta from the configured beta grid; model parameters are written to the accompanying TSV."
+    y = NULL
   ) +
   theme_minimal(base_size = 9) +
   theme(
-    plot.title = element_text(face = "bold"),
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
     strip.text = element_text(face = "bold", hjust = 0),
-    plot.caption = element_text(hjust = 0, color = "grey35", size = 8),
-    plot.caption.position = "plot",
     plot.margin = margin(t = 8, r = 18, b = 8, l = 8)
   )
 

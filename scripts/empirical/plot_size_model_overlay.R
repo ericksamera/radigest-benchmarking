@@ -113,11 +113,6 @@ if (nrow(plot_df) == 0) {
 window_df <- plot_df |>
   distinct(model_label, min_size, max_size)
 
-library_label <- plot_df |>
-  distinct(display_name) |>
-  pull(display_name) |>
-  first()
-
 panel_stats <- plot_df |>
   group_by(model, model_label) |>
   summarise(
@@ -148,13 +143,6 @@ window_df <- window_df |>
     xmin = pmax(min_size, 0),
     xmax = pmin(max_size, plot_xmax)
   )
-
-caption_text <- paste(
-  "Grey band: nominal size-selection window. Blue: model-weighted prediction",
-  "(and raw prediction for 'No size selection'). Black: raw radigest fragment",
-  "distribution in size-selected panels only. Red: empirical read-pair TLEN density.",
-  sep = "\n"
-)
 
 base_stem <- tools::file_path_sans_ext(out_path)
 out_ext <- tools::file_ext(out_path)
@@ -204,21 +192,15 @@ p <- ggplot(plot_df_window, aes(x = length)) +
     expand = expansion(mult = c(0, 0.12))
   ) +
   labs(
-    title = "Empirical TLENs compared with radigest size-selection and observation-bias models",
-    subtitle = library_label,
     x = "Insert or predicted fragment size (bp)",
-    y = "Density",
-    caption = caption_text
+    y = "Density"
   ) +
   coord_cartesian(clip = "off") +
   theme_minimal(base_size = 9) +
   theme(
-    plot.title = element_text(face = "bold"),
     panel.grid.minor = element_blank(),
     strip.text = element_text(face = "bold", hjust = 0),
     legend.position = "none",
-    plot.caption = element_text(hjust = 0, color = "grey35", size = 8, lineheight = 1.05),
-    plot.caption.position = "plot",
     axis.title.y = element_text(margin = margin(r = 6)),
     plot.margin = margin(t = 8, r = 10, b = 8, l = 8)
   )
