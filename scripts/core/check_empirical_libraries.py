@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 import sys
 from pathlib import Path
@@ -188,13 +189,28 @@ def count_matching_bams(bam_dir: str, bam_glob: str) -> int:
     )
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--require-enabled",
+        action="append",
+        default=[],
+        metavar="LIBRARY_ID",
+        help="Require the named empirical library row to exist and be enabled.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    required_enabled = set(args.require_enabled)
     rows = read_tsv(EMPIRICAL_LIBRARIES, REQUIRED_COLUMNS)
     enzymes = read_enzyme_ids()
     references = read_reference_rows()
     seen: set[str] = set()
     enabled_count = 0
     manuscript_count = 0
+    enabled_library_ids: set[str] = set()
 
     for line_number, row in enumerate(rows, start=2):
         library_id = row["library_id"]
@@ -226,6 +242,7 @@ def main() -> int:
             )
         if enabled:
             enabled_count += 1
+            enabled_library_ids.add(library_id)
         if include_for_manuscript:
             manuscript_count += 1
 
@@ -362,6 +379,19 @@ def main() -> int:
                     f"config/empirical_libraries.tsv:{line_number} source_type "
                     f"{source_type!r} is not wired into the empirical workflow yet"
                 )
+
+    missing_required = sorted(required_enabled - seen)
+    if missing_required:
+        fail(
+            "missing required empirical library row(s): "
+            + ", ".join(missing_required)
+        )
+    disabled_required = sorted(required_enabled - enabled_library_ids)
+    if disabled_required:
+        fail(
+            "required empirical library row(s) are not enabled: "
+            + ", ".join(disabled_required)
+        )
 
     print(
         "Empirical library manifest checks passed "
