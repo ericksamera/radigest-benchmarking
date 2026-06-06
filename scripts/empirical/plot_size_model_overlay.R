@@ -21,6 +21,41 @@ arg_value <- function(flag, default = NULL) {
   args[[idx + 1]]
 }
 
+weighted_median <- function(x, w) {
+  ok <- is.finite(x) & is.finite(w) & w > 0
+  x <- x[ok]
+  w <- w[ok]
+  if (length(x) == 0 || sum(w) <= 0) {
+    return(NA_real_)
+  }
+  ord <- order(x)
+  x <- x[ord]
+  w <- w[ord]
+  cumulative <- cumsum(w) / sum(w)
+  x[[which(cumulative >= 0.5)[1]]]
+}
+
+jensen_shannon_distance <- function(p, q) {
+  p <- as.numeric(p)
+  q <- as.numeric(q)
+  if (length(p) != length(q)) {
+    stop("p and q must have the same length", call. = FALSE)
+  }
+  p[p < 0] <- 0
+  q[q < 0] <- 0
+  if (sum(p) <= 0 || sum(q) <= 0) {
+    return(NA_real_)
+  }
+  p <- p / sum(p)
+  q <- q / sum(q)
+  m <- 0.5 * (p + q)
+  kl_div <- function(a, b) {
+    idx <- a > 0 & b > 0
+    sum(a[idx] * log2(a[idx] / b[idx]))
+  }
+  sqrt(0.5 * kl_div(p, m) + 0.5 * kl_div(q, m))
+}
+
 curves_path <- arg_value("--curves")
 out_path <- arg_value("--out")
 formats <- str_split(arg_value("--formats", "pdf"), ",", simplify = TRUE) |>
@@ -53,6 +88,7 @@ model_labels <- curves |>
   arrange(model) |>
   pull(model_label)
 
+plot_xmax <- 700
 plot_df <- curves |>
   mutate(
     model = factor(model, levels = model_order),
@@ -80,6 +116,45 @@ library_label <- plot_df |>
   pull(display_name) |>
   first()
 
+panel_stats <- plot_df |>
+  group_by(model, model_label) |>
+  summarise(
+    js_distance = jensen_shannon_distance(pred_weighted_density, empirical_density),
+    pred_median = weighted_median(length, pred_weighted_density),
+    obs_median = weighted_median(length, empirical_density),
+    pred_in_window = sum(pred_weighted_density[length >= first(min_size) & length <= first(max_size)]),
+    obs_in_window = sum(empirical_density[length >= first(min_size) & length <= first(max_size)]),
+    .groups = "drop"
+  ) |>
+  mutate(
+    label = sprintf(
+      "JS = %.3f\nMedian: pred %.0f bp | obs %.0f bp\nIn window: pred %.1f%% | obs %.1f%%",
+      js_distance,
+      pred_median,
+      obs_median,
+      100 * pred_in_window,
+      100 * obs_in_window
+    ),
+    x = plot_xmax - 8,
+    y = Inf
+  )
+
+plot_df_window <- plot_df |>
+  filter(length <= plot_xmax)
+window_df <- window_df |>
+  mutate(
+    xmin = pmax(min_size, 0),
+    xmax = pmin(max_size, plot_xmax)
+  )
+
+caption_text <- paste(
+  "Grey band: nominal size-selection window. Blue: model-weighted prediction",
+  "(and raw prediction for 'No size selection'). Black: raw radigest fragment",
+  "distribution in size-selected panels only. Red: empirical TLEN density.",
+  sep = "
+"
+)
+
 base_stem <- tools::file_path_sans_ext(out_path)
 out_ext <- tools::file_ext(out_path)
 if (identical(out_ext, "")) {
@@ -90,44 +165,69 @@ if (identical(out_ext, "")) {
   requested_outputs <- paste0(base_stem, ".", formats)
 }
 
-p <- ggplot(plot_df, aes(x = length)) +
+p <- ggplot(plot_df_window, aes(x = length)) +
   geom_rect(
     data = window_df,
-    aes(xmin = min_size, xmax = max_size, ymin = -Inf, ymax = Inf),
+    aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
     inherit.aes = FALSE,
     fill = "grey85",
     alpha = 0.55
   ) +
   geom_area(aes(y = pred_weighted_density), fill = "#4C72B0", alpha = 0.28) +
-  geom_line(aes(y = pred_raw_density), color = "#4D4D4D", linewidth = 0.35) +
-  geom_line(aes(y = pred_weighted_density), color = "#4C72B0", linewidth = 0.45) +
+  geom_line(
+    data = plot_df_window |> filter(model != "none"),
+    aes(y = pred_raw_density),
+    color = "#4D4D4D",
+    linewidth = 0.35
+  ) +
+  geom_line(aes(y = pred_weighted_density), color = "#4C72B0", linewidth = 0.5) +
   geom_line(aes(y = empirical_density), color = "#C44E52", linewidth = 0.45) +
+  geom_text(
+    data = panel_stats,
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    hjust = 1,
+    vjust = 1.05,
+    size = 2.45,
+    lineheight = 0.95,
+    color = "grey15"
+  ) +
   facet_wrap(vars(model_label), ncol = 1, scales = "free_y") +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(labels = label_number(accuracy = 0.001), expand = expansion(mult = c(0, 0.08))) +
+  scale_x_continuous(
+    limits = c(0, plot_xmax),
+    breaks = seq(0, plot_xmax, by = 100),
+    expand = expansion(mult = c(0, 0.01))
+  ) +
+  scale_y_continuous(
+    labels = label_number(accuracy = 0.001),
+    expand = expansion(mult = c(0, 0.12))
+  ) +
   labs(
     title = "Empirical TLENs compared with radigest size-selection models",
     subtitle = library_label,
     x = "Insert or predicted fragment size (bp)",
-    y = "Proportion of fragments",
-    caption = "Grey band: nominal size-selection window. Black: raw radigest fragment distribution. Blue: model-weighted prediction. Red: empirical TLEN distribution."
+    y = "Density",
+    caption = caption_text
   ) +
+  coord_cartesian(clip = "off") +
   theme_minimal(base_size = 9) +
   theme(
     plot.title = element_text(face = "bold"),
     panel.grid.minor = element_blank(),
     strip.text = element_text(face = "bold", hjust = 0),
     legend.position = "none",
-    plot.caption = element_text(hjust = 0, color = "grey35"),
-    axis.title.y = element_text(margin = margin(r = 6))
+    plot.caption = element_text(hjust = 0, color = "grey35", size = 8, lineheight = 1.05),
+    plot.caption.position = "plot",
+    axis.title.y = element_text(margin = margin(r = 6)),
+    plot.margin = margin(t = 8, r = 10, b = 8, l = 8)
   )
 
 for (output in requested_outputs) {
   dir.create(dirname(output), recursive = TRUE, showWarnings = FALSE)
   fmt <- tolower(tools::file_ext(output))
   if (identical(fmt, "pdf") && isTRUE(capabilities("cairo"))) {
-    ggsave(output, plot = p, width = 7.2, height = 8.4, device = cairo_pdf)
+    ggsave(output, plot = p, width = 7.4, height = 9.4, device = cairo_pdf)
   } else {
-    ggsave(output, plot = p, width = 7.2, height = 8.4)
+    ggsave(output, plot = p, width = 7.4, height = 9.4)
   }
 }
