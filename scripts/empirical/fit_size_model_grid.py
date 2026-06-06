@@ -11,9 +11,9 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-DEFAULT_MIN_SIZES = [150, 175, 200, 225]
-DEFAULT_MAX_SIZES = [350, 400, 450, 500, 550, 600]
-DEFAULT_EDGE_SDS = [25, 50, 75, 100]
+DEFAULT_MIN_SIZES = [100, 125, 150, 175, 200, 225]
+DEFAULT_MAX_SIZES = [350, 400, 450, 500, 550, 600, 650, 700]
+DEFAULT_EDGE_SDS = [25, 50, 75, 100, 125]
 DEFAULT_BETAS = [
     0.0,
     0.0005,
