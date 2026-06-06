@@ -161,10 +161,15 @@ for row in EMPIRICAL_ENABLED_ROWS:
                 f"{prefix}/{mode}.summary.tsv",
             ]
         )
-EMPIRICAL_CURVE_OUTPUTS = [
-    f"results/empirical/{row['library_id']}/size_model_curves.tsv"
-    for row in EMPIRICAL_ENABLED_ROWS
-]
+EMPIRICAL_CURVE_OUTPUTS = []
+for row in EMPIRICAL_ENABLED_ROWS:
+    prefix = f"results/empirical/{row['library_id']}"
+    EMPIRICAL_CURVE_OUTPUTS.extend(
+        [
+            f"{prefix}/size_model_curves.tsv",
+            f"{prefix}/size_model_short_bias_grid.tsv",
+        ]
+    )
 EMPIRICAL_FIGURE_OUTPUTS = [
     f"results/empirical/{row['library_id']}/figures/size_model_overlay.pdf"
     for row in EMPIRICAL_ENABLED_ROWS
@@ -531,7 +536,8 @@ rule empirical_size_model_curves:
         raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv",
         hard_histogram="results/empirical/{library_id}/predictions/hard.length_histogram.tsv"
     output:
-        curves="results/empirical/{library_id}/size_model_curves.tsv"
+        curves="results/empirical/{library_id}/size_model_curves.tsv",
+        bias_grid="results/empirical/{library_id}/size_model_short_bias_grid.tsv"
     log:
         "benchmark/logs/empirical/{library_id}.size_model_curves.log"
     conda:
@@ -548,6 +554,7 @@ rule empirical_size_model_curves:
           --raw-hist {input.raw_histogram:q} \
           --hard-hist {input.hard_histogram:q} \
           --out {output.curves:q} \
+          --bias-grid-out {output.bias_grid:q} \
           > {log:q} 2>&1
         """
 

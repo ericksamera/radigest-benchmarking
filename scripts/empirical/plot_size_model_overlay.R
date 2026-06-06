@@ -75,14 +75,15 @@ required_columns <- c(
   "library_id", "display_name", "model", "model_label", "length",
   "empirical_density", "empirical_unique_fragment_density",
   "empirical_capped_fragment_density", "pred_raw_density",
-  "pred_weighted_density", "min_size", "max_size", "score_min", "score_max"
+  "pred_weighted_density", "min_size", "max_size", "score_min", "score_max",
+  "length_bias_beta_per_bp"
 )
 missing_columns <- setdiff(required_columns, names(curves))
 if (length(missing_columns) > 0) {
   stop("Missing columns in curves table: ", paste(missing_columns, collapse = ", "), call. = FALSE)
 }
 
-model_order <- c("none", "hard", "soft-window", "normal", "triangular")
+model_order <- c("none", "hard", "soft-window", "soft-window-short-bias", "normal", "triangular")
 model_labels <- curves |>
   distinct(model, model_label) |>
   mutate(model = factor(model, levels = model_order)) |>
@@ -98,6 +99,7 @@ plot_df <- curves |>
     empirical_density = as.numeric(empirical_density),
     empirical_unique_fragment_density = as.numeric(empirical_unique_fragment_density),
     empirical_capped_fragment_density = as.numeric(empirical_capped_fragment_density),
+    length_bias_beta_per_bp = as.numeric(length_bias_beta_per_bp),
     pred_raw_density = as.numeric(pred_raw_density),
     pred_weighted_density = as.numeric(pred_weighted_density),
     min_size = as.numeric(min_size),
@@ -239,7 +241,7 @@ p <- ggplot(plot_df_window, aes(x = length)) +
     values = c("Read-pair" = "solid", "Unique fragment" = "longdash", "Capped fragment" = "dotted")
   ) +
   labs(
-    title = "Empirical TLENs compared with radigest size-selection models",
+    title = "Empirical TLENs compared with radigest size-selection and observation-bias models",
     subtitle = library_label,
     x = "Insert or predicted fragment size (bp)",
     y = "Density",

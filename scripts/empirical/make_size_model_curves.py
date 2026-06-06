@@ -36,11 +36,57 @@ CURVE_COLUMNS = [
     "score_min",
     "score_max",
     "size_edge_sd",
+    "length_bias_beta_per_bp",
+    "model_fit_js_read",
     "in_size_window",
     "in_score_window",
 ]
 
-VALID_MODELS = ["none", "hard", "soft-window", "normal", "triangular"]
+BIAS_GRID_COLUMNS = [
+    "library_id",
+    "display_name",
+    "model",
+    "min_size",
+    "max_size",
+    "size_edge_sd",
+    "length_bias_beta_per_bp",
+    "length_bias_half_life_bp",
+    "js_read",
+    "pred_median",
+    "obs_median",
+    "pred_in_window_fraction",
+    "obs_in_window_fraction",
+    "selected",
+]
+
+VALID_MODELS = [
+    "none",
+    "hard",
+    "soft-window",
+    "soft-window-short-bias",
+    "normal",
+    "triangular",
+]
+
+# Exploratory observation-bias grid. Positive beta penalizes longer inserts after the
+# nominal lower size bound: bias(length) = exp(-beta * max(0, length - min_size)).
+# This is not a biochemical size-selection probability; it is an empirical diagnostic
+# for shorter inserts being preferentially observed among mapped read pairs.
+SHORT_BIAS_BETA_GRID = [
+    0.0,
+    0.0005,
+    0.001,
+    0.0015,
+    0.002,
+    0.0025,
+    0.003,
+    0.004,
+    0.005,
+    0.0075,
+    0.01,
+    0.0125,
+    0.015,
+]
 
 
 @dataclass(frozen=True)
@@ -179,15 +225,29 @@ def sigmoid(value: float) -> float:
     return z / (1.0 + z)
 
 
-def model_weight(model: str, length: int, cfg: LibraryConfig) -> float:
+def soft_window_weight(length: int, cfg: LibraryConfig) -> float:
+    lower = sigmoid((length - cfg.min_size) / cfg.size_edge_sd)
+    upper = sigmoid((cfg.max_size - length) / cfg.size_edge_sd)
+    return lower * upper
+
+
+def short_insert_bias(length: int, cfg: LibraryConfig, beta: float) -> float:
+    if beta <= 0:
+        return 1.0
+    return math.exp(-beta * max(0, length - cfg.min_size))
+
+
+def model_weight(
+    model: str, length: int, cfg: LibraryConfig, beta: float = 0.0
+) -> float:
     if model == "none":
         return 1.0
     if model == "hard":
         return 1.0 if cfg.min_size <= length <= cfg.max_size else 0.0
     if model == "soft-window":
-        lower = sigmoid((length - cfg.min_size) / cfg.size_edge_sd)
-        upper = sigmoid((cfg.max_size - length) / cfg.size_edge_sd)
-        return lower * upper
+        return soft_window_weight(length, cfg)
+    if model == "soft-window-short-bias":
+        return soft_window_weight(length, cfg) * short_insert_bias(length, cfg, beta)
     if model == "normal":
         z = (length - cfg.center) / cfg.size_edge_sd
         return math.exp(-0.5 * z * z)
@@ -198,7 +258,7 @@ def model_weight(model: str, length: int, cfg: LibraryConfig) -> float:
     raise ValueError(f"unknown model {model!r}")
 
 
-def model_label(model: str, cfg: LibraryConfig) -> str:
+def model_label(model: str, cfg: LibraryConfig, beta: float = 0.0) -> str:
     labels = {
         "none": "No size selection",
         "hard": f"Hard {cfg.min_size}-{cfg.max_size} bp",
@@ -206,16 +266,23 @@ def model_label(model: str, cfg: LibraryConfig) -> str:
         "normal": f"Normal mean {cfg.center:g}, SD {cfg.size_edge_sd:g}",
         "triangular": f"Triangular peak {cfg.center:g}",
     }
+    if model == "soft-window-short-bias":
+        return f"Soft-window + short-bias, beta {beta:g}/bp"
     return labels[model]
 
 
-def model_params(model: str, cfg: LibraryConfig) -> str:
+def model_params(model: str, cfg: LibraryConfig, beta: float = 0.0) -> str:
     if model == "none":
         return "weight=1"
     if model == "hard":
         return f"min={cfg.min_size};max={cfg.max_size}"
     if model == "soft-window":
         return f"min={cfg.min_size};max={cfg.max_size};edge_sd={cfg.size_edge_sd:g}"
+    if model == "soft-window-short-bias":
+        return (
+            f"min={cfg.min_size};max={cfg.max_size};edge_sd={cfg.size_edge_sd:g};"
+            f"length_bias_beta_per_bp={beta:g}"
+        )
     if model == "normal":
         return f"mean={cfg.center:g};sd={cfg.size_edge_sd:g}"
     if model == "triangular":
@@ -223,9 +290,126 @@ def model_params(model: str, cfg: LibraryConfig) -> str:
     raise ValueError(f"unknown model {model!r}")
 
 
+def normalized(values: dict[int, float], lengths: range) -> list[float]:
+    total = sum(values.get(length, 0.0) for length in lengths)
+    if total <= 0:
+        return [0.0 for _ in lengths]
+    return [values.get(length, 0.0) / total for length in lengths]
+
+
+def jensen_shannon_distance(p: list[float], q: list[float]) -> float:
+    if len(p) != len(q):
+        raise ValueError("p and q must have the same length")
+    p_total = sum(p)
+    q_total = sum(q)
+    if p_total <= 0 or q_total <= 0:
+        return float("nan")
+    p_norm = [value / p_total for value in p]
+    q_norm = [value / q_total for value in q]
+    mid = [(p_value + q_value) / 2.0 for p_value, q_value in zip(p_norm, q_norm)]
+
+    def kl_divergence(a: list[float], b: list[float]) -> float:
+        return sum(
+            a_value * math.log2(a_value / b_value)
+            for a_value, b_value in zip(a, b)
+            if a_value > 0 and b_value > 0
+        )
+
+    return math.sqrt(
+        0.5 * kl_divergence(p_norm, mid) + 0.5 * kl_divergence(q_norm, mid)
+    )
+
+
+def weighted_median_from_density(lengths: range, density: list[float]) -> float:
+    total = sum(density)
+    if total <= 0:
+        return float("nan")
+    cumulative = 0.0
+    for length, value in zip(lengths, density):
+        cumulative += value / total
+        if cumulative >= 0.5:
+            return float(length)
+    return float(lengths.stop - 1)
+
+
+def in_window_fraction(
+    lengths: range, density: list[float], cfg: LibraryConfig
+) -> float:
+    total = sum(density)
+    if total <= 0:
+        return float("nan")
+    return (
+        sum(
+            value
+            for length, value in zip(lengths, density)
+            if cfg.min_size <= length <= cfg.max_size
+        )
+        / total
+    )
+
+
+def fit_short_bias_grid(
+    *, cfg: LibraryConfig, empirical: Counter[int], raw: Counter[int], lengths: range
+) -> tuple[float, list[dict[str, str]]]:
+    empirical_density = normalized(
+        {length: float(count) for length, count in empirical.items()}, lengths
+    )
+    obs_median = weighted_median_from_density(lengths, empirical_density)
+    obs_in_window = in_window_fraction(lengths, empirical_density, cfg)
+    rows: list[dict[str, str]] = []
+    best_beta = SHORT_BIAS_BETA_GRID[0]
+    best_js = float("inf")
+    for beta in SHORT_BIAS_BETA_GRID:
+        weighted_counts = {
+            length: raw.get(length, 0)
+            * model_weight("soft-window-short-bias", length, cfg, beta)
+            for length in lengths
+        }
+        pred_density = normalized(weighted_counts, lengths)
+        js_distance = jensen_shannon_distance(pred_density, empirical_density)
+        if js_distance < best_js:
+            best_js = js_distance
+            best_beta = beta
+        half_life = "inf" if beta == 0 else f"{math.log(2) / beta:.6g}"
+        rows.append(
+            {
+                "library_id": cfg.library_id,
+                "display_name": cfg.display_name,
+                "model": "soft-window-short-bias",
+                "min_size": str(cfg.min_size),
+                "max_size": str(cfg.max_size),
+                "size_edge_sd": f"{cfg.size_edge_sd:g}",
+                "length_bias_beta_per_bp": f"{beta:g}",
+                "length_bias_half_life_bp": half_life,
+                "js_read": f"{js_distance:.12g}",
+                "pred_median": f"{weighted_median_from_density(lengths, pred_density):.6g}",
+                "obs_median": f"{obs_median:.6g}",
+                "pred_in_window_fraction": f"{in_window_fraction(lengths, pred_density, cfg):.12g}",
+                "obs_in_window_fraction": f"{obs_in_window:.12g}",
+                "selected": "false",
+            }
+        )
+    for row in rows:
+        if parse_float(row["length_bias_beta_per_bp"], "beta") == best_beta:
+            row["selected"] = "true"
+            break
+    return best_beta, rows
+
+
+def write_bias_grid(output: Path, rows: list[dict[str, str]]) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle, delimiter="\t", fieldnames=BIAS_GRID_COLUMNS, lineterminator="\n"
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def write_curves(
     *,
     output: Path,
+    bias_grid_output: Path,
     cfg: LibraryConfig,
     empirical: Counter[int],
     empirical_unique: Counter[int],
@@ -267,6 +451,16 @@ def write_curves(
             cfg.score_max,
         ]
     )
+    score_lengths = range(cfg.score_min, cfg.score_max + 1)
+    best_beta, bias_rows = fit_short_bias_grid(
+        cfg=cfg, empirical=empirical, raw=raw, lengths=score_lengths
+    )
+    write_bias_grid(bias_grid_output, bias_rows)
+    fit_js_by_beta = {
+        parse_float(row["length_bias_beta_per_bp"], "beta"): row["js_read"]
+        for row in bias_rows
+    }
+
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
@@ -274,26 +468,32 @@ def write_curves(
         )
         writer.writeheader()
         for model in VALID_MODELS:
+            beta = best_beta if model == "soft-window-short-bias" else 0.0
             weighted_counts = {
-                length: raw.get(length, 0) * model_weight(model, length, cfg)
+                length: raw.get(length, 0) * model_weight(model, length, cfg, beta)
                 for length in range(min_length, max_length + 1)
             }
             weighted_total = sum(weighted_counts.values())
+            model_fit_js = (
+                fit_js_by_beta.get(beta, "")
+                if model == "soft-window-short-bias"
+                else ""
+            )
             for length in range(min_length, max_length + 1):
                 empirical_count = empirical.get(length, 0)
                 empirical_unique_count = empirical_unique.get(length, 0)
                 empirical_capped_count = empirical_capped.get(length, 0)
                 raw_count = raw.get(length, 0)
                 hard_count = hard.get(length, 0)
-                weight = model_weight(model, length, cfg)
+                weight = model_weight(model, length, cfg, beta)
                 weighted_count = weighted_counts[length]
                 writer.writerow(
                     {
                         "library_id": cfg.library_id,
                         "display_name": cfg.display_name,
                         "model": model,
-                        "model_label": model_label(model, cfg),
-                        "model_params": model_params(model, cfg),
+                        "model_label": model_label(model, cfg, beta),
+                        "model_params": model_params(model, cfg, beta),
                         "length": length,
                         "empirical_count": empirical_count,
                         "empirical_density": empirical_count / empirical_total,
@@ -323,6 +523,8 @@ def write_curves(
                         "score_min": cfg.score_min,
                         "score_max": cfg.score_max,
                         "size_edge_sd": f"{cfg.size_edge_sd:g}",
+                        "length_bias_beta_per_bp": f"{beta:g}",
+                        "model_fit_js_read": model_fit_js,
                         "in_size_window": str(
                             cfg.min_size <= length <= cfg.max_size
                         ).lower(),
@@ -343,6 +545,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--raw-hist", type=Path, required=True)
     parser.add_argument("--hard-hist", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--bias-grid-out", type=Path, required=True)
     return parser
 
 
@@ -362,6 +565,7 @@ def main(argv: list[str]) -> int:
         hard = read_prediction_histogram(args.hard_hist, args.library_id, "hard")
         write_curves(
             output=args.out,
+            bias_grid_output=args.bias_grid_out,
             cfg=cfg,
             empirical=empirical,
             empirical_unique=empirical_unique,
