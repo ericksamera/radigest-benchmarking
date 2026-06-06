@@ -383,8 +383,7 @@ def main(argv: list[str] | None = None) -> int:
     missing_required = sorted(required_enabled - seen)
     if missing_required:
         fail(
-            "missing required empirical library row(s): "
-            + ", ".join(missing_required)
+            "missing required empirical library row(s): " + ", ".join(missing_required)
         )
     disabled_required = sorted(required_enabled - enabled_library_ids)
     if disabled_required:
