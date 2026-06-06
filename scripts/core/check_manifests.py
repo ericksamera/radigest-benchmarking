@@ -218,6 +218,8 @@ EXTRA_REQUIRED_FILES = [
     "scripts/manuscript/make_matched_tool_timing_table.py",
     "scripts/core/check_empirical_libraries.py",
     "scripts/empirical/write_bam_manifest.py",
+    "scripts/empirical/extract_tlens.py",
+    "scripts/empirical/combine_tlens.py",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
     "scripts/audit/build_claim_audit.py",

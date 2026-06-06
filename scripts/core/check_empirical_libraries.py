@@ -175,9 +175,7 @@ def count_matching_bams(bam_dir: str, bam_glob: str) -> int:
     if not directory.is_dir():
         return 0
     return sum(
-        1
-        for path in directory.glob(bam_glob)
-        if path.is_file() or path.is_symlink()
+        1 for path in directory.glob(bam_glob) if path.is_file() or path.is_symlink()
     )
 
 

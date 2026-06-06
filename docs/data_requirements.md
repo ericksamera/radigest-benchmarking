@@ -41,13 +41,16 @@ ln -s /absolute/path/to/library_01.bam data/empirical/sockeye_ecori_msei/bam/lib
 ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam/library_01.bam.bai
 # repeat for each BAM, then set enabled=true in config/empirical_libraries.tsv
 make empirical-check
+make empirical-tlens THREADS=4
 make empirical THREADS=4
 ```
 
 The `reference_path` entry must point to the exact reference build used for the
 BAM alignment. If the manifest row is enabled, `make empirical-check` requires at
 least one BAM matching `bam_glob`; downloaded public references are materialized
-by `make empirical-references`/`make empirical`.
+by `make empirical-references`/`make empirical`. `make empirical-tlens` then
+extracts positive TLEN values from every BAM listed in the generated BAM
+manifest using the row-level MAPQ, duplicate, and maximum-TLEN filters.
 
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 

@@ -28,6 +28,7 @@ make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
 make empirical-check
 make empirical-references THREADS=4
+make empirical-tlens THREADS=4
 make empirical THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
@@ -135,13 +136,15 @@ directory, set `enabled=true` in `config/empirical_libraries.tsv`, and run:
 
 ```bash
 make empirical-check
+make empirical-tlens THREADS=4
 make empirical THREADS=4
 ```
 
 The first wired empirical source type is `local_bam_dir`. Enabled rows inventory
-all BAMs matching the manifest glob, currently `*.bam`, so downstream TLEN
-extraction can operate over the full directory rather than a single hard-coded
-BAM. The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
+all BAMs matching the manifest glob, currently `*.bam`, then extract positive
+TLEN values from every matching BAM into per-BAM text files, per-BAM
+histograms/QC tables, and pooled per-library TLEN, histogram, and QC outputs.
+The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
 ingestion without committing private sequence data to the repository.
 
 ## Comparator matrix boundaries
@@ -179,6 +182,7 @@ make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
 make empirical-check
 make empirical-references THREADS=4
+make empirical-tlens THREADS=4
 make empirical THREADS=4
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4

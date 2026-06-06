@@ -133,9 +133,12 @@ reference and the local BAM drop-off directory
 ```bash
 make empirical-check
 make empirical-references THREADS=4
+make empirical-tlens THREADS=4
+# or run the current full empirical workflow:
 make empirical THREADS=4
 ```
 
 With the default manifest, no empirical library is enabled. `make empirical-references`
 downloads the Sockeye reference; set `enabled=true` after local BAM symlinks exist
-under `data/empirical/sockeye_ecori_msei/bam/`.
+under `data/empirical/sockeye_ecori_msei/bam/`. Enabled rows produce BAM
+inventories plus TLEN files, histograms, and QC summaries for every matching BAM.

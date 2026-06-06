@@ -13,5 +13,11 @@ empirical:
   outputs:
     per_library_root: results/empirical/{library_id}
     bam_manifest: results/empirical/{library_id}/bam_manifest.tsv
+    per_bam_tlens: results/empirical/{library_id}/bams/{bam_id}/tlens.txt
+    per_bam_tlen_histogram: results/empirical/{library_id}/bams/{bam_id}/tlen_histogram.tsv
+    per_bam_tlen_qc: results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv
+    pooled_tlens: results/empirical/{library_id}/tlens.txt
+    tlen_histogram: results/empirical/{library_id}/tlen_histogram.tsv
+    tlen_qc: results/empirical/{library_id}/tlen_qc.tsv
     summary: results/empirical/empirical_recovery_summary.tsv
     table: results/manuscript/tables/table_08_empirical_recovery.tsv
