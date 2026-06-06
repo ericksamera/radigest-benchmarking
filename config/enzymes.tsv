@@ -4,6 +4,7 @@ MseI	MseI	TTAA	1	NEB	Common validation enzyme.
 PstI	PstI	CTGCAG	5	NEB	Candidate screening enzyme.
 SbfI	SbfI	CCTGCAGG	6	NEB	Candidate screening enzyme.
 MspI	MspI	CCGG	1	NEB	Candidate screening enzyme.
+SphI	SphI	GCATGC	5	NEB	Empirical Trichoderma ddRAD enzyme.
 MluCI	MluCI	AATT	0	NEB	Frequent cutter for single-digest synthetic validation.
 ApeKI	ApeKI	GCWGC	1	NEB	Degenerate IUPAC motif validation enzyme.
 DpnII	DpnII	GATC	0	NEB	Coincident-cut synthetic validation enzyme.
