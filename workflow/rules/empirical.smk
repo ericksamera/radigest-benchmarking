@@ -170,6 +170,15 @@ for row in EMPIRICAL_ENABLED_ROWS:
             f"{prefix}/size_model_short_bias_grid.tsv",
         ]
     )
+EMPIRICAL_MODEL_GRID_OUTPUTS = []
+for row in EMPIRICAL_ENABLED_ROWS:
+    prefix = f"results/empirical/{row['library_id']}"
+    EMPIRICAL_MODEL_GRID_OUTPUTS.extend(
+        [
+            f"{prefix}/size_model_grid.tsv",
+            f"{prefix}/best_size_model.tsv",
+        ]
+    )
 EMPIRICAL_OVERLAY_FIGURE_OUTPUTS = [
     f"results/empirical/{row['library_id']}/figures/size_model_overlay.pdf"
     for row in EMPIRICAL_ENABLED_ROWS
@@ -193,6 +202,7 @@ EMPIRICAL_ALL_OUTPUTS = (
     + EMPIRICAL_TLEN_OUTPUTS
     + EMPIRICAL_PREDICTION_OUTPUTS
     + EMPIRICAL_CURVE_OUTPUTS
+    + EMPIRICAL_MODEL_GRID_OUTPUTS
     + EMPIRICAL_FIGURE_OUTPUTS
 )
 
@@ -336,6 +346,11 @@ rule empirical_curves_all:
 rule empirical_figures_all:
     input:
         EMPIRICAL_FIGURE_OUTPUTS
+
+
+rule empirical_model_grid_all:
+    input:
+        EMPIRICAL_MODEL_GRID_OUTPUTS
 
 
 rule empirical_model_fit_ranking_all:
@@ -549,6 +564,31 @@ rule empirical_summarize_radigest_prediction:
           > {log:q} 2>&1
         """
 
+
+rule empirical_fit_size_model_grid:
+    input:
+        manifest=EMPIRICAL_LIBRARY_MANIFEST,
+        empirical_histogram="results/empirical/{library_id}/tlen_histogram.tsv",
+        raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv"
+    output:
+        grid="results/empirical/{library_id}/size_model_grid.tsv",
+        best="results/empirical/{library_id}/best_size_model.tsv"
+    log:
+        "benchmark/logs/empirical/{library_id}.size_model_grid.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
+        python3 scripts/empirical/fit_size_model_grid.py \
+          --manifest {input.manifest:q} \
+          --library-id {wildcards.library_id:q} \
+          --empirical-hist {input.empirical_histogram:q} \
+          --raw-hist {input.raw_histogram:q} \
+          --out {output.grid:q} \
+          --best-out {output.best:q} \
+          > {log:q} 2>&1
+        """
 
 rule empirical_size_model_curves:
     input:
