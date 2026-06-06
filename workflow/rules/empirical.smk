@@ -12,6 +12,12 @@ from pathlib import Path
 EMPIRICAL_LIBRARY_MANIFEST = "config/empirical_libraries.tsv"
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
+# Keep pooled library outputs from matching nested per-BAM paths such as
+# results/empirical/<library_id>/bams/<bam_id>/tlens.txt.
+wildcard_constraints:
+    library_id=r"[^/]+",
+    bam_id=r"[^/]+"
+
 
 def _read_tsv_rows(path):
     with open(path, newline="") as handle:
