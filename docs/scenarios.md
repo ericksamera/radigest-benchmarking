@@ -16,6 +16,7 @@ make references THREADS=4
 make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
 make comparators THREADS=4 RADIGEST=/path/to/radigest
 make empirical-check
+make empirical-references THREADS=4
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 ```
 
@@ -50,13 +51,14 @@ make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 
 The empirical scenario is optional until public inputs are available. Local testing
 is driven by `config/empirical_libraries.tsv`; disabled rows are metadata only,
-while enabled `local_bam` rows must have their BAM and alignment reference FASTA
-available under `data/empirical/`. Current empirical targets validate and expose
-the manifest contract; TLEN extraction and model-fitting rules are added in the
-next empirical workflow stage.
+while enabled `local_bam_dir` rows process every BAM matching `bam_glob` under
+the configured drop-off directory. Current empirical targets validate and expose
+the manifest/reference/BAM-inventory contract; TLEN extraction and model-fitting
+rules are added in the next empirical workflow stage.
 
 ```bash
 make empirical-check
+make empirical-references THREADS=4
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4 RADIGEST=/path/to/radigest
 ```

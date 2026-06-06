@@ -20,7 +20,10 @@ venv/
 # Local tool checkouts and private inputs
 .local/
 external/
-data/empirical/
+/data/empirical/**
+!/data/empirical/
+!/data/empirical/**/
+!/data/empirical/**/.gitkeep
 
 # Reference data are produced by the references workflow.
 /data/reference/**

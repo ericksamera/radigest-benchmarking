@@ -50,7 +50,9 @@ The table and R/ggplot2 figure are generated from `config/matched_tool_timing_ca
 Optional empirical recovery remains artifact `C11`. The current empirical stage
 declares the local/private input contract in `config/empirical_libraries.tsv` and
 keeps `C11 required_for_release=false` until TLEN extraction and public input
-provenance are wired.
+provenance are wired. The Sockeye `GCF_034236695.1_Oner_Uvic_2.0` reference is
+downloadable through `make empirical-references`, while private BAMs stay ignored
+under `data/empirical/sockeye_ecori_msei/bam/`.
 
 ## Stage 7a/7b audit contract
 

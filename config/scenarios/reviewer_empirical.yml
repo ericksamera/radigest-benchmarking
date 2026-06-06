@@ -2,10 +2,16 @@ empirical:
   required: false
   manifest: config/empirical_libraries.tsv
   input_root: data/empirical
-  initial_source_type: local_bam
+  initial_source_type: local_bam_dir
+  default_library_id: sockeye_ecori_msei
+  bam_dropoff_dir: data/empirical/sockeye_ecori_msei/bam
+  reference_id: sockeye_oner_uvic_2_0
+  reference_accession: GCF_034236695.1
+  reference_name: GCF_034236695.1_Oner_Uvic_2.0
   enabled_column: enabled
   include_for_manuscript_column: include_for_manuscript
   outputs:
     per_library_root: results/empirical/{library_id}
+    bam_manifest: results/empirical/{library_id}/bam_manifest.tsv
     summary: results/empirical/empirical_recovery_summary.tsv
     table: results/manuscript/tables/table_08_empirical_recovery.tsv

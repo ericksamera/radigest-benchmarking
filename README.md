@@ -27,6 +27,8 @@ make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
 make empirical-check
+make empirical-references THREADS=4
+make empirical THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
   RADIGEST=/path/to/radigest \
@@ -114,18 +116,33 @@ results/manuscript/figures/figure_s04_large_genome.pdf
 
 ## Empirical input manifest
 
-Empirical inputs remain optional and private by default. Declare local test libraries in
-`config/empirical_libraries.tsv`, keep `enabled=false` until the BAM and reference
-FASTA are available under `data/empirical/`, and run:
+Empirical inputs remain optional and private by default. The default empirical row
+uses the public Sockeye reference `GCF_034236695.1_Oner_Uvic_2.0` and a local
+EcoRI-MseI BAM drop-off directory:
+
+```text
+data/empirical/sockeye_ecori_msei/bam/
+```
+
+Download the associated reference with:
+
+```bash
+make empirical-references THREADS=4
+```
+
+For local testing, copy or symlink every BAM for that library set into the BAM
+directory, set `enabled=true` in `config/empirical_libraries.tsv`, and run:
 
 ```bash
 make empirical-check
 make empirical THREADS=4
 ```
 
-The first wired empirical source type is `local_bam`. The manifest also reserves
-columns for later CRAM, FASTQ, and SRA-backed ingestion without committing private
-sequence data to the repository.
+The first wired empirical source type is `local_bam_dir`. Enabled rows inventory
+all BAMs matching the manifest glob, currently `*.bam`, so downstream TLEN
+extraction can operate over the full directory rather than a single hard-coded
+BAM. The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
+ingestion without committing private sequence data to the repository.
 
 ## Comparator matrix boundaries
 
@@ -161,6 +178,7 @@ make performance-thread-scaling THREADS=4
 make performance-pair-screen-scaling THREADS=4
 make performance-matched-tools THREADS=4
 make empirical-check
+make empirical-references THREADS=4
 make empirical THREADS=4
 make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4

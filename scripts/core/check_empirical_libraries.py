@@ -11,6 +11,7 @@ from typing import NoReturn
 ROOT = Path(__file__).resolve().parents[2]
 EMPIRICAL_LIBRARIES = ROOT / "config" / "empirical_libraries.tsv"
 ENZYMES = ROOT / "config" / "enzymes.tsv"
+REFERENCES = ROOT / "config" / "references.tsv"
 
 REQUIRED_COLUMNS = [
     "library_id",
@@ -18,8 +19,9 @@ REQUIRED_COLUMNS = [
     "enabled",
     "include_for_manuscript",
     "source_type",
-    "bam_path",
-    "bam_index_path",
+    "bam_dir",
+    "bam_glob",
+    "bam_index_suffix",
     "reference_id",
     "reference_path",
     "enzyme_1",
@@ -35,8 +37,19 @@ REQUIRED_COLUMNS = [
     "notes",
 ]
 
+REFERENCE_COLUMNS = [
+    "reference_id",
+    "display_name",
+    "accession",
+    "source_type",
+    "output_gzip",
+    "output_plain",
+    "required_for_nonempirical",
+    "notes",
+]
+
 BOOLEAN_COLUMNS = ["enabled", "include_for_manuscript", "exclude_duplicates"]
-VALID_SOURCE_TYPES = {"local_bam", "local_cram", "local_fastq_pe", "sra_fastq"}
+VALID_SOURCE_TYPES = {"local_bam_dir", "local_cram_dir", "local_fastq_pe", "sra_fastq"}
 VALID_SIZE_MODELS = {"hard", "normal", "triangular", "soft-window"}
 NA_VALUES = {"NA", "N/A", "NONE", "NULL", ""}
 
@@ -100,16 +113,29 @@ def require_relative_path(value: str, label: str) -> None:
         fail(f"{label} must be a repository-relative path without '..'")
 
 
-def validate_local_path_shape(
-    value: str, label: str, *, allow_na: bool = False
-) -> None:
-    if is_na(value):
-        if allow_na:
-            return
-        fail(f"{label} must not be NA")
+def validate_empirical_dir_shape(value: str, label: str) -> None:
     require_relative_path(value, label)
     if not value.startswith("data/empirical/"):
         fail(f"{label} should live under data/empirical/ for private local inputs")
+
+
+def validate_bam_glob(value: str, label: str, *, expected_suffix: str) -> None:
+    if is_na(value):
+        fail(f"{label} must not be NA")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts or len(path.parts) != 1:
+        fail(f"{label} must be a single filename glob, e.g. *.bam")
+    if not value.endswith(expected_suffix):
+        fail(f"{label} should end with {expected_suffix}")
+
+
+def validate_index_suffix(value: str, label: str) -> None:
+    if is_na(value):
+        return
+    if "/" in value or "\\" in value or ".." in value:
+        fail(f"{label} must be a suffix such as .bai, not a path")
+    if not value.startswith("."):
+        fail(f"{label} should start with '.', e.g. .bai")
 
 
 def validate_reference_path_shape(value: str, label: str) -> None:
@@ -126,9 +152,39 @@ def read_enzyme_ids() -> set[str]:
     return {row["enzyme_id"] for row in rows}
 
 
+def read_reference_rows() -> dict[str, dict[str, str]]:
+    rows = read_tsv(REFERENCES, REFERENCE_COLUMNS)
+    return {row["reference_id"]: row for row in rows}
+
+
+def reference_is_downloaded_public(
+    reference_id: str,
+    reference_path: str,
+    references: dict[str, dict[str, str]],
+) -> bool:
+    row = references.get(reference_id)
+    if row is None:
+        return False
+    return row["output_plain"] == reference_path and reference_path.startswith(
+        "data/reference/"
+    )
+
+
+def count_matching_bams(bam_dir: str, bam_glob: str) -> int:
+    directory = ROOT / bam_dir
+    if not directory.is_dir():
+        return 0
+    return sum(
+        1
+        for path in directory.glob(bam_glob)
+        if path.is_file() or path.is_symlink()
+    )
+
+
 def main() -> int:
     rows = read_tsv(EMPIRICAL_LIBRARIES, REQUIRED_COLUMNS)
     enzymes = read_enzyme_ids()
+    references = read_reference_rows()
     seen: set[str] = set()
     enabled_count = 0
     manuscript_count = 0
@@ -213,56 +269,75 @@ def main() -> int:
                 f"config/empirical_libraries.tsv:{line_number} "
                 "reference_id must not be NA"
             )
-
-        if source_type == "local_bam":
-            validate_local_path_shape(row["bam_path"], f"library {library_id} bam_path")
-            validate_local_path_shape(
-                row["bam_index_path"],
-                f"library {library_id} bam_index_path",
-                allow_na=True,
+        is_downloaded_reference = reference_is_downloaded_public(
+            row["reference_id"], row["reference_path"], references
+        )
+        if row["reference_id"] not in references and row["reference_path"].startswith(
+            "data/reference/"
+        ):
+            fail(
+                f"config/empirical_libraries.tsv:{line_number} unknown "
+                f"reference_id={row['reference_id']!r}; add downloadable "
+                "data/reference/ references to config/references.tsv"
             )
-            if not row["bam_path"].endswith(".bam"):
+        if not is_downloaded_reference:
+            candidate = ROOT / row["reference_path"]
+            if enabled and not candidate.exists():
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} local_bam "
-                    "bam_path should end with .bam"
+                    f"config/empirical_libraries.tsv:{line_number} enabled library "
+                    f"{library_id} missing non-downloadable reference_path: "
+                    f"{row['reference_path']}"
                 )
-        elif source_type == "local_cram":
-            validate_local_path_shape(row["bam_path"], f"library {library_id} bam_path")
-            validate_local_path_shape(
-                row["bam_index_path"],
-                f"library {library_id} bam_index_path",
-                allow_na=True,
+
+        if source_type == "local_bam_dir":
+            validate_empirical_dir_shape(
+                row["bam_dir"], f"library {library_id} bam_dir"
             )
-            if not row["bam_path"].endswith(".cram"):
+            validate_bam_glob(
+                row["bam_glob"],
+                f"library {library_id} bam_glob",
+                expected_suffix=".bam",
+            )
+            validate_index_suffix(
+                row["bam_index_suffix"], f"library {library_id} bam_index_suffix"
+            )
+            if enabled:
+                bam_dir = ROOT / row["bam_dir"]
+                if not bam_dir.is_dir():
+                    fail(
+                        f"config/empirical_libraries.tsv:{line_number} enabled "
+                        f"library {library_id} missing bam_dir: {row['bam_dir']}"
+                    )
+                bam_count = count_matching_bams(row["bam_dir"], row["bam_glob"])
+                if bam_count < 1:
+                    fail(
+                        f"config/empirical_libraries.tsv:{line_number} enabled "
+                        f"library {library_id} found no BAMs matching "
+                        f"{row['bam_dir']}/{row['bam_glob']}"
+                    )
+        elif source_type == "local_cram_dir":
+            validate_empirical_dir_shape(
+                row["bam_dir"], f"library {library_id} bam_dir"
+            )
+            validate_bam_glob(
+                row["bam_glob"],
+                f"library {library_id} bam_glob",
+                expected_suffix=".cram",
+            )
+            validate_index_suffix(
+                row["bam_index_suffix"], f"library {library_id} bam_index_suffix"
+            )
+            if enabled:
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} local_cram "
-                    "bam_path should end with .cram"
+                    f"config/empirical_libraries.tsv:{line_number} source_type "
+                    "'local_cram_dir' is reserved but not wired yet"
                 )
         else:
-            # FASTQ/SRA ingestion is planned later. For now these rows can exist as
-            # disabled metadata placeholders but should not be enabled.
             if enabled:
                 fail(
                     f"config/empirical_libraries.tsv:{line_number} source_type "
                     f"{source_type!r} is not wired into the empirical workflow yet"
                 )
-
-        if enabled:
-            for column in ["bam_path", "reference_path"]:
-                candidate = ROOT / row[column]
-                if not candidate.exists():
-                    fail(
-                        f"config/empirical_libraries.tsv:{line_number} enabled "
-                        f"library {library_id} missing {column}: {row[column]}"
-                    )
-            if not is_na(row["bam_index_path"]):
-                index_path = ROOT / row["bam_index_path"]
-                if not index_path.exists():
-                    fail(
-                        f"config/empirical_libraries.tsv:{line_number} enabled "
-                        f"library {library_id} missing bam_index_path: "
-                        f"{row['bam_index_path']}"
-                    )
 
     print(
         "Empirical library manifest checks passed "

@@ -28,23 +28,26 @@ Install helpers live in `scripts/comparators/`. Version metadata is written into
 ## Optional empirical inputs
 
 Empirical BAM/CRAM/FASTQ/SRA inputs are declared in `config/empirical_libraries.tsv`.
-The initial local-testing contract is BAM-first: put private files or symlinks under
-`data/empirical/`, keep those files out of Git, then set `enabled=true` for the
-corresponding manifest row.
+The initial local-testing contract is BAM-directory first. The default row uses
+the public Sockeye reference `GCF_034236695.1_Oner_Uvic_2.0`, downloaded through
+`config/references.tsv`, and private BAM files or symlinks under
+`data/empirical/sockeye_ecori_msei/bam/`.
 
 Example local setup:
 
 ```bash
-mkdir -p data/empirical/sockeye_ddrad
-ln -s /absolute/path/to/library.bam data/empirical/sockeye_ddrad/input.bam
-ln -s /absolute/path/to/library.bam.bai data/empirical/sockeye_ddrad/input.bam.bai
-ln -s /absolute/path/to/alignment-reference.fa data/empirical/sockeye_ddrad/reference.fa
+make empirical-references THREADS=4
+ln -s /absolute/path/to/library_01.bam data/empirical/sockeye_ecori_msei/bam/library_01.bam
+ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam/library_01.bam.bai
+# repeat for each BAM, then set enabled=true in config/empirical_libraries.tsv
 make empirical-check
+make empirical THREADS=4
 ```
 
 The `reference_path` entry must point to the exact reference build used for the
-BAM alignment. If the manifest row is enabled, `make empirical-check` requires
-the BAM and reference FASTA paths to exist.
+BAM alignment. If the manifest row is enabled, `make empirical-check` requires at
+least one BAM matching `bam_glob`; downloaded public references are materialized
+by `make empirical-references`/`make empirical`.
 
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 

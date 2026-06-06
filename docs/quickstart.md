@@ -126,14 +126,16 @@ make install-radigest RADIGEST_REF=<tag-or-commit>
 ## Empirical scaffold
 
 Declare optional local empirical libraries in `config/empirical_libraries.tsv`.
-Private BAMs and alignment references should be copied or symlinked under
-`data/empirical/`, which is ignored by Git.
+The default row points to the public Sockeye `GCF_034236695.1_Oner_Uvic_2.0`
+reference and the local BAM drop-off directory
+`data/empirical/sockeye_ecori_msei/bam/`.
 
 ```bash
 make empirical-check
+make empirical-references THREADS=4
 make empirical THREADS=4
 ```
 
-With the default manifest, no empirical library is enabled and these commands
-validate only the input contract. Set `enabled=true` after local BAM/reference
-paths exist.
+With the default manifest, no empirical library is enabled. `make empirical-references`
+downloads the Sockeye reference; set `enabled=true` after local BAM symlinks exist
+under `data/empirical/sockeye_ecori_msei/bam/`.
