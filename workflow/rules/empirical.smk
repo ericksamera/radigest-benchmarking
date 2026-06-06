@@ -155,6 +155,14 @@ for row in EMPIRICAL_ENABLED_ROWS:
                 f"{prefix}/{mode}.summary.tsv",
             ]
         )
+EMPIRICAL_CURVE_OUTPUTS = [
+    f"results/empirical/{row['library_id']}/size_model_curves.tsv"
+    for row in EMPIRICAL_ENABLED_ROWS
+]
+EMPIRICAL_FIGURE_OUTPUTS = [
+    f"results/empirical/{row['library_id']}/figures/size_model_overlay.pdf"
+    for row in EMPIRICAL_ENABLED_ROWS
+]
 EMPIRICAL_ALL_OUTPUTS = (
     [EMPIRICAL_LIBRARY_MANIFEST]
     + EMPIRICAL_PLACEHOLDER_OUTPUTS
@@ -162,6 +170,8 @@ EMPIRICAL_ALL_OUTPUTS = (
     + EMPIRICAL_BAM_MANIFESTS
     + EMPIRICAL_TLEN_OUTPUTS
     + EMPIRICAL_PREDICTION_OUTPUTS
+    + EMPIRICAL_CURVE_OUTPUTS
+    + EMPIRICAL_FIGURE_OUTPUTS
 )
 
 
@@ -266,6 +276,16 @@ rule empirical_tlens_all:
 rule empirical_predictions_all:
     input:
         EMPIRICAL_PREDICTION_OUTPUTS
+
+
+rule empirical_curves_all:
+    input:
+        EMPIRICAL_CURVE_OUTPUTS
+
+
+rule empirical_figures_all:
+    input:
+        EMPIRICAL_FIGURE_OUTPUTS
 
 
 rule empirical_all:
@@ -451,5 +471,51 @@ rule empirical_summarize_radigest_prediction:
           --size-edge-sd {params.size_edge_sd:q} \
           --hist-out {output.histogram:q} \
           --summary-out {output.summary:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_size_model_curves:
+    input:
+        manifest=EMPIRICAL_LIBRARY_MANIFEST,
+        empirical_histogram="results/empirical/{library_id}/tlen_histogram.tsv",
+        raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv",
+        hard_histogram="results/empirical/{library_id}/predictions/hard.length_histogram.tsv"
+    output:
+        curves="results/empirical/{library_id}/size_model_curves.tsv"
+    log:
+        "benchmark/logs/empirical/{library_id}.size_model_curves.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
+        python3 scripts/empirical/make_size_model_curves.py \
+          --manifest {input.manifest:q} \
+          --library-id {wildcards.library_id:q} \
+          --empirical-hist {input.empirical_histogram:q} \
+          --raw-hist {input.raw_histogram:q} \
+          --hard-hist {input.hard_histogram:q} \
+          --out {output.curves:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_size_model_overlay_figure:
+    input:
+        curves="results/empirical/{library_id}/size_model_curves.tsv"
+    output:
+        figure="results/empirical/{library_id}/figures/size_model_overlay.pdf"
+    log:
+        "benchmark/logs/empirical/{library_id}.size_model_overlay.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/figures
+        Rscript scripts/empirical/plot_size_model_overlay.R \
+          --curves {input.curves:q} \
+          --out {output.figure:q} \
+          --formats pdf \
           > {log:q} 2>&1
         """

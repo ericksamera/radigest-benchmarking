@@ -222,6 +222,8 @@ EXTRA_REQUIRED_FILES = [
     "scripts/empirical/extract_tlens.py",
     "scripts/empirical/combine_tlens.py",
     "scripts/empirical/summarize_radigest_prediction.py",
+    "scripts/empirical/make_size_model_curves.py",
+    "scripts/empirical/plot_size_model_overlay.R",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
     "scripts/audit/build_claim_audit.py",
