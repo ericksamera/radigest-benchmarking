@@ -11,6 +11,7 @@ from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 EMPIRICAL_LIBRARIES = ROOT / "config" / "empirical_libraries.tsv"
+EMPIRICAL_SRA_RUNS = ROOT / "config" / "empirical_sra_runs.tsv"
 ENZYMES = ROOT / "config" / "enzymes.tsv"
 REFERENCES = ROOT / "config" / "references.tsv"
 
@@ -51,6 +52,20 @@ REFERENCE_COLUMNS = [
     "notes",
 ]
 
+SRA_COLUMNS = [
+    "library_id",
+    "bioproject_accession",
+    "biosample_accession",
+    "experiment_accession",
+    "run_accession",
+    "platform",
+    "layout",
+    "read_length",
+    "enabled",
+    "include",
+    "notes",
+]
+
 BOOLEAN_COLUMNS = ["enabled", "include_for_manuscript", "exclude_duplicates"]
 VALID_SOURCE_TYPES = {"local_bam_dir", "local_cram_dir", "local_fastq_pe", "sra_fastq"}
 VALID_SIZE_MODELS = {"hard", "normal", "triangular", "soft-window"}
@@ -87,6 +102,30 @@ def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
             rows.append(row)
     if not rows:
         fail(f"{rel(path)}: no data rows")
+    return rows
+
+
+def read_tsv_allow_empty(
+    path: Path, required_columns: list[str]
+) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="	")
+        fieldnames = reader.fieldnames
+        if fieldnames is None:
+            fail(f"{rel(path)}: missing header")
+        fieldname_set = set(fieldnames)
+        missing = [column for column in required_columns if column not in fieldname_set]
+        if missing:
+            fail(f"{rel(path)}: missing columns: " + ", ".join(missing))
+        rows: list[dict[str, str]] = []
+        for raw_row in reader:
+            if not any((value or "").strip() for value in raw_row.values()):
+                continue
+            row: dict[str, str] = {}
+            for key, value in raw_row.items():
+                if key is not None:
+                    row[key] = "" if value is None else value.strip()
+            rows.append(row)
     return rows
 
 
@@ -189,6 +228,16 @@ def count_matching_bams(bam_dir: str, bam_glob: str) -> int:
     )
 
 
+def count_enabled_sra_runs(library_id: str, sra_rows: list[dict[str, str]]) -> int:
+    return sum(
+        1
+        for row in sra_rows
+        if row["library_id"] == library_id
+        and row["enabled"].lower() == "true"
+        and row["include"].lower() == "true"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -205,8 +254,27 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     required_enabled = set(args.require_enabled)
     rows = read_tsv(EMPIRICAL_LIBRARIES, REQUIRED_COLUMNS)
+    sra_rows = read_tsv_allow_empty(EMPIRICAL_SRA_RUNS, SRA_COLUMNS)
     enzymes = read_enzyme_ids()
     references = read_reference_rows()
+    library_ids = {row["library_id"] for row in rows}
+    seen_sra_runs: set[str] = set()
+    for line_number, sra_row in enumerate(sra_rows, start=2):
+        label = f"config/empirical_sra_runs.tsv:{line_number}"
+        if sra_row["library_id"] not in library_ids:
+            fail(f"{label} unknown library_id={sra_row['library_id']!r}")
+        for column in ["enabled", "include"]:
+            parse_bool(sra_row[column], f"{label} {column}")
+        if sra_row["run_accession"] in seen_sra_runs:
+            fail(f"{label} duplicate run_accession={sra_row['run_accession']!r}")
+        seen_sra_runs.add(sra_row["run_accession"])
+        if not sra_row["run_accession"].startswith("SRR"):
+            fail(f"{label} run_accession should start with SRR")
+        if sra_row["layout"] != "PAIRED":
+            fail(f"{label} layout must be PAIRED")
+        if parse_int(sra_row["read_length"], f"{label} read_length") <= 0:
+            fail(f"{label} read_length must be > 0")
+
     seen: set[str] = set()
     enabled_count = 0
     manuscript_count = 0
@@ -350,11 +418,12 @@ def main(argv: list[str] | None = None) -> int:
                         f"library {library_id} missing bam_dir: {row['bam_dir']}"
                     )
                 bam_count = count_matching_bams(row["bam_dir"], row["bam_glob"])
-                if bam_count < 1:
+                sra_count = count_enabled_sra_runs(library_id, sra_rows)
+                if bam_count < 1 and sra_count < 1:
                     fail(
                         f"config/empirical_libraries.tsv:{line_number} enabled "
                         f"library {library_id} found no BAMs matching "
-                        f"{row['bam_dir']}/{row['bam_glob']}"
+                        f"{row['bam_dir']}/{row['bam_glob']} and no enabled SRA runs"
                     )
         elif source_type == "local_cram_dir":
             validate_empirical_dir_shape(

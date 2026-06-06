@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 EMPIRICAL_LIBRARY_MANIFEST = "config/empirical_libraries.tsv"
+EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
 # Keep pooled library outputs from matching nested per-BAM paths such as
@@ -33,6 +34,16 @@ def _read_tsv_rows(path):
     return rows
 
 
+def _read_optional_tsv_rows(path):
+    with open(path, newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        return [
+            {key: (value or "").strip() for key, value in row.items() if key}
+            for row in reader
+            if any((value or "").strip() for value in row.values())
+        ]
+
+
 EMPIRICAL_LIBRARY_ROWS = _read_tsv_rows(EMPIRICAL_LIBRARY_MANIFEST)
 EMPIRICAL_ENABLED_ROWS = [
     row
@@ -42,6 +53,16 @@ EMPIRICAL_ENABLED_ROWS = [
 EMPIRICAL_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_LIBRARY_ROWS]
 EMPIRICAL_ENABLED_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_ENABLED_ROWS]
 EMPIRICAL_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_LIBRARY_ROWS}
+
+EMPIRICAL_SRA_RUN_ROWS = [
+    row
+    for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST)
+    if row.get("enabled", "false").lower() == "true"
+    and row.get("include", "false").lower() == "true"
+]
+EMPIRICAL_SRA_RUNS_BY_LIBRARY = {}
+for row in EMPIRICAL_SRA_RUN_ROWS:
+    EMPIRICAL_SRA_RUNS_BY_LIBRARY.setdefault(row["library_id"], []).append(row)
 
 REFERENCE_ROWS_BY_ID_FOR_EMPIRICAL = {
     row["reference_id"]: row for row in _read_tsv_rows("config/references.tsv")
@@ -94,12 +115,29 @@ def _empirical_bam_sample_rows():
     for row in EMPIRICAL_ENABLED_ROWS:
         if row.get("source_type") != "local_bam_dir":
             continue
+        library_id = row["library_id"]
+        sra_rows = EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(library_id, [])
         seen_ids = {}
+        if sra_rows:
+            for sra_row in sra_rows:
+                bam_id = sra_row["run_accession"]
+                bam_path = f"data/empirical/{library_id}/bam/{bam_id}.bam"
+                if bam_id in seen_ids:
+                    raise ValueError(
+                        f"{library_id}: duplicate SRA-derived bam_id {bam_id!r}"
+                    )
+                seen_ids[bam_id] = bam_path
+                sample_row = dict(row)
+                sample_row["bam_id"] = bam_id
+                sample_row["bam_path"] = bam_path
+                sample_row["sra_run_accession"] = sra_row["run_accession"]
+                rows.append(sample_row)
+            continue
         for bam_path in _matching_bam_paths(row):
             bam_id = _safe_bam_id(bam_path)
             if bam_id in seen_ids:
                 raise ValueError(
-                    f"{row['library_id']}: duplicate derived bam_id {bam_id!r} for "
+                    f"{library_id}: duplicate derived bam_id {bam_id!r} for "
                     f"{seen_ids[bam_id]} and {bam_path}"
                 )
             seen_ids[bam_id] = bam_path
@@ -149,6 +187,32 @@ for library_id in EMPIRICAL_ENABLED_BAM_LIBRARY_IDS:
         ]
     )
 EMPIRICAL_TLEN_OUTPUTS = EMPIRICAL_PER_BAM_TLEN_OUTPUTS + EMPIRICAL_LIBRARY_TLEN_OUTPUTS
+EMPIRICAL_SRA_FASTQ_OUTPUTS = []
+EMPIRICAL_SRA_TRIMMED_OUTPUTS = []
+EMPIRICAL_SRA_BAM_OUTPUTS = []
+for row in EMPIRICAL_SRA_RUN_ROWS:
+    library_id = row["library_id"]
+    run = row["run_accession"]
+    EMPIRICAL_SRA_FASTQ_OUTPUTS.extend(
+        [
+            f"data/empirical/{library_id}/fastq/{run}_1.fastq.gz",
+            f"data/empirical/{library_id}/fastq/{run}_2.fastq.gz",
+        ]
+    )
+    EMPIRICAL_SRA_TRIMMED_OUTPUTS.extend(
+        [
+            f"data/empirical/{library_id}/trimmed/{run}_1.trimmed.fastq.gz",
+            f"data/empirical/{library_id}/trimmed/{run}_2.trimmed.fastq.gz",
+            f"results/empirical/{library_id}/fastp/{run}.html",
+            f"results/empirical/{library_id}/fastp/{run}.json",
+        ]
+    )
+    EMPIRICAL_SRA_BAM_OUTPUTS.extend(
+        [
+            f"data/empirical/{library_id}/bam/{run}.bam",
+            f"data/empirical/{library_id}/bam/{run}.bam.bai",
+        ]
+    )
 EMPIRICAL_PREDICTION_OUTPUTS = []
 for row in EMPIRICAL_ENABLED_ROWS:
     prefix = f"results/empirical/{row['library_id']}/predictions"
@@ -199,6 +263,9 @@ EMPIRICAL_ALL_OUTPUTS = (
     + EMPIRICAL_PLACEHOLDER_OUTPUTS
     + EMPIRICAL_REFERENCE_OUTPUTS
     + EMPIRICAL_BAM_MANIFESTS
+    + EMPIRICAL_SRA_FASTQ_OUTPUTS
+    + EMPIRICAL_SRA_TRIMMED_OUTPUTS
+    + EMPIRICAL_SRA_BAM_OUTPUTS
     + EMPIRICAL_TLEN_OUTPUTS
     + EMPIRICAL_PREDICTION_OUTPUTS
     + EMPIRICAL_CURVE_OUTPUTS
@@ -213,6 +280,12 @@ def _empirical_reference_path(wildcards):
 
 def _empirical_bam_paths(wildcards):
     row = EMPIRICAL_ROWS_BY_ID[wildcards.library_id]
+    sra_rows = EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(wildcards.library_id, [])
+    if sra_rows:
+        return [
+            f"data/empirical/{wildcards.library_id}/bam/{sra_row['run_accession']}.bam"
+            for sra_row in sra_rows
+        ]
     return [str(path) for path in _matching_bam_paths(row)]
 
 
@@ -228,6 +301,24 @@ def _empirical_bam_sample_row(wildcards):
 
 def _empirical_bam_path(wildcards):
     return _empirical_bam_sample_row(wildcards)["bam_path"]
+
+
+def _empirical_sra_run_row(wildcards):
+    for row in EMPIRICAL_SRA_RUN_ROWS:
+        if (
+            row["library_id"] == wildcards.library_id
+            and row["run_accession"] == wildcards.run_accession
+        ):
+            return row
+    raise ValueError(
+        f"unknown empirical SRA run library_id={wildcards.library_id!r} "
+        f"run_accession={wildcards.run_accession!r}"
+    )
+
+
+def _empirical_bwa_index_files(wildcards):
+    reference = EMPIRICAL_ROWS_BY_ID[wildcards.library_id]["reference_path"]
+    return [f"{reference}.{suffix}" for suffix in ["amb", "ann", "bwt", "pac", "sa"]]
 
 
 def _empirical_library_bam_ids(library_id):
@@ -333,6 +424,16 @@ rule empirical_tlens_all:
         EMPIRICAL_BAM_MANIFESTS + EMPIRICAL_TLEN_OUTPUTS
 
 
+rule empirical_sra_fastqs_all:
+    input:
+        EMPIRICAL_SRA_FASTQ_OUTPUTS
+
+
+rule empirical_sra_bams_all:
+    input:
+        EMPIRICAL_SRA_BAM_OUTPUTS
+
+
 rule empirical_predictions_all:
     input:
         EMPIRICAL_PREDICTION_OUTPUTS
@@ -361,6 +462,91 @@ rule empirical_model_fit_ranking_all:
 rule empirical_all:
     input:
         EMPIRICAL_ALL_OUTPUTS
+
+
+rule empirical_sra_fastq:
+    output:
+        r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
+        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
+    threads: 4
+    log:
+        "benchmark/logs/empirical/{library_id}.{run_accession}.fasterq_dump.log"
+    conda:
+        "../envs/sra-align.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/fastq
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "$tmpdir"' EXIT
+        fasterq-dump {wildcards.run_accession:q}           --split-files           --threads {threads}           --outdir "$tmpdir"           > {log:q} 2>&1
+        test -s "$tmpdir/{wildcards.run_accession}_1.fastq"
+        test -s "$tmpdir/{wildcards.run_accession}_2.fastq"
+        gzip -c "$tmpdir/{wildcards.run_accession}_1.fastq" > {output.r1:q}
+        gzip -c "$tmpdir/{wildcards.run_accession}_2.fastq" > {output.r2:q}
+        """
+
+
+rule empirical_fastp_trim:
+    input:
+        r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
+        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
+    output:
+        r1="data/empirical/{library_id}/trimmed/{run_accession}_1.trimmed.fastq.gz",
+        r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
+        html="results/empirical/{library_id}/fastp/{run_accession}.html",
+        json="results/empirical/{library_id}/fastp/{run_accession}.json"
+    threads: 4
+    log:
+        "benchmark/logs/empirical/{library_id}.{run_accession}.fastp.log"
+    conda:
+        "../envs/sra-align.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical           data/empirical/{wildcards.library_id}/trimmed           results/empirical/{wildcards.library_id}/fastp
+        fastp           --in1 {input.r1:q}           --in2 {input.r2:q}           --out1 {output.r1:q}           --out2 {output.r2:q}           --html {output.html:q}           --json {output.json:q}           --thread {threads}           > {log:q} 2>&1
+        """
+
+
+rule empirical_bwa_index:
+    input:
+        reference="data/reference/{reference_id}.fa"
+    output:
+        amb="data/reference/{reference_id}.fa.amb",
+        ann="data/reference/{reference_id}.fa.ann",
+        bwt="data/reference/{reference_id}.fa.bwt",
+        pac="data/reference/{reference_id}.fa.pac",
+        sa="data/reference/{reference_id}.fa.sa"
+    log:
+        "benchmark/logs/empirical/{reference_id}.bwa_index.log"
+    conda:
+        "../envs/sra-align.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical
+        bwa index {input.reference:q} > {log:q} 2>&1
+        """
+
+
+rule empirical_align_sra_bam:
+    input:
+        r1="data/empirical/{library_id}/trimmed/{run_accession}_1.trimmed.fastq.gz",
+        r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
+        reference=lambda wildcards: EMPIRICAL_ROWS_BY_ID[wildcards.library_id]["reference_path"],
+        index=_empirical_bwa_index_files
+    output:
+        bam="data/empirical/{library_id}/bam/{run_accession}.bam",
+        bai="data/empirical/{library_id}/bam/{run_accession}.bam.bai"
+    threads: 4
+    log:
+        "benchmark/logs/empirical/{library_id}.{run_accession}.bwa_mem.log"
+    conda:
+        "../envs/sra-align.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/bam
+        bwa mem -t {threads} {input.reference:q} {input.r1:q} {input.r2:q} 2> {log:q}           | samtools sort -@ {threads} -o {output.bam:q} -
+        samtools index -@ {threads} {output.bam:q} {output.bai:q}
+        """
 
 
 rule empirical_bam_manifest:
