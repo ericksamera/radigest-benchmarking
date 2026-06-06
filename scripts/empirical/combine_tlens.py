@@ -23,6 +23,7 @@ QC_COLUMNS = [
     "score_min",
     "score_max",
     "size_model",
+    "size_edge_sd",
     "total_records",
     "used_pairs",
     "in_window_count",

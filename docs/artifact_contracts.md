@@ -49,13 +49,15 @@ The table and R/ggplot2 figure are generated from `config/matched_tool_timing_ca
 
 Optional empirical recovery remains artifact `C11`. The current empirical stage
 declares the local/private input contract in `config/empirical_libraries.tsv` and
-keeps `C11 required_for_release=false` until radigest prediction/model fitting
-and public input provenance are wired. The Sockeye
+keeps `C11 required_for_release=false` until empirical model fitting, manuscript
+figures, and public input provenance are wired. The Sockeye
 `GCF_034236695.1_Oner_Uvic_2.0` reference is downloadable through `make
 empirical-references`, while private BAMs stay ignored under
 `data/empirical/sockeye_ecori_msei/bam/`. Enabled BAM-directory rows now produce
 `bam_manifest.tsv`, per-BAM `tlens.txt`/`tlen_histogram.tsv`/`tlen_qc.tsv`, and
-pooled per-library TLEN, histogram, and QC outputs.
+pooled per-library TLEN, histogram, and QC outputs. Enabled rows also produce
+broad raw and hard-window radigest prediction fragments, length histograms, and
+prediction summaries under `results/empirical/{library_id}/predictions/`.
 
 ## Stage 7a/7b audit contract
 

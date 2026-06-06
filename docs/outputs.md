@@ -156,11 +156,17 @@ results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv
 results/empirical/{library_id}/tlens.txt
 results/empirical/{library_id}/tlen_histogram.tsv
 results/empirical/{library_id}/tlen_qc.tsv
+results/empirical/{library_id}/predictions/raw.fragments.tsv
+results/empirical/{library_id}/predictions/raw.length_histogram.tsv
+results/empirical/{library_id}/predictions/raw.summary.tsv
+results/empirical/{library_id}/predictions/hard.fragments.tsv
+results/empirical/{library_id}/predictions/hard.length_histogram.tsv
+results/empirical/{library_id}/predictions/hard.summary.tsv
 results/empirical/.gitkeep
 ```
 
-Later empirical stages will add radigest prediction/model-fit summaries and
-manuscript plots from these TLEN outputs.
+Later empirical stages will add model-fit summaries and manuscript plots from
+these TLEN and radigest-prediction outputs.
 
 Stage 7 audit outputs are:
 

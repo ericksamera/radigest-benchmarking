@@ -28,6 +28,7 @@ make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
 make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
@@ -46,7 +47,7 @@ SimRAD             retained-fragment count agreement only
 ddgRADer backend   binned fragment-count distribution agreement only
 ```
 
-Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 5e/5f large-reference timing is included in the required reference and matched-tools path, including a large wheat matched-tool subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits. Stage 6 now declares the empirical library manifest, Sockeye reference download, local BAM-directory inventory contract, and TLEN extraction; later empirical stages will add model fitting and empirical recovery plots. Stage 7a adds artifact, claim, and environment audit products from `config/artifacts.tsv`. Stage 7b adds the release checklist and output index.
+Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cached `radigest-screen-pairs-cached` screening-speed timing using `config/screening_speed_cases.tsv`. Stage 5c adds intra-tool radigest thread scaling using `config/thread_scaling_cases.tsv`. Stage 5d adds cached pair-screen job scaling using `config/pair_screen_scaling_cases.tsv`. Stage 5e/5f large-reference timing is included in the required reference and matched-tools path, including a large wheat matched-tool subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits. Stage 6 now declares the empirical library manifest, Sockeye reference download, local BAM-directory inventory contract, TLEN extraction, and broad/raw plus strict/hard radigest prediction tracks; later empirical stages will add model fitting and empirical recovery plots. Stage 7a adds artifact, claim, and environment audit products from `config/artifacts.tsv`. Stage 7b adds the release checklist and output index.
 
 Stage 5e/5f large-reference timing is included in the required reference and matched-tools path:
 

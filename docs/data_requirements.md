@@ -42,6 +42,7 @@ ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam
 # repeat for each BAM, then set enabled=true in config/empirical_libraries.tsv
 make empirical-check
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4
 make empirical THREADS=4
 ```
 
@@ -51,6 +52,12 @@ least one BAM matching `bam_glob`; downloaded public references are materialized
 by `make empirical-references`/`make empirical`. `make empirical-tlens` then
 extracts positive TLEN values from every BAM listed in the generated BAM
 manifest using the row-level MAPQ, duplicate, and maximum-TLEN filters.
+`make empirical-predictions` then runs radigest twice per enabled library: a
+broad `raw` prediction using `score_min`/`score_max` and a strict `hard`
+prediction using `min_size`/`max_size`. For the default Sockeye EcoRI-MseI row,
+the nominal experimental guess is 200-400 bp with `soft-window` edge SD 55; the
+broad prediction remains available for plotting the unselected fragment
+distribution against empirical TLENs.
 
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 

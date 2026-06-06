@@ -29,6 +29,7 @@ make performance-matched-tools THREADS=4
 make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4
 make empirical THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
@@ -137,6 +138,7 @@ directory, set `enabled=true` in `config/empirical_libraries.tsv`, and run:
 ```bash
 make empirical-check
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4
 make empirical THREADS=4
 ```
 
@@ -144,6 +146,11 @@ The first wired empirical source type is `local_bam_dir`. Enabled rows inventory
 all BAMs matching the manifest glob, currently `*.bam`, then extract positive
 TLEN values from every matching BAM into per-BAM text files, per-BAM
 histograms/QC tables, and pooled per-library TLEN, histogram, and QC outputs.
+Enabled rows also generate two radigest fragment-prediction tracks: a broad
+`raw` score-window prediction for distribution plots and a `hard` nominal-window
+prediction for showing how a strict size filter differs from the empirical TLEN
+distribution. The default Sockeye row uses a 200-400 bp nominal window with
+`soft-window` edge SD 55 for downstream model interpretation.
 The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
 ingestion without committing private sequence data to the repository.
 

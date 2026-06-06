@@ -16,7 +16,8 @@ EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 # results/empirical/<library_id>/bams/<bam_id>/tlens.txt.
 wildcard_constraints:
     library_id=r"[^/]+",
-    bam_id=r"[^/]+"
+    bam_id=r"[^/]+",
+    prediction_mode=r"raw|hard"
 
 
 def _read_tsv_rows(path):
@@ -142,12 +143,25 @@ for library_id in EMPIRICAL_ENABLED_BAM_LIBRARY_IDS:
         ]
     )
 EMPIRICAL_TLEN_OUTPUTS = EMPIRICAL_PER_BAM_TLEN_OUTPUTS + EMPIRICAL_LIBRARY_TLEN_OUTPUTS
+EMPIRICAL_PREDICTION_OUTPUTS = []
+for row in EMPIRICAL_ENABLED_ROWS:
+    prefix = f"results/empirical/{row['library_id']}/predictions"
+    for mode in ["raw", "hard"]:
+        EMPIRICAL_PREDICTION_OUTPUTS.extend(
+            [
+                f"{prefix}/{mode}.fragments.tsv",
+                f"{prefix}/{mode}.json",
+                f"{prefix}/{mode}.length_histogram.tsv",
+                f"{prefix}/{mode}.summary.tsv",
+            ]
+        )
 EMPIRICAL_ALL_OUTPUTS = (
     [EMPIRICAL_LIBRARY_MANIFEST]
     + EMPIRICAL_PLACEHOLDER_OUTPUTS
     + EMPIRICAL_REFERENCE_OUTPUTS
     + EMPIRICAL_BAM_MANIFESTS
     + EMPIRICAL_TLEN_OUTPUTS
+    + EMPIRICAL_PREDICTION_OUTPUTS
 )
 
 
@@ -207,6 +221,28 @@ def _empirical_param(wildcards, name):
     return _empirical_bam_sample_row(wildcards)[name]
 
 
+def _empirical_library_param(wildcards, name):
+    return EMPIRICAL_ROWS_BY_ID[wildcards.library_id][name]
+
+
+def _empirical_prediction_min(wildcards):
+    row = EMPIRICAL_ROWS_BY_ID[wildcards.library_id]
+    if wildcards.prediction_mode == "raw":
+        return row["score_min"]
+    if wildcards.prediction_mode == "hard":
+        return row["min_size"]
+    raise ValueError(f"unknown empirical prediction_mode={wildcards.prediction_mode!r}")
+
+
+def _empirical_prediction_max(wildcards):
+    row = EMPIRICAL_ROWS_BY_ID[wildcards.library_id]
+    if wildcards.prediction_mode == "raw":
+        return row["score_max"]
+    if wildcards.prediction_mode == "hard":
+        return row["max_size"]
+    raise ValueError(f"unknown empirical prediction_mode={wildcards.prediction_mode!r}")
+
+
 rule empirical_manifest_all:
     input:
         EMPIRICAL_LIBRARY_MANIFEST
@@ -225,6 +261,11 @@ rule empirical_bam_manifests_all:
 rule empirical_tlens_all:
     input:
         EMPIRICAL_BAM_MANIFESTS + EMPIRICAL_TLEN_OUTPUTS
+
+
+rule empirical_predictions_all:
+    input:
+        EMPIRICAL_PREDICTION_OUTPUTS
 
 
 rule empirical_all:
@@ -272,6 +313,7 @@ rule empirical_extract_tlens:
         score_min=lambda wildcards: _empirical_param(wildcards, "score_min"),
         score_max=lambda wildcards: _empirical_param(wildcards, "score_max"),
         size_model=lambda wildcards: _empirical_param(wildcards, "size_model"),
+        size_edge_sd=lambda wildcards: _empirical_param(wildcards, "size_edge_sd"),
         min_mapq=lambda wildcards: _empirical_param(wildcards, "min_mapq"),
         exclude_duplicates=lambda wildcards: _empirical_param(
             wildcards, "exclude_duplicates"
@@ -298,6 +340,7 @@ rule empirical_extract_tlens:
           --score-min {params.score_min:q} \
           --score-max {params.score_max:q} \
           --size-model {params.size_model:q} \
+          --size-edge-sd {params.size_edge_sd:q} \
           --min-mapq {params.min_mapq:q} \
           --exclude-duplicates {params.exclude_duplicates:q} \
           --max-tlen {params.max_tlen:q} \
@@ -332,5 +375,81 @@ rule empirical_combine_tlens:
           --tlens-out {output.tlens:q} \
           --hist-out {output.histogram:q} \
           --qc-out {output.qc:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_radigest_prediction:
+    input:
+        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+    output:
+        fragments="results/empirical/{library_id}/predictions/{prediction_mode}.fragments.tsv",
+        json="results/empirical/{library_id}/predictions/{prediction_mode}.json"
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        enzyme_1=lambda wildcards: _empirical_library_param(wildcards, "enzyme_1"),
+        enzyme_2=lambda wildcards: _empirical_library_param(wildcards, "enzyme_2"),
+        min_size=_empirical_prediction_min,
+        max_size=_empirical_prediction_max
+    threads: 4
+    log:
+        "benchmark/logs/empirical/{library_id}.{prediction_mode}.radigest_prediction.log"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical \
+          results/empirical/{wildcards.library_id}/predictions
+        {params.radigest:q} \
+          -fasta {input.reference:q} \
+          -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+          -min {params.min_size:q} \
+          -max {params.max_size:q} \
+          -threads {threads} \
+          -fragments-tsv {output.fragments:q} \
+          -json {output.json:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_summarize_radigest_prediction:
+    input:
+        fragments="results/empirical/{library_id}/predictions/{prediction_mode}.fragments.tsv"
+    output:
+        histogram="results/empirical/{library_id}/predictions/{prediction_mode}.length_histogram.tsv",
+        summary="results/empirical/{library_id}/predictions/{prediction_mode}.summary.tsv"
+    params:
+        reference_id=lambda wildcards: _empirical_library_param(wildcards, "reference_id"),
+        reference_path=lambda wildcards: _empirical_library_param(wildcards, "reference_path"),
+        enzyme_1=lambda wildcards: _empirical_library_param(wildcards, "enzyme_1"),
+        enzyme_2=lambda wildcards: _empirical_library_param(wildcards, "enzyme_2"),
+        min_size=lambda wildcards: _empirical_library_param(wildcards, "min_size"),
+        max_size=lambda wildcards: _empirical_library_param(wildcards, "max_size"),
+        score_min=lambda wildcards: _empirical_library_param(wildcards, "score_min"),
+        score_max=lambda wildcards: _empirical_library_param(wildcards, "score_max"),
+        size_model=lambda wildcards: _empirical_library_param(wildcards, "size_model"),
+        size_edge_sd=lambda wildcards: _empirical_library_param(wildcards, "size_edge_sd")
+    log:
+        "benchmark/logs/empirical/{library_id}.{prediction_mode}.summarize_prediction.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical \
+          results/empirical/{wildcards.library_id}/predictions
+        python3 scripts/empirical/summarize_radigest_prediction.py \
+          --fragments {input.fragments:q} \
+          --library-id {wildcards.library_id:q} \
+          --prediction-mode {wildcards.prediction_mode:q} \
+          --reference-id {params.reference_id:q} \
+          --reference-path {params.reference_path:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --min-size {params.min_size:q} \
+          --max-size {params.max_size:q} \
+          --score-min {params.score_min:q} \
+          --score-max {params.score_max:q} \
+          --size-model {params.size_model:q} \
+          --size-edge-sd {params.size_edge_sd:q} \
+          --hist-out {output.histogram:q} \
+          --summary-out {output.summary:q} \
           > {log:q} 2>&1
         """

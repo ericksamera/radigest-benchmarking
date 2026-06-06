@@ -18,6 +18,7 @@ make comparators THREADS=4 RADIGEST=/path/to/radigest
 make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 ```
 
@@ -54,13 +55,15 @@ The empirical scenario is optional until public inputs are available. Local test
 is driven by `config/empirical_libraries.tsv`; disabled rows are metadata only,
 while enabled `local_bam_dir` rows process every BAM matching `bam_glob` under
 the configured drop-off directory. Current empirical targets validate the
-manifest/reference contract, inventory BAMs, and extract TLEN distributions;
-model-fitting rules are added in the next empirical workflow stage.
+manifest/reference contract, inventory BAMs, extract TLEN distributions, and
+run broad/raw plus strict/hard radigest predictions. Model-fitting rules are
+added in the next empirical workflow stage.
 
 ```bash
 make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
+make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4 RADIGEST=/path/to/radigest
 ```

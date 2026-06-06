@@ -31,6 +31,7 @@ REQUIRED_COLUMNS = [
     "score_min",
     "score_max",
     "size_model",
+    "size_edge_sd",
     "min_mapq",
     "exclude_duplicates",
     "max_tlen",
@@ -243,6 +244,9 @@ def main() -> int:
         max_size = parse_int(row["max_size"], f"library {library_id} max_size")
         score_min = parse_int(row["score_min"], f"library {library_id} score_min")
         score_max = parse_int(row["score_max"], f"library {library_id} score_max")
+        size_edge_sd = parse_int(
+            row["size_edge_sd"], f"library {library_id} size_edge_sd"
+        )
         min_mapq = parse_int(row["min_mapq"], f"library {library_id} min_mapq")
         max_tlen = parse_int(row["max_tlen"], f"library {library_id} max_tlen")
         if min_size < 0 or max_size <= min_size:
@@ -253,6 +257,11 @@ def main() -> int:
             fail(
                 f"config/empirical_libraries.tsv:{line_number} score_min/score_max "
                 "must cover min_size/max_size"
+            )
+        if size_edge_sd <= 0:
+            fail(
+                f"config/empirical_libraries.tsv:{line_number} "
+                "size_edge_sd must be > 0"
             )
         if min_mapq < 0:
             fail(f"config/empirical_libraries.tsv:{line_number} min_mapq must be >= 0")

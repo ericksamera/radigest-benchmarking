@@ -30,6 +30,7 @@ QC_COLUMNS = [
     "score_min",
     "score_max",
     "size_model",
+    "size_edge_sd",
     "total_records",
     "used_pairs",
     "in_window_count",
@@ -72,6 +73,7 @@ class TlenSummary:
     score_min: int
     score_max: int
     size_model: str
+    size_edge_sd: int
     min_mapq: int
     exclude_duplicates: bool
     max_tlen: int
@@ -136,6 +138,7 @@ class TlenSummary:
             "score_min": self.score_min,
             "score_max": self.score_max,
             "size_model": self.size_model,
+            "size_edge_sd": self.size_edge_sd,
             "total_records": self.total_records,
             "used_pairs": self.used_pairs,
             "in_window_count": self.in_window_count,
@@ -294,6 +297,7 @@ def build_summary(args: argparse.Namespace) -> TlenSummary:
         score_min=parse_int(args.score_min, "score_min"),
         score_max=parse_int(args.score_max, "score_max"),
         size_model=args.size_model,
+        size_edge_sd=parse_int(args.size_edge_sd, "size_edge_sd"),
         min_mapq=parse_int(args.min_mapq, "min_mapq"),
         exclude_duplicates=parse_bool(args.exclude_duplicates, "exclude_duplicates"),
         max_tlen=parse_int(args.max_tlen, "max_tlen"),
@@ -314,6 +318,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--score-min", required=True)
     parser.add_argument("--score-max", required=True)
     parser.add_argument("--size-model", required=True)
+    parser.add_argument("--size-edge-sd", required=True)
     parser.add_argument("--min-mapq", required=True)
     parser.add_argument("--exclude-duplicates", required=True)
     parser.add_argument("--max-tlen", required=True)
