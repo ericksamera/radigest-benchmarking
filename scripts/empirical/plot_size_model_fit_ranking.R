@@ -69,7 +69,7 @@ jensen_shannon_distance <- function(p, q) {
 
 model_family_label <- function(model) {
   case_when(
-    model == "none" ~ "No selection",
+    model == "none" ~ "Raw digest",
     model == "hard" ~ "Hard window",
     model == "soft-window" ~ "Soft window",
     model == "soft-window-short-bias" ~ "Soft + short-bias",
@@ -157,7 +157,7 @@ ranking <- curves |>
     model_family = factor(
       model_family,
       levels = c(
-        "No selection", "Hard window", "Soft window", "Soft + short-bias",
+        "Raw digest", "Hard window", "Soft window", "Soft + short-bias",
         "Normal", "Triangular"
       )
     )
@@ -206,12 +206,19 @@ xmax <- max(ranking$js_read, na.rm = TRUE) * 1.18
 if (!is.finite(xmax) || xmax <= 0) {
   xmax <- 1
 }
-height <- max(4.0, 2.2 + 0.36 * nrow(ranking))
+dataset_count <- n_distinct(ranking$display_name)
+facet_cols <- min(2, dataset_count)
+facet_rows <- ceiling(dataset_count / facet_cols)
+models_per_dataset <- ranking |>
+  count(library_id, name = "n_models") |>
+  pull(n_models)
+height <- max(4.0, 2.3 + 0.42 * max(models_per_dataset, na.rm = TRUE) * facet_rows)
+width <- if (facet_cols > 1) 9.2 else 7.2
 
 p <- ggplot(ranking, aes(x = js_read, y = factor(y_key, levels = y_levels))) +
   geom_col(width = 0.68, fill = "grey55") +
   geom_text(aes(label = js_label), hjust = -0.15, size = 2.8) +
-  facet_wrap(vars(display_name), ncol = 1, scales = "free_y") +
+  facet_wrap(vars(display_name), ncol = facet_cols, scales = "free_y") +
   scale_y_discrete(labels = y_labels) +
   scale_x_continuous(
     labels = label_number(accuracy = 0.001),
@@ -219,11 +226,11 @@ p <- ggplot(ranking, aes(x = js_read, y = factor(y_key, levels = y_levels))) +
   ) +
   coord_cartesian(xlim = c(0, xmax), clip = "off") +
   labs(
-    title = "Empirical size-selection model fit ranking",
+    title = "Soft recovery models better match empirical insert-size distributions",
     subtitle = "Lower Jensen-Shannon distance indicates better agreement with empirical read-pair TLEN density",
     x = "Jensen-Shannon distance",
     y = NULL,
-    caption = "Models are ranked independently within each empirical library. Short-bias is the best beta from the configured beta grid."
+    caption = "Models are ranked independently within each empirical library. Short-bias is the best beta from the configured beta grid; model parameters are written to the accompanying TSV."
   ) +
   theme_minimal(base_size = 9) +
   theme(
@@ -250,8 +257,8 @@ for (output in requested_outputs) {
   dir.create(dirname(output), recursive = TRUE, showWarnings = FALSE)
   fmt <- tolower(tools::file_ext(output))
   if (identical(fmt, "pdf") && isTRUE(capabilities("cairo"))) {
-    ggsave(output, plot = p, width = 7.2, height = height, device = cairo_pdf)
+    ggsave(output, plot = p, width = width, height = height, device = cairo_pdf)
   } else {
-    ggsave(output, plot = p, width = 7.2, height = height)
+    ggsave(output, plot = p, width = width, height = height)
   }
 }
