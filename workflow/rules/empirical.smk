@@ -270,7 +270,7 @@ def _empirical_library_fragment_depth_qc_files(wildcards):
     ]
 
 
-def _empirical_curve_files():
+def _empirical_curve_files(wildcards=None):
     return [
         f"results/empirical/{row['library_id']}/size_model_curves.tsv"
         for row in EMPIRICAL_ENABLED_ROWS
