@@ -20,6 +20,10 @@ CURVE_COLUMNS = [
     "length",
     "empirical_count",
     "empirical_density",
+    "empirical_unique_fragment_count",
+    "empirical_unique_fragment_density",
+    "empirical_capped_fragment_count",
+    "empirical_capped_fragment_density",
     "pred_raw_count",
     "pred_raw_density",
     "pred_hard_count",
@@ -224,19 +228,45 @@ def write_curves(
     output: Path,
     cfg: LibraryConfig,
     empirical: Counter[int],
+    empirical_unique: Counter[int],
+    empirical_capped: Counter[int],
     raw: Counter[int],
     hard: Counter[int],
 ) -> None:
     empirical_total = sum(empirical.values())
+    empirical_unique_total = sum(empirical_unique.values())
+    empirical_capped_total = sum(empirical_capped.values())
     raw_total = sum(raw.values())
     hard_total = sum(hard.values())
     if empirical_total == 0:
         raise ValueError("empirical histogram is empty")
+    if empirical_unique_total == 0:
+        raise ValueError("unique-fragment empirical histogram is empty")
+    if empirical_capped_total == 0:
+        raise ValueError("capped-fragment empirical histogram is empty")
     if raw_total == 0:
         raise ValueError("raw prediction histogram is empty")
 
-    min_length = min([*empirical.keys(), *raw.keys(), *hard.keys(), cfg.score_min])
-    max_length = max([*empirical.keys(), *raw.keys(), *hard.keys(), cfg.score_max])
+    min_length = min(
+        [
+            *empirical.keys(),
+            *empirical_unique.keys(),
+            *empirical_capped.keys(),
+            *raw.keys(),
+            *hard.keys(),
+            cfg.score_min,
+        ]
+    )
+    max_length = max(
+        [
+            *empirical.keys(),
+            *empirical_unique.keys(),
+            *empirical_capped.keys(),
+            *raw.keys(),
+            *hard.keys(),
+            cfg.score_max,
+        ]
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
@@ -251,6 +281,8 @@ def write_curves(
             weighted_total = sum(weighted_counts.values())
             for length in range(min_length, max_length + 1):
                 empirical_count = empirical.get(length, 0)
+                empirical_unique_count = empirical_unique.get(length, 0)
+                empirical_capped_count = empirical_capped.get(length, 0)
                 raw_count = raw.get(length, 0)
                 hard_count = hard.get(length, 0)
                 weight = model_weight(model, length, cfg)
@@ -265,6 +297,14 @@ def write_curves(
                         "length": length,
                         "empirical_count": empirical_count,
                         "empirical_density": empirical_count / empirical_total,
+                        "empirical_unique_fragment_count": empirical_unique_count,
+                        "empirical_unique_fragment_density": (
+                            empirical_unique_count / empirical_unique_total
+                        ),
+                        "empirical_capped_fragment_count": empirical_capped_count,
+                        "empirical_capped_fragment_density": (
+                            empirical_capped_count / empirical_capped_total
+                        ),
                         "pred_raw_count": raw_count,
                         "pred_raw_density": raw_count / raw_total,
                         "pred_hard_count": hard_count,
@@ -298,6 +338,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--library-id", required=True)
     parser.add_argument("--empirical-hist", type=Path, required=True)
+    parser.add_argument("--empirical-unique-fragment-hist", type=Path, required=True)
+    parser.add_argument("--empirical-capped-fragment-hist", type=Path, required=True)
     parser.add_argument("--raw-hist", type=Path, required=True)
     parser.add_argument("--hard-hist", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
@@ -310,9 +352,23 @@ def main(argv: list[str]) -> int:
     try:
         cfg = read_manifest_row(args.manifest, args.library_id)
         empirical = read_empirical_histogram(args.empirical_hist, args.library_id)
+        empirical_unique = read_empirical_histogram(
+            args.empirical_unique_fragment_hist, args.library_id
+        )
+        empirical_capped = read_empirical_histogram(
+            args.empirical_capped_fragment_hist, args.library_id
+        )
         raw = read_prediction_histogram(args.raw_hist, args.library_id, "raw")
         hard = read_prediction_histogram(args.hard_hist, args.library_id, "hard")
-        write_curves(output=args.out, cfg=cfg, empirical=empirical, raw=raw, hard=hard)
+        write_curves(
+            output=args.out,
+            cfg=cfg,
+            empirical=empirical,
+            empirical_unique=empirical_unique,
+            empirical_capped=empirical_capped,
+            raw=raw,
+            hard=hard,
+        )
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

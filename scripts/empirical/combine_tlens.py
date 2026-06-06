@@ -47,8 +47,39 @@ QC_COLUMNS = [
     "min_observed_tlen",
     "max_observed_tlen",
 ]
+FRAGMENT_DEPTH_QC_COLUMNS = [
+    "library_id",
+    "bam_id",
+    "bam_path",
+    "reference_id",
+    "reference_path",
+    "enzyme_1",
+    "enzyme_2",
+    "min_size",
+    "max_size",
+    "total_fragment_reads",
+    "unique_fragments",
+    "singleton_fragments",
+    "mean_fragment_depth",
+    "median_fragment_depth",
+    "max_fragment_depth",
+    "unique_in_window_count",
+    "unique_in_window_fraction",
+    "capped_depth",
+    "capped_fragment_reads",
+    "capped_in_window_count",
+    "capped_in_window_fraction",
+]
 SKIP_COLUMNS = [column for column in QC_COLUMNS if column.startswith("skipped_")]
 INT_COLUMNS = ["total_records", "used_pairs", "in_window_count", *SKIP_COLUMNS]
+FRAGMENT_DEPTH_INT_COLUMNS = [
+    "total_fragment_reads",
+    "unique_fragments",
+    "singleton_fragments",
+    "unique_in_window_count",
+    "capped_fragment_reads",
+    "capped_in_window_count",
+]
 
 
 def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
@@ -87,6 +118,13 @@ def median_from_histogram(histogram: Counter[int]) -> str:
     if left_value is None or right_value is None:
         raise AssertionError("median calculation failed for non-empty histogram")
     return f"{((left_value + right_value) / 2):.6g}"
+
+
+def weighted_mean(values: list[float], weights: list[int]) -> str:
+    total_weight = sum(weights)
+    if total_weight == 0:
+        return "NA"
+    return f"{sum(value * weight for value, weight in zip(values, weights)) / total_weight:.6g}"
 
 
 def write_combined_tlens(input_paths: list[Path], output: Path) -> None:
@@ -167,15 +205,73 @@ def write_combined_qc(
         writer.writerows(rows)
 
 
+def write_combined_fragment_depth_qc(
+    input_paths: list[Path], output: Path, library_id: str
+) -> None:
+    rows: list[dict[str, str]] = []
+    for path in input_paths:
+        rows.extend(read_tsv(path, FRAGMENT_DEPTH_QC_COLUMNS))
+    if not rows:
+        raise ValueError("cannot combine zero fragment-depth QC rows")
+    template = rows[0]
+    pooled_row = dict(template)
+    pooled_row["library_id"] = library_id
+    pooled_row["bam_id"] = "pooled"
+    pooled_row["bam_path"] = "NA"
+    for column in FRAGMENT_DEPTH_INT_COLUMNS:
+        pooled_row[column] = str(sum(int(row[column]) for row in rows))
+    unique_fragments = int(pooled_row["unique_fragments"])
+    unique_in_window = int(pooled_row["unique_in_window_count"])
+    capped_reads = int(pooled_row["capped_fragment_reads"])
+    capped_in_window = int(pooled_row["capped_in_window_count"])
+    pooled_row["unique_in_window_fraction"] = (
+        "NA" if unique_fragments == 0 else f"{unique_in_window / unique_fragments:.12g}"
+    )
+    pooled_row["capped_in_window_fraction"] = (
+        "NA" if capped_reads == 0 else f"{capped_in_window / capped_reads:.12g}"
+    )
+    pooled_row["mean_fragment_depth"] = weighted_mean(
+        [float(row["mean_fragment_depth"]) for row in rows],
+        [int(row["unique_fragments"]) for row in rows],
+    )
+    pooled_row["median_fragment_depth"] = "NA"
+    pooled_row["max_fragment_depth"] = str(
+        max(int(row["max_fragment_depth"]) for row in rows)
+    )
+    rows.append(pooled_row)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            delimiter="\t",
+            fieldnames=FRAGMENT_DEPTH_QC_COLUMNS,
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library-id", required=True)
     parser.add_argument("--tlens", type=Path, nargs="+", required=True)
     parser.add_argument("--histograms", type=Path, nargs="+", required=True)
+    parser.add_argument(
+        "--unique-fragment-histograms", type=Path, nargs="+", required=True
+    )
+    parser.add_argument(
+        "--capped-fragment-histograms", type=Path, nargs="+", required=True
+    )
     parser.add_argument("--qc-tables", type=Path, nargs="+", required=True)
+    parser.add_argument(
+        "--fragment-depth-qc-tables", type=Path, nargs="+", required=True
+    )
     parser.add_argument("--tlens-out", type=Path, required=True)
     parser.add_argument("--hist-out", type=Path, required=True)
+    parser.add_argument("--unique-fragment-hist-out", type=Path, required=True)
+    parser.add_argument("--capped-fragment-hist-out", type=Path, required=True)
     parser.add_argument("--qc-out", type=Path, required=True)
+    parser.add_argument("--fragment-depth-qc-out", type=Path, required=True)
     return parser
 
 
@@ -187,7 +283,22 @@ def main(argv: list[str]) -> int:
         pooled_hist = write_combined_histograms(
             args.histograms, args.hist_out, args.library_id
         )
+        write_combined_histograms(
+            args.unique_fragment_histograms,
+            args.unique_fragment_hist_out,
+            args.library_id,
+        )
+        write_combined_histograms(
+            args.capped_fragment_histograms,
+            args.capped_fragment_hist_out,
+            args.library_id,
+        )
         write_combined_qc(args.qc_tables, args.qc_out, args.library_id, pooled_hist)
+        write_combined_fragment_depth_qc(
+            args.fragment_depth_qc_tables,
+            args.fragment_depth_qc_out,
+            args.library_id,
+        )
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

@@ -9,6 +9,7 @@ import sys
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+from statistics import median
 from typing import Any
 
 try:
@@ -54,9 +55,33 @@ QC_COLUMNS = [
     "min_observed_tlen",
     "max_observed_tlen",
 ]
+FRAGMENT_DEPTH_QC_COLUMNS = [
+    "library_id",
+    "bam_id",
+    "bam_path",
+    "reference_id",
+    "reference_path",
+    "enzyme_1",
+    "enzyme_2",
+    "min_size",
+    "max_size",
+    "total_fragment_reads",
+    "unique_fragments",
+    "singleton_fragments",
+    "mean_fragment_depth",
+    "median_fragment_depth",
+    "max_fragment_depth",
+    "unique_in_window_count",
+    "unique_in_window_fraction",
+    "capped_depth",
+    "capped_fragment_reads",
+    "capped_in_window_count",
+    "capped_in_window_fraction",
+]
 SKIP_COLUMNS = [column for column in QC_COLUMNS if column.startswith("skipped_")]
 TRUE_VALUES = {"1", "true", "t", "yes", "y"}
 FALSE_VALUES = {"0", "false", "f", "no", "n"}
+FragmentKey = tuple[int, int, int, bool, bool]
 
 
 @dataclass
@@ -77,11 +102,14 @@ class TlenSummary:
     min_mapq: int
     exclude_duplicates: bool
     max_tlen: int
+    capped_fragment_depth: int
     total_records: int = 0
     skips: dict[str, int] = field(
         default_factory=lambda: {column: 0 for column in SKIP_COLUMNS}
     )
     histogram: Counter[int] = field(default_factory=Counter)
+    fragment_depths: Counter[FragmentKey] = field(default_factory=Counter)
+    fragment_tlens: dict[FragmentKey, int] = field(default_factory=dict)
 
     @property
     def used_pairs(self) -> int:
@@ -153,6 +181,66 @@ class TlenSummary:
         }
         row.update(self.skips)
         return row
+
+    def unique_fragment_histogram(self) -> Counter[int]:
+        histogram: Counter[int] = Counter()
+        for key in self.fragment_depths:
+            histogram[self.fragment_tlens[key]] += 1
+        return histogram
+
+    def capped_fragment_histogram(self) -> Counter[int]:
+        histogram: Counter[int] = Counter()
+        for key, depth in self.fragment_depths.items():
+            histogram[self.fragment_tlens[key]] += min(
+                depth, self.capped_fragment_depth
+            )
+        return histogram
+
+    def fragment_depth_qc_row(self) -> dict[str, str | int]:
+        depths = list(self.fragment_depths.values())
+        unique_hist = self.unique_fragment_histogram()
+        capped_hist = self.capped_fragment_histogram()
+        unique_total = sum(unique_hist.values())
+        capped_total = sum(capped_hist.values())
+        unique_in_window = sum(
+            count
+            for tlen, count in unique_hist.items()
+            if self.min_size <= tlen <= self.max_size
+        )
+        capped_in_window = sum(
+            count
+            for tlen, count in capped_hist.items()
+            if self.min_size <= tlen <= self.max_size
+        )
+        return {
+            "library_id": self.library_id,
+            "bam_id": self.bam_id,
+            "bam_path": self.bam_path,
+            "reference_id": self.reference_id,
+            "reference_path": self.reference_path,
+            "enzyme_1": self.enzyme_1,
+            "enzyme_2": self.enzyme_2,
+            "min_size": self.min_size,
+            "max_size": self.max_size,
+            "total_fragment_reads": sum(depths),
+            "unique_fragments": len(depths),
+            "singleton_fragments": sum(1 for depth in depths if depth == 1),
+            "mean_fragment_depth": (
+                "NA" if not depths else f"{sum(depths) / len(depths):.6g}"
+            ),
+            "median_fragment_depth": "NA" if not depths else f"{median(depths):.6g}",
+            "max_fragment_depth": "NA" if not depths else max(depths),
+            "unique_in_window_count": unique_in_window,
+            "unique_in_window_fraction": (
+                "NA" if unique_total == 0 else f"{unique_in_window / unique_total:.12g}"
+            ),
+            "capped_depth": self.capped_fragment_depth,
+            "capped_fragment_reads": capped_total,
+            "capped_in_window_count": capped_in_window,
+            "capped_in_window_fraction": (
+                "NA" if capped_total == 0 else f"{capped_in_window / capped_total:.12g}"
+            ),
+        }
 
 
 def median_from_histogram(histogram: Counter[int]) -> float:
@@ -231,15 +319,28 @@ def should_use_record(record: Any, summary: TlenSummary) -> int | None:
     return tlen
 
 
-def iter_histogram_rows(summary: TlenSummary) -> list[dict[str, str | int]]:
-    denominator = summary.used_pairs
+def fragment_key(record: Any, tlen: int) -> FragmentKey:
+    start = int(record.reference_start)
+    return (
+        int(record.reference_id),
+        start,
+        start + tlen,
+        bool(record.is_reverse),
+        bool(record.mate_is_reverse),
+    )
+
+
+def iter_histogram_rows(
+    *, library_id: str, bam_id: str, histogram: Counter[int]
+) -> list[dict[str, str | int]]:
+    denominator = sum(histogram.values())
     rows: list[dict[str, str | int]] = []
-    for tlen, count in sorted(summary.histogram.items()):
+    for tlen, count in sorted(histogram.items()):
         fraction = 0.0 if denominator == 0 else count / denominator
         rows.append(
             {
-                "library_id": summary.library_id,
-                "bam_id": summary.bam_id,
+                "library_id": library_id,
+                "bam_id": bam_id,
                 "tlen": tlen,
                 "count": count,
                 "fraction": f"{fraction:.12g}",
@@ -248,14 +349,20 @@ def iter_histogram_rows(summary: TlenSummary) -> list[dict[str, str | int]]:
     return rows
 
 
-def write_histogram(path: Path, summary: TlenSummary) -> None:
+def write_histogram(
+    path: Path, *, library_id: str, bam_id: str, histogram: Counter[int]
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
             handle, delimiter="\t", fieldnames=HISTOGRAM_COLUMNS, lineterminator="\n"
         )
         writer.writeheader()
-        writer.writerows(iter_histogram_rows(summary))
+        writer.writerows(
+            iter_histogram_rows(
+                library_id=library_id, bam_id=bam_id, histogram=histogram
+            )
+        )
 
 
 def write_qc(path: Path, summary: TlenSummary) -> None:
@@ -266,6 +373,19 @@ def write_qc(path: Path, summary: TlenSummary) -> None:
         )
         writer.writeheader()
         writer.writerow(summary.qc_row())
+
+
+def write_fragment_depth_qc(path: Path, summary: TlenSummary) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            delimiter="\t",
+            fieldnames=FRAGMENT_DEPTH_QC_COLUMNS,
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerow(summary.fragment_depth_qc_row())
 
 
 def extract_tlens(*, bam: Path, tlens_out: Path, summary: TlenSummary) -> None:
@@ -279,7 +399,10 @@ def extract_tlens(*, bam: Path, tlens_out: Path, summary: TlenSummary) -> None:
                 tlen = should_use_record(record, summary)
                 if tlen is None:
                     continue
+                key = fragment_key(record, tlen)
                 summary.histogram[tlen] += 1
+                summary.fragment_depths[key] += 1
+                summary.fragment_tlens[key] = tlen
                 tlens_handle.write(f"{tlen}\n")
 
 
@@ -301,6 +424,9 @@ def build_summary(args: argparse.Namespace) -> TlenSummary:
         min_mapq=parse_int(args.min_mapq, "min_mapq"),
         exclude_duplicates=parse_bool(args.exclude_duplicates, "exclude_duplicates"),
         max_tlen=parse_int(args.max_tlen, "max_tlen"),
+        capped_fragment_depth=parse_int(
+            args.capped_fragment_depth, "capped_fragment_depth"
+        ),
     )
 
 
@@ -322,9 +448,13 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--min-mapq", required=True)
     parser.add_argument("--exclude-duplicates", required=True)
     parser.add_argument("--max-tlen", required=True)
+    parser.add_argument("--capped-fragment-depth", default="5")
     parser.add_argument("--tlens-out", type=Path, required=True)
     parser.add_argument("--hist-out", type=Path, required=True)
+    parser.add_argument("--unique-fragment-hist-out", type=Path, required=True)
+    parser.add_argument("--capped-fragment-hist-out", type=Path, required=True)
     parser.add_argument("--qc-out", type=Path, required=True)
+    parser.add_argument("--fragment-depth-qc-out", type=Path, required=True)
     args = parser.parse_args(argv)
 
     if pysam is None:
@@ -336,8 +466,26 @@ def main(argv: list[str]) -> int:
     try:
         summary = build_summary(args)
         extract_tlens(bam=args.bam, tlens_out=args.tlens_out, summary=summary)
-        write_histogram(args.hist_out, summary)
+        write_histogram(
+            args.hist_out,
+            library_id=summary.library_id,
+            bam_id=summary.bam_id,
+            histogram=summary.histogram,
+        )
+        write_histogram(
+            args.unique_fragment_hist_out,
+            library_id=summary.library_id,
+            bam_id=summary.bam_id,
+            histogram=summary.unique_fragment_histogram(),
+        )
+        write_histogram(
+            args.capped_fragment_hist_out,
+            library_id=summary.library_id,
+            bam_id=summary.bam_id,
+            histogram=summary.capped_fragment_histogram(),
+        )
         write_qc(args.qc_out, summary)
+        write_fragment_depth_qc(args.fragment_depth_qc_out, summary)
         if summary.used_pairs == 0:
             raise ValueError("no usable positive TLEN values after filtering")
     except Exception as exc:

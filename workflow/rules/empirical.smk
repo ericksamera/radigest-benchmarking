@@ -130,7 +130,10 @@ for row in EMPIRICAL_BAM_SAMPLE_ROWS:
         [
             f"{prefix}/tlens.txt",
             f"{prefix}/tlen_histogram.tsv",
+            f"{prefix}/unique_fragment_tlen_histogram.tsv",
+            f"{prefix}/capped_fragment_tlen_histogram.tsv",
             f"{prefix}/tlen_qc.tsv",
+            f"{prefix}/fragment_depth_qc.tsv",
         ]
     )
 EMPIRICAL_LIBRARY_TLEN_OUTPUTS = []
@@ -139,7 +142,10 @@ for library_id in EMPIRICAL_ENABLED_BAM_LIBRARY_IDS:
         [
             f"results/empirical/{library_id}/tlens.txt",
             f"results/empirical/{library_id}/tlen_histogram.tsv",
+            f"results/empirical/{library_id}/unique_fragment_tlen_histogram.tsv",
+            f"results/empirical/{library_id}/capped_fragment_tlen_histogram.tsv",
             f"results/empirical/{library_id}/tlen_qc.tsv",
+            f"results/empirical/{library_id}/fragment_depth_qc.tsv",
         ]
     )
 EMPIRICAL_TLEN_OUTPUTS = EMPIRICAL_PER_BAM_TLEN_OUTPUTS + EMPIRICAL_LIBRARY_TLEN_OUTPUTS
@@ -220,9 +226,30 @@ def _empirical_library_histogram_files(wildcards):
     ]
 
 
+def _empirical_library_unique_fragment_histogram_files(wildcards):
+    return [
+        f"results/empirical/{wildcards.library_id}/bams/{bam_id}/unique_fragment_tlen_histogram.tsv"
+        for bam_id in _empirical_library_bam_ids(wildcards.library_id)
+    ]
+
+
+def _empirical_library_capped_fragment_histogram_files(wildcards):
+    return [
+        f"results/empirical/{wildcards.library_id}/bams/{bam_id}/capped_fragment_tlen_histogram.tsv"
+        for bam_id in _empirical_library_bam_ids(wildcards.library_id)
+    ]
+
+
 def _empirical_library_qc_files(wildcards):
     return [
         f"results/empirical/{wildcards.library_id}/bams/{bam_id}/tlen_qc.tsv"
+        for bam_id in _empirical_library_bam_ids(wildcards.library_id)
+    ]
+
+
+def _empirical_library_fragment_depth_qc_files(wildcards):
+    return [
+        f"results/empirical/{wildcards.library_id}/bams/{bam_id}/fragment_depth_qc.tsv"
         for bam_id in _empirical_library_bam_ids(wildcards.library_id)
     ]
 
@@ -322,7 +349,10 @@ rule empirical_extract_tlens:
     output:
         tlens="results/empirical/{library_id}/bams/{bam_id}/tlens.txt",
         histogram="results/empirical/{library_id}/bams/{bam_id}/tlen_histogram.tsv",
-        qc="results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv"
+        unique_fragment_histogram="results/empirical/{library_id}/bams/{bam_id}/unique_fragment_tlen_histogram.tsv",
+        capped_fragment_histogram="results/empirical/{library_id}/bams/{bam_id}/capped_fragment_tlen_histogram.tsv",
+        qc="results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv",
+        fragment_depth_qc="results/empirical/{library_id}/bams/{bam_id}/fragment_depth_qc.tsv"
     params:
         reference_id=lambda wildcards: _empirical_param(wildcards, "reference_id"),
         reference_path=lambda wildcards: _empirical_param(wildcards, "reference_path"),
@@ -338,7 +368,8 @@ rule empirical_extract_tlens:
         exclude_duplicates=lambda wildcards: _empirical_param(
             wildcards, "exclude_duplicates"
         ),
-        max_tlen=lambda wildcards: _empirical_param(wildcards, "max_tlen")
+        max_tlen=lambda wildcards: _empirical_param(wildcards, "max_tlen"),
+        capped_fragment_depth="5"
     log:
         "benchmark/logs/empirical/{library_id}.{bam_id}.extract_tlens.log"
     conda:
@@ -364,9 +395,13 @@ rule empirical_extract_tlens:
           --min-mapq {params.min_mapq:q} \
           --exclude-duplicates {params.exclude_duplicates:q} \
           --max-tlen {params.max_tlen:q} \
+          --capped-fragment-depth {params.capped_fragment_depth:q} \
           --tlens-out {output.tlens:q} \
           --hist-out {output.histogram:q} \
+          --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
+          --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
           --qc-out {output.qc:q} \
+          --fragment-depth-qc-out {output.fragment_depth_qc:q} \
           > {log:q} 2>&1
         """
 
@@ -375,11 +410,17 @@ rule empirical_combine_tlens:
     input:
         tlens=_empirical_library_tlen_files,
         histograms=_empirical_library_histogram_files,
-        qc_tables=_empirical_library_qc_files
+        unique_fragment_histograms=_empirical_library_unique_fragment_histogram_files,
+        capped_fragment_histograms=_empirical_library_capped_fragment_histogram_files,
+        qc_tables=_empirical_library_qc_files,
+        fragment_depth_qc_tables=_empirical_library_fragment_depth_qc_files
     output:
         tlens="results/empirical/{library_id}/tlens.txt",
         histogram="results/empirical/{library_id}/tlen_histogram.tsv",
-        qc="results/empirical/{library_id}/tlen_qc.tsv"
+        unique_fragment_histogram="results/empirical/{library_id}/unique_fragment_tlen_histogram.tsv",
+        capped_fragment_histogram="results/empirical/{library_id}/capped_fragment_tlen_histogram.tsv",
+        qc="results/empirical/{library_id}/tlen_qc.tsv",
+        fragment_depth_qc="results/empirical/{library_id}/fragment_depth_qc.tsv"
     log:
         "benchmark/logs/empirical/{library_id}.combine_tlens.log"
     conda:
@@ -391,10 +432,16 @@ rule empirical_combine_tlens:
           --library-id {wildcards.library_id:q} \
           --tlens {input.tlens:q} \
           --histograms {input.histograms:q} \
+          --unique-fragment-histograms {input.unique_fragment_histograms:q} \
+          --capped-fragment-histograms {input.capped_fragment_histograms:q} \
           --qc-tables {input.qc_tables:q} \
+          --fragment-depth-qc-tables {input.fragment_depth_qc_tables:q} \
           --tlens-out {output.tlens:q} \
           --hist-out {output.histogram:q} \
+          --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
+          --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
           --qc-out {output.qc:q} \
+          --fragment-depth-qc-out {output.fragment_depth_qc:q} \
           > {log:q} 2>&1
         """
 
@@ -479,6 +526,8 @@ rule empirical_size_model_curves:
     input:
         manifest=EMPIRICAL_LIBRARY_MANIFEST,
         empirical_histogram="results/empirical/{library_id}/tlen_histogram.tsv",
+        empirical_unique_fragment_histogram="results/empirical/{library_id}/unique_fragment_tlen_histogram.tsv",
+        empirical_capped_fragment_histogram="results/empirical/{library_id}/capped_fragment_tlen_histogram.tsv",
         raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv",
         hard_histogram="results/empirical/{library_id}/predictions/hard.length_histogram.tsv"
     output:
@@ -494,6 +543,8 @@ rule empirical_size_model_curves:
           --manifest {input.manifest:q} \
           --library-id {wildcards.library_id:q} \
           --empirical-hist {input.empirical_histogram:q} \
+          --empirical-unique-fragment-hist {input.empirical_unique_fragment_histogram:q} \
+          --empirical-capped-fragment-hist {input.empirical_capped_fragment_histogram:q} \
           --raw-hist {input.raw_histogram:q} \
           --hard-hist {input.hard_histogram:q} \
           --out {output.curves:q} \
