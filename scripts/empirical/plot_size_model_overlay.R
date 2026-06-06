@@ -73,9 +73,8 @@ if (is.null(out_path)) {
 curves <- read_tsv(curves_path, show_col_types = FALSE, progress = FALSE)
 required_columns <- c(
   "library_id", "display_name", "model", "model_label", "length",
-  "empirical_density", "empirical_unique_fragment_density",
-  "empirical_capped_fragment_density", "pred_raw_density",
-  "pred_weighted_density", "min_size", "max_size", "score_min", "score_max",
+  "empirical_density", "pred_raw_density", "pred_weighted_density",
+  "min_size", "max_size", "score_min", "score_max",
   "length_bias_beta_per_bp"
 )
 missing_columns <- setdiff(required_columns, names(curves))
@@ -97,8 +96,6 @@ plot_df <- curves |>
     model_label = factor(model_label, levels = model_labels),
     length = as.integer(length),
     empirical_density = as.numeric(empirical_density),
-    empirical_unique_fragment_density = as.numeric(empirical_unique_fragment_density),
-    empirical_capped_fragment_density = as.numeric(empirical_capped_fragment_density),
     length_bias_beta_per_bp = as.numeric(length_bias_beta_per_bp),
     pred_raw_density = as.numeric(pred_raw_density),
     pred_weighted_density = as.numeric(pred_weighted_density),
@@ -152,35 +149,10 @@ window_df <- window_df |>
     xmax = pmin(max_size, plot_xmax)
   )
 
-empirical_plot_df <- bind_rows(
-  plot_df_window |>
-    transmute(model_label, length, density = empirical_density, empirical_weighting = "Read-pair"),
-  plot_df_window |>
-    transmute(
-      model_label,
-      length,
-      density = empirical_unique_fragment_density,
-      empirical_weighting = "Unique fragment"
-    ),
-  plot_df_window |>
-    transmute(
-      model_label,
-      length,
-      density = empirical_capped_fragment_density,
-      empirical_weighting = "Capped fragment"
-    )
-) |>
-  mutate(
-    empirical_weighting = factor(
-      empirical_weighting,
-      levels = c("Read-pair", "Unique fragment", "Capped fragment")
-    )
-  )
-
 caption_text <- paste(
   "Grey band: nominal size-selection window. Blue: model-weighted prediction",
   "(and raw prediction for 'No size selection'). Black: raw radigest fragment",
-  "distribution in size-selected panels only. Red: empirical TLEN densities.",
+  "distribution in size-selected panels only. Red: empirical read-pair TLEN density.",
   sep = "\n"
 )
 
@@ -210,12 +182,7 @@ p <- ggplot(plot_df_window, aes(x = length)) +
     linewidth = 0.35
   ) +
   geom_line(aes(y = pred_weighted_density), color = "#4C72B0", linewidth = 0.5) +
-  geom_line(
-    data = empirical_plot_df,
-    aes(y = density, linetype = empirical_weighting),
-    color = "#C44E52",
-    linewidth = 0.45
-  ) +
+  geom_line(aes(y = empirical_density), color = "#C44E52", linewidth = 0.45) +
   geom_text(
     data = panel_stats,
     aes(x = x, y = y, label = label),
@@ -236,10 +203,6 @@ p <- ggplot(plot_df_window, aes(x = length)) +
     labels = label_number(accuracy = 0.001),
     expand = expansion(mult = c(0, 0.12))
   ) +
-  scale_linetype_manual(
-    name = "Empirical weighting",
-    values = c("Read-pair" = "solid", "Unique fragment" = "longdash", "Capped fragment" = "dotted")
-  ) +
   labs(
     title = "Empirical TLENs compared with radigest size-selection and observation-bias models",
     subtitle = library_label,
@@ -253,9 +216,7 @@ p <- ggplot(plot_df_window, aes(x = length)) +
     plot.title = element_text(face = "bold"),
     panel.grid.minor = element_blank(),
     strip.text = element_text(face = "bold", hjust = 0),
-    legend.position = "bottom",
-    legend.title = element_text(size = 8),
-    legend.text = element_text(size = 8),
+    legend.position = "none",
     plot.caption = element_text(hjust = 0, color = "grey35", size = 8, lineheight = 1.05),
     plot.caption.position = "plot",
     axis.title.y = element_text(margin = margin(r = 6)),
@@ -266,8 +227,8 @@ for (output in requested_outputs) {
   dir.create(dirname(output), recursive = TRUE, showWarnings = FALSE)
   fmt <- tolower(tools::file_ext(output))
   if (identical(fmt, "pdf") && isTRUE(capabilities("cairo"))) {
-    ggsave(output, plot = p, width = 7.4, height = 9.7, device = cairo_pdf)
+    ggsave(output, plot = p, width = 7.4, height = 9.4, device = cairo_pdf)
   } else {
-    ggsave(output, plot = p, width = 7.4, height = 9.7)
+    ggsave(output, plot = p, width = 7.4, height = 9.4)
   }
 }
