@@ -227,7 +227,11 @@ reviewer-nonempirical: install-all
 	$(MAKE) check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-empirical-check empirical-check-inputs:
+empirical-check:
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --allow-missing-enabled-inputs
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+
+empirical-check-inputs:
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
 	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 
@@ -235,36 +239,36 @@ empirical-references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_references_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-tlens:
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_tlens_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-predictions: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_predictions_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-curves: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_curves_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-model-grid: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_model_grid_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-model-fit-ranking: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_model_fit_ranking_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-figures: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_figures_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_depth_validation_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-sockeye: $(RADIGEST_BUILD_PREREQ)

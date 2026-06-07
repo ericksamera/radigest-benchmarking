@@ -55,6 +55,7 @@ EMPIRICAL_ENABLED_ROWS = [
 EMPIRICAL_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_LIBRARY_ROWS]
 EMPIRICAL_ENABLED_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_ENABLED_ROWS]
 EMPIRICAL_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_LIBRARY_ROWS}
+EMPIRICAL_ENABLED_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_ENABLED_ROWS}
 
 EMPIRICAL_DEPTH_VALIDATION_ROWS = [
     row
@@ -77,13 +78,18 @@ EMPIRICAL_DEPTH_VALIDATION_TABLES = (
     else []
 )
 
-EMPIRICAL_SRA_RUN_ROWS = [
-    row
-    for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST)
-    if row.get("enabled", "false").lower() == "true"
-    and row.get("include", "false").lower() == "true"
-    and row.get("library_id", "") in EMPIRICAL_ENABLED_LIBRARY_IDS
-]
+EMPIRICAL_SRA_RUN_ROWS = []
+for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST):
+    parent = EMPIRICAL_ENABLED_ROWS_BY_ID.get(row.get("library_id", ""))
+    if parent is None:
+        continue
+    if parent.get("source_type") != "sra_fastq":
+        continue
+    if row.get("enabled", "false").lower() != "true":
+        continue
+    if row.get("include", "false").lower() != "true":
+        continue
+    EMPIRICAL_SRA_RUN_ROWS.append(row)
 EMPIRICAL_SRA_RUNS_BY_LIBRARY = {}
 for row in EMPIRICAL_SRA_RUN_ROWS:
     EMPIRICAL_SRA_RUNS_BY_LIBRARY.setdefault(row["library_id"], []).append(row)
@@ -137,13 +143,24 @@ def _matching_bam_paths(row):
 def _empirical_bam_sample_rows():
     rows = []
     for row in EMPIRICAL_ENABLED_ROWS:
-        if row.get("source_type") != "local_bam_dir":
-            continue
         library_id = row["library_id"]
-        sra_rows = EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(library_id, [])
+        source_type = row.get("source_type")
         seen_ids = {}
-        if sra_rows:
-            for sra_row in sra_rows:
+        if source_type == "local_bam_dir":
+            for bam_path in _matching_bam_paths(row):
+                bam_id = _safe_bam_id(bam_path)
+                if bam_id in seen_ids:
+                    raise ValueError(
+                        f"{library_id}: duplicate derived bam_id {bam_id!r} for "
+                        f"{seen_ids[bam_id]} and {bam_path}"
+                    )
+                seen_ids[bam_id] = str(bam_path)
+                sample_row = dict(row)
+                sample_row["bam_id"] = bam_id
+                sample_row["bam_path"] = str(bam_path)
+                rows.append(sample_row)
+        elif source_type == "sra_fastq":
+            for sra_row in EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(library_id, []):
                 bam_id = sra_row["run_accession"]
                 bam_path = f"data/empirical/{library_id}/bam/{bam_id}.bam"
                 if bam_id in seen_ids:
@@ -156,21 +173,7 @@ def _empirical_bam_sample_rows():
                 sample_row["bam_path"] = bam_path
                 sample_row["sra_run_accession"] = sra_row["run_accession"]
                 rows.append(sample_row)
-            continue
-        for bam_path in _matching_bam_paths(row):
-            bam_id = _safe_bam_id(bam_path)
-            if bam_id in seen_ids:
-                raise ValueError(
-                    f"{library_id}: duplicate derived bam_id {bam_id!r} for "
-                    f"{seen_ids[bam_id]} and {bam_path}"
-                )
-            seen_ids[bam_id] = bam_path
-            sample_row = dict(row)
-            sample_row["bam_id"] = bam_id
-            sample_row["bam_path"] = str(bam_path)
-            rows.append(sample_row)
     return rows
-
 
 EMPIRICAL_BAM_SAMPLE_ROWS = _empirical_bam_sample_rows()
 EMPIRICAL_BAM_SAMPLE_BY_KEY = {
@@ -183,7 +186,7 @@ EMPIRICAL_ENABLED_BAM_LIBRARY_IDS = sorted(
 EMPIRICAL_BAM_MANIFESTS = [
     f"results/empirical/{row['library_id']}/bam_manifest.tsv"
     for row in EMPIRICAL_ENABLED_ROWS
-    if row.get("source_type") == "local_bam_dir"
+    if row.get("source_type") in {"local_bam_dir", "sra_fastq"}
 ]
 EMPIRICAL_PER_BAM_TLEN_OUTPUTS = []
 for row in EMPIRICAL_BAM_SAMPLE_ROWS:
@@ -341,14 +344,14 @@ def _empirical_reference_path(wildcards):
 
 def _empirical_bam_paths(wildcards):
     row = EMPIRICAL_ROWS_BY_ID[wildcards.library_id]
-    sra_rows = EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(wildcards.library_id, [])
-    if sra_rows:
+    if row.get("source_type") == "sra_fastq":
         return [
             f"data/empirical/{wildcards.library_id}/bam/{sra_row['run_accession']}.bam"
-            for sra_row in sra_rows
+            for sra_row in EMPIRICAL_SRA_RUNS_BY_LIBRARY.get(wildcards.library_id, [])
         ]
-    return [str(path) for path in _matching_bam_paths(row)]
-
+    if row.get("source_type") == "local_bam_dir":
+        return [str(path) for path in _matching_bam_paths(row)]
+    return []
 
 def _empirical_bam_sample_row(wildcards):
     key = (wildcards.library_id, wildcards.bam_id)
@@ -631,6 +634,7 @@ rule empirical_bam_manifest:
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
         python3 scripts/empirical/write_bam_manifest.py \
           --manifest {input.manifest:q} \
+          --sra-runs {EMPIRICAL_SRA_RUN_MANIFEST:q} \
           --library-id {wildcards.library_id:q} \
           --out {output.manifest:q} \
           > {log:q} 2>&1

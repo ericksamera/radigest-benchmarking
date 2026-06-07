@@ -54,6 +54,12 @@ OUTPUT_COLUMNS = [
     "exclude_duplicates",
     "max_tlen",
 ]
+SRA_COLUMNS = [
+    "library_id",
+    "run_accession",
+    "enabled",
+    "include",
+]
 
 
 def read_manifest(path: Path) -> dict[str, dict[str, str]]:
@@ -80,6 +86,31 @@ def read_manifest(path: Path) -> dict[str, dict[str, str]]:
     return rows
 
 
+def read_sra_runs(path: Path, library_id: str) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="	")
+        if reader.fieldnames is None:
+            raise ValueError(f"{path}: missing header")
+        missing = [column for column in SRA_COLUMNS if column not in reader.fieldnames]
+        if missing:
+            raise ValueError(f"{path}: missing columns: {', '.join(missing)}")
+        rows: list[dict[str, str]] = []
+        for row in reader:
+            if not any((value or "").strip() for value in row.values()):
+                continue
+            cleaned = {key: (row.get(key) or "").strip() for key in reader.fieldnames}
+            if cleaned.get("library_id") != library_id:
+                continue
+            if cleaned.get("enabled", "false").lower() != "true":
+                continue
+            if cleaned.get("include", "false").lower() != "true":
+                continue
+            rows.append(cleaned)
+    return rows
+
+
 def safe_bam_id(path: Path) -> str:
     name = path.name
     if name.endswith(".bam"):
@@ -103,12 +134,39 @@ def index_is_na(value: str) -> bool:
     return value.strip().upper() in {"", "NA", "N/A", "NONE", "NULL"}
 
 
-def write_bam_manifest(row: dict[str, str], output: Path) -> None:
-    if row["source_type"] != "local_bam_dir":
-        raise ValueError(
-            f"{row['library_id']}: write_bam_manifest currently supports "
-            "source_type=local_bam_dir only"
-        )
+def _manifest_row(
+    row: dict[str, str], *, bam_id: str, bam_path: Path
+) -> dict[str, str]:
+    index_suffix = row["bam_index_suffix"]
+    index_path = "NA"
+    index_exists = "false"
+    if not index_is_na(index_suffix):
+        candidate_index = Path(str(bam_path) + index_suffix)
+        index_path = relative_to_cwd(candidate_index)
+        index_exists = "true" if candidate_index.exists() else "false"
+    return {
+        "library_id": row["library_id"],
+        "bam_id": bam_id,
+        "bam_path": relative_to_cwd(bam_path),
+        "bam_index_path": index_path,
+        "bam_index_exists": index_exists,
+        "reference_id": row["reference_id"],
+        "reference_path": row["reference_path"],
+        "enzyme_1": row["enzyme_1"],
+        "enzyme_2": row["enzyme_2"],
+        "min_size": row["min_size"],
+        "max_size": row["max_size"],
+        "score_min": row["score_min"],
+        "score_max": row["score_max"],
+        "size_model": row["size_model"],
+        "size_edge_sd": row["size_edge_sd"],
+        "min_mapq": row["min_mapq"],
+        "exclude_duplicates": row["exclude_duplicates"],
+        "max_tlen": row["max_tlen"],
+    }
+
+
+def write_local_bam_manifest(row: dict[str, str], output: Path) -> None:
     bam_dir = Path(row["bam_dir"])
     if not bam_dir.is_dir():
         raise FileNotFoundError(f"{row['library_id']}: missing BAM directory {bam_dir}")
@@ -121,8 +179,6 @@ def write_bam_manifest(row: dict[str, str], output: Path) -> None:
         raise FileNotFoundError(
             f"{row['library_id']}: no BAMs matched {bam_dir / row['bam_glob']}"
         )
-
-    index_suffix = row["bam_index_suffix"]
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
@@ -130,39 +186,50 @@ def write_bam_manifest(row: dict[str, str], output: Path) -> None:
         )
         writer.writeheader()
         for bam_path in bam_paths:
-            index_path = "NA"
-            index_exists = "false"
-            if not index_is_na(index_suffix):
-                candidate_index = Path(str(bam_path) + index_suffix)
-                index_path = relative_to_cwd(candidate_index)
-                index_exists = "true" if candidate_index.exists() else "false"
             writer.writerow(
-                {
-                    "library_id": row["library_id"],
-                    "bam_id": safe_bam_id(bam_path),
-                    "bam_path": relative_to_cwd(bam_path),
-                    "bam_index_path": index_path,
-                    "bam_index_exists": index_exists,
-                    "reference_id": row["reference_id"],
-                    "reference_path": row["reference_path"],
-                    "enzyme_1": row["enzyme_1"],
-                    "enzyme_2": row["enzyme_2"],
-                    "min_size": row["min_size"],
-                    "max_size": row["max_size"],
-                    "score_min": row["score_min"],
-                    "score_max": row["score_max"],
-                    "size_model": row["size_model"],
-                    "size_edge_sd": row["size_edge_sd"],
-                    "min_mapq": row["min_mapq"],
-                    "exclude_duplicates": row["exclude_duplicates"],
-                    "max_tlen": row["max_tlen"],
-                }
+                _manifest_row(row, bam_id=safe_bam_id(bam_path), bam_path=bam_path)
             )
+
+
+def write_sra_bam_manifest(row: dict[str, str], output: Path, sra_runs: Path) -> None:
+    runs = read_sra_runs(sra_runs, row["library_id"])
+    if not runs:
+        raise FileNotFoundError(
+            f"{row['library_id']}: no enabled included SRA runs found in {sra_runs}"
+        )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle, delimiter="\t", fieldnames=OUTPUT_COLUMNS, lineterminator="\n"
+        )
+        writer.writeheader()
+        for sra_row in runs:
+            bam_id = sra_row["run_accession"]
+            bam_path = Path(f"data/empirical/{row['library_id']}/bam/{bam_id}.bam")
+            writer.writerow(_manifest_row(row, bam_id=bam_id, bam_path=bam_path))
+
+
+def write_bam_manifest(row: dict[str, str], output: Path, sra_runs: Path) -> None:
+    if row["source_type"] == "local_bam_dir":
+        write_local_bam_manifest(row, output)
+        return
+    if row["source_type"] == "sra_fastq":
+        write_sra_bam_manifest(row, output, sra_runs)
+        return
+    raise ValueError(
+        f"{row['library_id']}: write_bam_manifest supports source_type="
+        "local_bam_dir or sra_fastq"
+    )
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument(
+        "--sra-runs",
+        default=Path("config/empirical_sra_runs.tsv"),
+        type=Path,
+    )
     parser.add_argument("--library-id", required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -173,7 +240,7 @@ def main(argv: list[str]) -> int:
             raise ValueError(
                 f"unknown library_id={args.library_id!r} in {args.manifest}"
             )
-        write_bam_manifest(rows[args.library_id], args.out)
+        write_bam_manifest(rows[args.library_id], args.out, args.sra_runs)
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

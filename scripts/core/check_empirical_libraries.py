@@ -396,7 +396,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         if not is_downloaded_reference:
             candidate = ROOT / row["reference_path"]
-            if enabled and not candidate.exists() and not args.allow_missing_enabled_inputs:
+            if (
+                enabled
+                and not candidate.exists()
+                and not args.allow_missing_enabled_inputs
+            ):
                 fail(
                     f"{rel(manifest)}:{line_number} enabled library "
                     f"{library_id} missing non-downloadable reference_path: "
@@ -425,12 +429,11 @@ def main(argv: list[str] | None = None) -> int:
                         f"library {library_id} missing bam_dir: {row['bam_dir']}"
                     )
                 bam_count = count_matching_bams(row["bam_dir"], row["bam_glob"])
-                sra_count = count_enabled_sra_runs(library_id, sra_rows)
-                if bam_count < 1 and sra_count < 1 and not args.allow_missing_enabled_inputs:
+                if bam_count < 1 and not args.allow_missing_enabled_inputs:
                     fail(
                         f"{rel(manifest)}:{line_number} enabled "
                         f"library {library_id} found no BAMs matching "
-                        f"{row['bam_dir']}/{row['bam_glob']} and no enabled SRA runs"
+                        f"{row['bam_dir']}/{row['bam_glob']}"
                     )
         elif source_type == "local_cram_dir":
             validate_empirical_dir_shape(
@@ -448,6 +451,28 @@ def main(argv: list[str] | None = None) -> int:
                 fail(
                     f"{rel(manifest)}:{line_number} source_type "
                     "'local_cram_dir' is reserved but not wired yet"
+                )
+        elif source_type == "sra_fastq":
+            validate_empirical_dir_shape(
+                row["bam_dir"], f"library {library_id} bam_dir"
+            )
+            validate_bam_glob(
+                row["bam_glob"],
+                f"library {library_id} bam_glob",
+                expected_suffix=".bam",
+            )
+            validate_index_suffix(
+                row["bam_index_suffix"], f"library {library_id} bam_index_suffix"
+            )
+            if (
+                enabled
+                and count_enabled_sra_runs(library_id, sra_rows) < 1
+                and not args.allow_missing_enabled_inputs
+            ):
+                fail(
+                    f"{rel(manifest)}:{line_number} enabled SRA library "
+                    f"{library_id} has no enabled included rows in "
+                    "config/empirical_sra_runs.tsv"
                 )
         else:
             if enabled:
