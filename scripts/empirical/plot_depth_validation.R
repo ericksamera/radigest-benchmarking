@@ -193,7 +193,7 @@ combined <- (p_sorted / p_calibration) +
   plot_annotation(tag_levels = "A") &
   theme(
     plot.tag = element_text(face = "bold", size = 13),
-    plot.tag.position = c(0.01, 0.99),
+    plot.tag.position = "topleft",
     plot.tag.location = "margin",
     legend.position = "bottom"
   )
