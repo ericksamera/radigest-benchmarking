@@ -29,6 +29,16 @@ require_columns <- function(data, columns, label) {
   }
 }
 
+log_breaks_from_range <- function(values) {
+  values <- values[is.finite(values) & values > 0]
+  if (length(values) == 0) {
+    return(c(0.1, 1, 10, 100))
+  }
+  lower_exp <- floor(log10(min(values)))
+  upper_exp <- ceiling(log10(max(values)))
+  10^(seq(lower_exp, upper_exp))
+}
+
 per_sample_path <- arg_value("--per-sample-depth")
 summary_path <- arg_value("--summary")
 out_path <- arg_value("--out")
@@ -93,7 +103,16 @@ plot_df <- per_sample |>
     assigned_read_pair_fraction = as.numeric(assigned_read_pair_fraction),
     sample_label = basename(sample)
   ) |>
-  filter(is.finite(observed_read_pairs_at_loci), is.finite(mean_pairs_per_locus), mean_pairs_per_locus > 0, observed_read_pairs_at_loci > 0) |>
+  filter(
+    is.finite(observed_read_pairs_at_loci),
+    is.finite(mean_pairs_per_locus),
+    mean_pairs_per_locus > 0,
+    observed_read_pairs_at_loci > 0
+  ) |>
+  mutate(
+    read_normalized_predicted_depth = predicted_budget_depth * observed_read_pairs_at_loci / modeled_reads_per_sample
+  ) |>
+  filter(is.finite(read_normalized_predicted_depth), read_normalized_predicted_depth > 0) |>
   arrange(mean_pairs_per_locus, sample_label) |>
   mutate(sample_order = row_number())
 
@@ -101,7 +120,6 @@ if (nrow(plot_df) == 0) {
   stop("No finite positive per-sample depth rows to plot", call. = FALSE)
 }
 
-model_slope <- predicted_budget_depth / modeled_reads_per_sample
 line_df <- tibble(
   label = c(
     sprintf("Predicted at modeled budget (%.1fx)", predicted_budget_depth),
@@ -113,84 +131,72 @@ line_df <- tibble(
 )
 line_df$label <- factor(line_df$label, levels = line_df$label)
 
-x_breaks <- pretty_breaks(n = 6)(range(plot_df$observed_read_pairs_at_loci, na.rm = TRUE))
-x_breaks <- x_breaks[x_breaks > 0]
-
-annotation_text <- sprintf(
-  "Observed mean = %.2fx\nObserved median = %.2fx\nBudget prediction = %.2fx\nRead-normalized prediction = %.2fx",
-  observed_mean_depth,
-  observed_median_depth,
+depth_breaks <- log_breaks_from_range(c(
+  plot_df$mean_pairs_per_locus,
+  plot_df$read_normalized_predicted_depth,
   predicted_budget_depth,
+  observed_median_depth,
   read_normalized_prediction
-)
+))
 
 p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   geom_point(color = "#2B5CAD", size = 1.5, alpha = 0.82) +
   geom_hline(data = line_df, aes(yintercept = depth, linetype = label), color = "grey15", linewidth = 0.45) +
   scale_linetype_manual(values = setNames(line_df$line_type, line_df$label)) +
-  scale_y_log10(labels = label_number(accuracy = 0.1)) +
+  scale_y_log10(
+    breaks = depth_breaks,
+    labels = label_number(accuracy = 0.1, trim = TRUE)
+  ) +
   scale_x_continuous(breaks = pretty_breaks(n = 8)) +
   labs(
-    x = "Sample, sorted by observed locus depth",
-    y = "Observed mean read pairs per locus",
-    linetype = NULL,
-    tag = "A"
+    x = "Sample (sorted by observed depth)",
+    y = "Observed mean locus depth",
+    linetype = NULL
   ) +
   theme_minimal(base_size = 9) +
   theme(
     panel.grid.minor = element_blank(),
-    legend.position = c(0.02, 0.98),
-    legend.justification = c(0, 1),
-    legend.background = element_rect(fill = "white", color = "grey75"),
-    legend.key.width = unit(1.2, "lines"),
-    plot.tag = element_text(face = "bold", size = 14),
-    plot.tag.position = c(0, 1)
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.margin = margin(0, 0, 0, 0),
+    legend.text = element_text(size = 8),
+    legend.key.width = unit(1.3, "lines"),
+    plot.margin = margin(5.5, 8, 5.5, 12)
   )
 
-p_calibration <- ggplot(plot_df, aes(x = observed_read_pairs_at_loci, y = mean_pairs_per_locus)) +
+p_calibration <- ggplot(
+  plot_df,
+  aes(x = read_normalized_predicted_depth, y = mean_pairs_per_locus)
+) +
   geom_point(color = "#2B5CAD", size = 1.6, alpha = 0.82) +
-  geom_abline(intercept = 0, slope = model_slope, linetype = "longdash", color = "grey15", linewidth = 0.45) +
-  annotate(
-    "label",
-    x = Inf,
-    y = -Inf,
-    label = annotation_text,
-    hjust = 1.02,
-    vjust = -0.25,
-    size = 2.8,
-    lineheight = 0.95,
-    label.size = 0.25,
-    fill = "white",
-    color = "grey15"
+  geom_abline(intercept = 0, slope = 1, linetype = "longdash", color = "grey15", linewidth = 0.45) +
+  scale_x_log10(
+    breaks = depth_breaks,
+    labels = label_number(accuracy = 0.1, trim = TRUE)
   ) +
-  scale_x_continuous(labels = label_number(scale_cut = cut_short_scale()), breaks = x_breaks) +
-  scale_y_log10(labels = label_number(accuracy = 0.1)) +
+  scale_y_log10(
+    breaks = depth_breaks,
+    labels = label_number(accuracy = 0.1, trim = TRUE)
+  ) +
   labs(
-    x = "Observed read pairs assigned to predicted loci",
-    y = "Observed mean read pairs per locus",
-    tag = "B"
+    x = "Read-normalized predicted mean locus depth",
+    y = "Observed mean locus depth"
   ) +
   theme_minimal(base_size = 9) +
   theme(
     panel.grid.minor = element_blank(),
-    plot.tag = element_text(face = "bold", size = 14),
-    plot.tag.position = c(0, 1)
+    plot.margin = margin(5.5, 8, 5.5, 12)
   )
-
-caption <- paste(
-  "Dashed line in panel B shows expected mean locus depth from the radigest-design",
-  "budget model after rescaling by observed read pairs assigned to predicted loci."
-)
-
-title <- paste0("Empirical depth validation: ", s$display_name, " (", s$enzyme_pair, ")")
 
 combined <- (p_sorted / p_calibration) +
-  plot_annotation(
-    title = title,
-    subtitle = "Observed sample allocation versus radigest-design budget-level prediction",
-    caption = caption
-  ) &
-  theme(plot.title = element_text(face = "bold", size = 11))
+  plot_layout(heights = c(1, 1), guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    plot.tag = element_text(face = "bold", size = 13),
+    plot.tag.position = c(0.01, 0.99),
+    plot.tag.location = "margin",
+    legend.position = "bottom"
+  )
 
 base_stem <- tools::file_path_sans_ext(out_path)
 out_ext <- tools::file_ext(out_path)
