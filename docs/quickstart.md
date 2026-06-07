@@ -125,7 +125,7 @@ make install-radigest RADIGEST_REF=<tag-or-commit>
 
 ## Empirical scaffold
 
-Declare optional local empirical libraries in `config/empirical_libraries.tsv`.
+Declare optional local empirical libraries in `config/empirical_libraries.tsv`; depth-validation cases are declared in `config/empirical_depth_validation_cases.tsv`.
 The default row points to the public Sockeye `GCF_034236695.1_Oner_Uvic_2.0`
 reference and the local BAM drop-off directory
 `data/empirical/sockeye_ecori_msei/bam/`.
@@ -135,6 +135,7 @@ make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4
+make empirical-depth-validation THREADS=4
 # or run the current full empirical workflow:
 make empirical THREADS=4
 ```

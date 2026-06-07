@@ -29,6 +29,7 @@ make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
+make empirical-depth-validation THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \

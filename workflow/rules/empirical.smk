@@ -11,6 +11,8 @@ from pathlib import Path
 
 EMPIRICAL_LIBRARY_MANIFEST = "config/empirical_libraries.tsv"
 EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
+EMPIRICAL_DEPTH_VALIDATION_CASES = "config/empirical_depth_validation_cases.tsv"
+EMPIRICAL_DEPTH_VALIDATION_TABLE = "results/manuscript/tables/table_08_empirical_recovery.tsv"
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
 # Keep pooled library outputs from matching nested per-BAM paths such as
@@ -53,6 +55,27 @@ EMPIRICAL_ENABLED_ROWS = [
 EMPIRICAL_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_LIBRARY_ROWS]
 EMPIRICAL_ENABLED_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_ENABLED_ROWS]
 EMPIRICAL_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_LIBRARY_ROWS}
+
+EMPIRICAL_DEPTH_VALIDATION_ROWS = [
+    row
+    for row in _read_tsv_rows(EMPIRICAL_DEPTH_VALIDATION_CASES)
+    if row.get("enabled", "false").strip().lower() == "true"
+]
+EMPIRICAL_DEPTH_VALIDATION_ROWS = [
+    row
+    for row in EMPIRICAL_DEPTH_VALIDATION_ROWS
+    if row["library_id"] in EMPIRICAL_ROWS_BY_ID
+    and EMPIRICAL_ROWS_BY_ID[row["library_id"]].get("enabled", "false").strip().lower() == "true"
+]
+EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY = {
+    row["library_id"]: row for row in EMPIRICAL_DEPTH_VALIDATION_ROWS
+}
+EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS = sorted(EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY)
+EMPIRICAL_DEPTH_VALIDATION_TABLES = (
+    [EMPIRICAL_DEPTH_VALIDATION_TABLE]
+    if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
+    else []
+)
 
 EMPIRICAL_SRA_RUN_ROWS = [
     row
@@ -225,6 +248,19 @@ for row in EMPIRICAL_ENABLED_ROWS:
                 f"{prefix}/{mode}.summary.tsv",
             ]
         )
+EMPIRICAL_DEPTH_VALIDATION_OUTPUTS = []
+for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS:
+    prefix = f"results/empirical/{library_id}/depth_validation"
+    EMPIRICAL_DEPTH_VALIDATION_OUTPUTS.extend(
+        [
+            f"{prefix}/design.tsv",
+            f"{prefix}/design.json",
+            f"{prefix}/loci.bed",
+            f"{prefix}/loci.json",
+            f"{prefix}/per_sample_depth.tsv",
+            f"{prefix}/summary.tsv",
+        ]
+    )
 EMPIRICAL_CURVE_OUTPUTS = []
 for row in EMPIRICAL_ENABLED_ROWS:
     prefix = f"results/empirical/{row['library_id']}"
@@ -268,10 +304,33 @@ EMPIRICAL_ALL_OUTPUTS = (
     + EMPIRICAL_SRA_BAM_OUTPUTS
     + EMPIRICAL_TLEN_OUTPUTS
     + EMPIRICAL_PREDICTION_OUTPUTS
+    + EMPIRICAL_DEPTH_VALIDATION_OUTPUTS
+    + EMPIRICAL_DEPTH_VALIDATION_TABLES
     + EMPIRICAL_CURVE_OUTPUTS
     + EMPIRICAL_MODEL_GRID_OUTPUTS
     + EMPIRICAL_FIGURE_OUTPUTS
 )
+
+
+def _empirical_depth_case(wildcards):
+    if wildcards.library_id not in EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY:
+        raise ValueError(
+            f"no enabled depth-validation case for library_id={wildcards.library_id!r}"
+        )
+    return EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY[wildcards.library_id]
+
+
+def _empirical_depth_param(wildcards, name):
+    return _empirical_depth_case(wildcards)[name]
+
+
+def _empirical_depth_read_budget(wildcards):
+    row = _empirical_depth_case(wildcards)
+    if row.get("flowcell_read_pairs", "NA") not in {"", "NA"}:
+        return ["--flowcell-read-pairs", row["flowcell_read_pairs"]]
+    if row.get("lane_read_pairs", "NA") not in {"", "NA"}:
+        return ["--lane-read-pairs", row["lane_read_pairs"], "--lanes", row["lanes"]]
+    raise ValueError(f"depth-validation case {wildcards.library_id!r} has no read budget")
 
 
 def _empirical_reference_path(wildcards):
@@ -437,6 +496,11 @@ rule empirical_sra_bams_all:
 rule empirical_predictions_all:
     input:
         EMPIRICAL_PREDICTION_OUTPUTS
+
+
+rule empirical_depth_validation_all:
+    input:
+        EMPIRICAL_DEPTH_VALIDATION_OUTPUTS + EMPIRICAL_DEPTH_VALIDATION_TABLES
 
 
 rule empirical_curves_all:
@@ -700,7 +764,7 @@ rule empirical_radigest_prediction:
           -min {params.min_size:q} \
           -max {params.max_size:q} \
           -threads {threads} \
-          -fragments-tsv {output.fragments:q} \
+          -bed {output.bed:q} \
           -json {output.json:q} \
           > {log:q} 2>&1
         """
@@ -750,6 +814,176 @@ rule empirical_summarize_radigest_prediction:
           > {log:q} 2>&1
         """
 
+
+
+rule empirical_depth_design:
+    input:
+        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+    output:
+        tsv="results/empirical/{library_id}/depth_validation/design.tsv",
+        json="results/empirical/{library_id}/depth_validation/design.json"
+    params:
+        radigest_design=lambda wildcards: config.get("radigest_design", "radigest-design"),
+        enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
+        enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2"),
+        target_genome_pct=lambda wildcards: _empirical_depth_param(wildcards, "target_genome_pct"),
+        coverage_tolerance_pct=lambda wildcards: _empirical_depth_param(wildcards, "coverage_tolerance_pct"),
+        desired_depth=lambda wildcards: _empirical_depth_param(wildcards, "desired_depth"),
+        samples=lambda wildcards: _empirical_depth_param(wildcards, "samples"),
+        read_layout=lambda wildcards: _empirical_depth_param(wildcards, "read_layout"),
+        read_length=lambda wildcards: _empirical_depth_param(wildcards, "read_length"),
+        usable_read_fraction=lambda wildcards: _empirical_depth_param(wildcards, "usable_read_fraction"),
+        min_size=lambda wildcards: _empirical_depth_param(wildcards, "min_size"),
+        max_size=lambda wildcards: _empirical_depth_param(wildcards, "max_size"),
+        score_min=lambda wildcards: _empirical_depth_param(wildcards, "score_min"),
+        score_max=lambda wildcards: _empirical_depth_param(wildcards, "score_max"),
+        size_model=lambda wildcards: _empirical_depth_param(wildcards, "size_model"),
+        size_mean=lambda wildcards: _empirical_depth_param(wildcards, "size_mean"),
+        size_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_sd"),
+        size_edge_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_edge_sd"),
+        read_budget=_empirical_depth_read_budget
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.design.log"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
+        {params.radigest_design:q} \
+          --fasta {input.reference:q} \
+          --enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+          --target-genome-pct {params.target_genome_pct:q} \
+          --coverage-tolerance-pct {params.coverage_tolerance_pct:q} \
+          --desired-depth {params.desired_depth:q} \
+          --samples {params.samples:q} \
+          --read-layout {params.read_layout:q} \
+          --read-length {params.read_length:q} \
+          {params.read_budget:q} \
+          --usable-read-fraction {params.usable_read_fraction:q} \
+          --min {params.min_size:q} \
+          --max {params.max_size:q} \
+          --score-min {params.score_min:q} \
+          --score-max {params.score_max:q} \
+          --size-model {params.size_model:q} \
+          --size-mean {params.size_mean:q} \
+          --size-sd {params.size_sd:q} \
+          --size-edge-sd {params.size_edge_sd:q} \
+          --out-dir results/empirical/{wildcards.library_id}/depth_validation \
+          --force \
+          > {log:q} 2>&1
+        test -s {output.tsv:q}
+        test -s {output.json:q}
+        """
+
+
+rule empirical_depth_loci:
+    input:
+        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+    output:
+        bed="results/empirical/{library_id}/depth_validation/loci.bed",
+        json="results/empirical/{library_id}/depth_validation/loci.json"
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
+        enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2"),
+        min_size=lambda wildcards: _empirical_depth_param(wildcards, "min_size"),
+        max_size=lambda wildcards: _empirical_depth_param(wildcards, "max_size")
+    threads: 4
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.loci.log"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
+        {params.radigest:q} \
+          -fasta {input.reference:q} \
+          -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+          -min {params.min_size:q} \
+          -max {params.max_size:q} \
+          -score-min {params.min_size:q} \
+          -score-max {params.max_size:q} \
+          -size-model hard \
+          -threads {threads} \
+          -bed {output.bed:q} \
+          -json {output.json:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_depth_per_sample:
+    input:
+        bam_manifest="results/empirical/{library_id}/bam_manifest.tsv",
+        bams=_empirical_bam_paths,
+        loci="results/empirical/{library_id}/depth_validation/loci.bed"
+    output:
+        depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv"
+    params:
+        min_mapq=lambda wildcards: _empirical_depth_param(wildcards, "min_mapq"),
+        exclude_duplicates=lambda wildcards: _empirical_depth_param(wildcards, "exclude_duplicates")
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.per_sample_depth.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
+        python3 scripts/empirical/calculate_locus_depth.py \
+          --bam-manifest {input.bam_manifest:q} \
+          --loci-bed {input.loci:q} \
+          --library-id {wildcards.library_id:q} \
+          --min-mapq {params.min_mapq:q} \
+          --exclude-duplicates {params.exclude_duplicates:q} \
+          --out {output.depth:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_depth_validation_summary:
+    input:
+        design="results/empirical/{library_id}/depth_validation/design.tsv",
+        per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv"
+    output:
+        summary="results/empirical/{library_id}/depth_validation/summary.tsv"
+    params:
+        display_name=lambda wildcards: _empirical_depth_param(wildcards, "display_name"),
+        enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
+        enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2")
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.summary.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation results/manuscript/tables
+        python3 scripts/empirical/summarize_depth_validation.py \
+          --library-id {wildcards.library_id:q} \
+          --display-name {params.display_name:q} \
+          --enzyme-1 {params.enzyme_1:q} \
+          --enzyme-2 {params.enzyme_2:q} \
+          --design-tsv {input.design:q} \
+          --per-sample-depth {input.per_sample_depth:q} \
+          --out {output.summary:q} \
+          > {log:q} 2>&1
+        """
+
+
+rule empirical_depth_validation_manuscript_table:
+    input:
+        summaries=[
+            f"results/empirical/{library_id}/depth_validation/summary.tsv"
+            for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
+        ]
+    output:
+        table=EMPIRICAL_DEPTH_VALIDATION_TABLE
+    log:
+        "benchmark/logs/empirical/depth_validation.manuscript_table.log"
+    conda:
+        "../envs/empirical.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/manuscript/tables
+        python3 scripts/manuscript/make_empirical_depth_validation_table.py \
+          --summaries {input.summaries:q} \
+          --out {output.table:q} \
+          > {log:q} 2>&1
+        """
 
 rule empirical_fit_size_model_grid:
     input:

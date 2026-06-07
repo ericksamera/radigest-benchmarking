@@ -138,6 +138,35 @@ TSV_SPECS = {
         "required_for_nonempirical",
         "notes",
     ],
+
+    "config/empirical_depth_validation_cases.tsv": [
+        "library_id",
+        "display_name",
+        "enabled",
+        "enzyme_1",
+        "enzyme_2",
+        "min_size",
+        "max_size",
+        "score_min",
+        "score_max",
+        "size_model",
+        "size_mean",
+        "size_sd",
+        "size_edge_sd",
+        "target_genome_pct",
+        "coverage_tolerance_pct",
+        "desired_depth",
+        "samples",
+        "read_layout",
+        "read_length",
+        "flowcell_read_pairs",
+        "lane_read_pairs",
+        "lanes",
+        "usable_read_fraction",
+        "min_mapq",
+        "exclude_duplicates",
+        "notes",
+    ],
     "config/empirical_libraries.tsv": [
         "library_id",
         "display_name",
@@ -222,7 +251,10 @@ EXTRA_REQUIRED_FILES = [
     "scripts/empirical/extract_tlens.py",
     "scripts/empirical/combine_tlens.py",
     "scripts/empirical/summarize_radigest_prediction.py",
+    "scripts/empirical/calculate_locus_depth.py",
+    "scripts/empirical/summarize_depth_validation.py",
     "scripts/empirical/make_size_model_curves.py",
+    "scripts/manuscript/make_empirical_depth_validation_table.py",
     "scripts/empirical/plot_size_model_overlay.R",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
@@ -258,6 +290,10 @@ BOOL_COLUMNS = {
     "config/empirical_libraries.tsv": [
         "enabled",
         "include_for_manuscript",
+        "exclude_duplicates",
+    ],
+    "config/empirical_depth_validation_cases.tsv": [
+        "enabled",
         "exclude_duplicates",
     ],
 }
@@ -510,6 +546,42 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
             if runs < 1:
                 fail(f"{path}: case {case} runs must be >= 1")
 
+
+    if path == "config/empirical_depth_validation_cases.tsv":
+        valid_models = {"hard", "normal", "triangular", "soft-window"}
+        for row in rows:
+            library_id = row["library_id"]
+            if row["size_model"] not in valid_models:
+                fail(f"{path}: library {library_id} invalid size_model={row['size_model']!r}")
+            if row["read_layout"] not in {"pe", "se"}:
+                fail(f"{path}: library {library_id} read_layout must be pe or se")
+            try:
+                min_size = int(row["min_size"])
+                max_size = int(row["max_size"])
+                score_min = int(row["score_min"])
+                score_max = int(row["score_max"])
+                samples = int(row["samples"])
+                read_length = int(row["read_length"])
+                lanes = int(row["lanes"])
+                min_mapq = int(row["min_mapq"])
+                target = float(row["target_genome_pct"])
+                tolerance = float(row["coverage_tolerance_pct"])
+                desired_depth = float(row["desired_depth"])
+                usable = float(row["usable_read_fraction"])
+            except ValueError:
+                fail(f"{path}: library {library_id} numeric fields are invalid")
+            if min_size < 0 or max_size <= min_size:
+                fail(f"{path}: library {library_id} invalid size interval")
+            if score_min < 0 or score_max <= score_min or score_min > min_size or score_max < max_size:
+                fail(f"{path}: library {library_id} score interval must cover size interval")
+            if samples < 1 or read_length < 1 or lanes < 1 or min_mapq < 0:
+                fail(f"{path}: library {library_id} samples/read_length/lanes must be positive and min_mapq nonnegative")
+            if target <= 0 or tolerance < 0 or desired_depth <= 0 or usable <= 0 or usable > 1:
+                fail(f"{path}: library {library_id} target/depth/usable values are out of range")
+            has_flowcell = row["flowcell_read_pairs"] not in {"", "NA"}
+            has_lane = row["lane_read_pairs"] not in {"", "NA"}
+            if has_flowcell == has_lane:
+                fail(f"{path}: library {library_id} must set exactly one of flowcell_read_pairs or lane_read_pairs")
     if path == "config/artifacts.tsv":
         for row in rows:
             claim = row["claim_id"]

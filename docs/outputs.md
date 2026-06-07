@@ -162,11 +162,21 @@ results/empirical/{library_id}/predictions/raw.summary.tsv
 results/empirical/{library_id}/predictions/hard.fragments.tsv
 results/empirical/{library_id}/predictions/hard.length_histogram.tsv
 results/empirical/{library_id}/predictions/hard.summary.tsv
+results/empirical/{library_id}/depth_validation/design.tsv
+results/empirical/{library_id}/depth_validation/design.json
+results/empirical/{library_id}/depth_validation/loci.bed
+results/empirical/{library_id}/depth_validation/loci.json
+results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
+results/empirical/{library_id}/depth_validation/summary.tsv
+results/manuscript/tables/table_08_empirical_recovery.tsv
 results/empirical/.gitkeep
 ```
 
-Later empirical stages will add model-fit summaries and manuscript plots from
-these TLEN and radigest-prediction outputs.
+The depth-validation summary records the configured `radigest-design` run, the
+BED predicted-locus set, per-sample empirical mean read-pair depth per locus,
+and read-budget-normalized predicted depths. Later empirical stages will add
+model-fit summaries and manuscript plots from these TLEN and radigest-prediction
+outputs.
 
 Stage 7 audit outputs are:
 

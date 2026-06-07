@@ -25,6 +25,7 @@ MANIFESTS = [
     "config/matched_tool_timing_cases.tsv",
     "config/artifacts.tsv",
     "config/empirical_libraries.tsv",
+    "config/empirical_depth_validation_cases.tsv",
     "config/candidate_enzymes.txt",
     "config/synthetic_expected.tsv",
     "config/references.tsv",
@@ -119,6 +120,7 @@ rule manuscript_all:
         THREAD_SCALING_TABLE,
         PAIR_SCREEN_SCALING_TABLE,
         LARGE_GENOME_TABLE,
+        EMPIRICAL_DEPTH_VALIDATION_TABLES,
         PERFORMANCE_FIGURE_OUTPUTS,
         "results/manuscript/figures/.gitkeep"
 

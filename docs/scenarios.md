@@ -4,7 +4,7 @@ Scenario files live under `config/scenarios/`.
 
 - `smoke.yml` is for minimal scaffold and synthetic validation checks. It also declares the separate comparator-smoke tier, but `make smoke` remains radigest-only so it does not require external comparator checkouts.
 - `reviewer_nonempirical.yml` is for public-reference reviewer reruns. It now declares both comparator matrices: tracked synthetic smoke and small public yeast.
-- `reviewer_empirical.yml` is for empirical recovery when inputs are available; it points to `config/empirical_libraries.tsv` for the local input contract.
+- `reviewer_empirical.yml` is for empirical recovery when inputs are available; it points to `config/empirical_libraries.tsv` and `config/empirical_depth_validation_cases.tsv` for the local input contract.
 - `reviewer_all.yml` combines nonempirical and empirical contracts.
 
 Useful comparator-specific execution targets are:
@@ -19,6 +19,7 @@ make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
+make empirical-depth-validation THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 ```
 
@@ -64,6 +65,7 @@ make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
+make empirical-depth-validation THREADS=4 RADIGEST=/path/to/radigest
 make empirical THREADS=4 RADIGEST=/path/to/radigest
 make reviewer-empirical THREADS=4 RADIGEST=/path/to/radigest
 ```

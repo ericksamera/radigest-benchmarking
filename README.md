@@ -30,6 +30,7 @@ make empirical-check
 make empirical-references THREADS=4
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4
+make empirical-depth-validation THREADS=4
 make empirical THREADS=4
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=4 \
@@ -139,6 +140,7 @@ directory, set `enabled=true` in `config/empirical_libraries.tsv`, and run:
 make empirical-check
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4
+make empirical-depth-validation THREADS=4
 make empirical THREADS=4
 ```
 
@@ -151,6 +153,19 @@ Enabled rows also generate two radigest fragment-prediction tracks: a broad
 prediction for showing how a strict size filter differs from the empirical TLEN
 distribution. The default Sockeye row uses a 200-400 bp nominal window with
 `soft-window` edge SD 55 for downstream model interpretation.
+
+Depth-validation settings live in `config/empirical_depth_validation_cases.tsv`.
+When the matching empirical library is enabled, `make empirical-depth-validation`
+runs the configured `radigest-design` prediction, regenerates the hard-selected locus
+set for the validation size window as BED, calculates per-sample mean read-pair depth
+across those predicted loci from the BAMs, and writes
+`results/empirical/{library_id}/depth_validation/summary.tsv` plus the
+manuscript table `results/manuscript/tables/table_08_empirical_recovery.tsv`.
+The default Sockeye depth-validation case mirrors the EcoRI-MseI
+200-400 bp run: target 1.5% weighted genome recovery, 20x target
+mean locus depth, 37 samples, 50M read pairs per flowcell, PE300 reads, and a
+soft-window size model with edge SD 50 bp.
+
 The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
 ingestion without committing private sequence data to the repository.
 
@@ -249,6 +264,7 @@ This clones `https://github.com/ericksamera/radigest.git` into `external/radiges
 ```text
 .local/bin/radigest
 .local/bin/radigest-screen-pairs-cached
+.local/bin/radigest-design
 .local/radigest/build_info.tsv
 ```
 

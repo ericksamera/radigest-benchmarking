@@ -9,9 +9,11 @@ RADIGEST_SOURCE_COMMIT = ".local/radigest/source_commit.txt"
 RADIGEST_BUILD_INFO = ".local/radigest/build_info.tsv"
 RADIGEST_LOCAL_BIN = f"{LOCAL_BIN_DIR}/radigest"
 RADIGEST_LOCAL_SCREEN_PAIRS_CACHED = f"{LOCAL_BIN_DIR}/radigest-screen-pairs-cached"
+RADIGEST_LOCAL_DESIGN = f"{LOCAL_BIN_DIR}/radigest-design"
 RADIGEST_BUILD_OUTPUTS = [
     RADIGEST_LOCAL_BIN,
     RADIGEST_LOCAL_SCREEN_PAIRS_CACHED,
+    RADIGEST_LOCAL_DESIGN,
     RADIGEST_BUILD_INFO,
 ]
 
@@ -57,6 +59,7 @@ rule build_local_radigest:
     output:
         radigest=RADIGEST_LOCAL_BIN,
         screen_pairs_cached=RADIGEST_LOCAL_SCREEN_PAIRS_CACHED,
+        design=RADIGEST_LOCAL_DESIGN,
         build_info=RADIGEST_BUILD_INFO
     log:
         "benchmark/logs/radigest/build.log"
@@ -71,6 +74,7 @@ rule build_local_radigest:
         make -C {params.repo_dir:q} build BIN_DIR="$PWD/{params.bin_dir}" > {log:q} 2>&1
         test -x {output.radigest:q}
         test -x {output.screen_pairs_cached:q}
+        test -x {output.design:q}
         {{
           printf 'field\tvalue\n'
           printf 'repo_dir\t%s\n' {params.repo_dir:q}

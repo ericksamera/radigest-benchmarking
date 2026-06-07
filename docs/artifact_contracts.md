@@ -58,6 +58,10 @@ empirical-references`, while private BAMs stay ignored under
 pooled per-library TLEN, histogram, and QC outputs. Enabled rows also produce
 broad raw and hard-window radigest prediction fragments, length histograms, and
 prediction summaries under `results/empirical/{library_id}/predictions/`.
+Depth-validation cases in `config/empirical_depth_validation_cases.tsv` add a
+configured `radigest-design` run, predicted-locus BED depth calculation across BAMs,
+`results/empirical/{library_id}/depth_validation/summary.tsv`, and the
+manuscript table `results/manuscript/tables/table_08_empirical_recovery.tsv`.
 
 ## Stage 7a/7b audit contract
 

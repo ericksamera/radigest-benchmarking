@@ -27,7 +27,7 @@ Install helpers live in `scripts/comparators/`. Version metadata is written into
 
 ## Optional empirical inputs
 
-Empirical BAM/CRAM/FASTQ/SRA inputs are declared in `config/empirical_libraries.tsv`.
+Empirical BAM/CRAM/FASTQ/SRA inputs are declared in `config/empirical_libraries.tsv`; depth-validation cases are declared in `config/empirical_depth_validation_cases.tsv`.
 The initial local-testing contract is BAM-directory first. The default row uses
 the public Sockeye reference `GCF_034236695.1_Oner_Uvic_2.0`, downloaded through
 `config/references.tsv`, and private BAM files or symlinks under
@@ -43,6 +43,7 @@ ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam
 make empirical-check
 make empirical-tlens THREADS=4
 make empirical-predictions THREADS=4
+make empirical-depth-validation THREADS=4
 make empirical THREADS=4
 ```
 
@@ -57,7 +58,10 @@ broad `raw` prediction using `score_min`/`score_max` and a strict `hard`
 prediction using `min_size`/`max_size`. For the default Sockeye EcoRI-MseI row,
 the nominal experimental guess is 200-400 bp with `soft-window` edge SD 55; the
 broad prediction remains available for plotting the unselected fragment
-distribution against empirical TLENs.
+distribution against empirical TLENs. `make empirical-depth-validation` uses
+`config/empirical_depth_validation_cases.tsv` to run `radigest-design`, compute
+per-sample BAM depth across the configured predicted loci, and write the
+validation summary/manuscript table.
 
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 
@@ -115,6 +119,7 @@ Generated local binaries are ignored by Git:
 ```text
 .local/bin/radigest
 .local/bin/radigest-screen-pairs-cached
+.local/bin/radigest-design
 ```
 
 For a release, pin `RADIGEST_REF` to a tag or commit and record `results/manuscript/tables/environment.tsv` from `make audit`.
