@@ -255,6 +255,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="LIBRARY_ID",
         help="Require the named empirical library row to exist and be enabled.",
     )
+    parser.add_argument(
+        "--allow-missing-enabled-inputs",
+        action="store_true",
+        help=(
+            "Validate manifest shape for enabled empirical rows without requiring "
+            "local BAM/reference files to exist. Use this for static checks only; "
+            "reviewer/empirical preflight should omit it."
+        ),
+    )
     return parser
 
 
@@ -387,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         if not is_downloaded_reference:
             candidate = ROOT / row["reference_path"]
-            if enabled and not candidate.exists():
+            if enabled and not candidate.exists() and not args.allow_missing_enabled_inputs:
                 fail(
                     f"{rel(manifest)}:{line_number} enabled library "
                     f"{library_id} missing non-downloadable reference_path: "
@@ -409,13 +418,15 @@ def main(argv: list[str] | None = None) -> int:
             if enabled:
                 bam_dir = ROOT / row["bam_dir"]
                 if not bam_dir.is_dir():
+                    if args.allow_missing_enabled_inputs:
+                        continue
                     fail(
                         f"{rel(manifest)}:{line_number} enabled "
                         f"library {library_id} missing bam_dir: {row['bam_dir']}"
                     )
                 bam_count = count_matching_bams(row["bam_dir"], row["bam_glob"])
                 sra_count = count_enabled_sra_runs(library_id, sra_rows)
-                if bam_count < 1 and sra_count < 1:
+                if bam_count < 1 and sra_count < 1 and not args.allow_missing_enabled_inputs:
                     fail(
                         f"{rel(manifest)}:{line_number} enabled "
                         f"library {library_id} found no BAMs matching "

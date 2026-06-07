@@ -1,5 +1,5 @@
 empirical:
-  required: false
+  required: true
   manifest: config/empirical_libraries.tsv
   input_root: data/empirical
   initial_source_type: local_bam_dir
@@ -28,5 +28,4 @@ empirical:
     depth_loci_bed: results/empirical/{library_id}/depth_validation/loci.bed
     depth_per_sample: results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
     depth_summary: results/empirical/{library_id}/depth_validation/summary.tsv
-    summary: results/empirical/empirical_recovery_summary.tsv
     table: results/manuscript/tables/table_08_empirical_depth_validation.tsv

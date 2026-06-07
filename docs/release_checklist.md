@@ -20,6 +20,6 @@ results/manuscript/tables/release_checklist.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 
-A missing optional empirical artifact is acceptable while `C11 required_for_release=false`. A missing required release artifact is a release blocker.
+Sockeye empirical depth validation (`C11`) is part of the publication reviewer path. Missing `C11` outputs are release-blocking after this scaffold is enabled; private BAM/BAI inputs must be supplied locally before `make reviewer-all`.
 
 The release checklist is generated from the artifact-status, claim-audit, environment, and output-index tables. A `FAIL` row with `blocking=true` causes `make audit` to fail.

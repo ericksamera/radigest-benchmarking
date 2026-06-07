@@ -198,7 +198,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.require_effective_enabled and not effective_enabled:
         fail(
             "no effective empirical depth-validation cases are enabled; enable a "
-            "parent library row or use make reviewer-all-sockeye after adding BAMs"
+            "parent library row, then rerun after adding BAMs to the configured "
+            "data/empirical drop-off directory"
         )
     suffix = f" ({len(effective_enabled)} effective enabled)"
     print(f"Empirical depth-validation case checks passed{suffix}.")

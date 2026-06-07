@@ -207,20 +207,23 @@ def build_checks(
     )
 
     empirical = [item for item in claim_rows if item["claim_id"] == "C11"]
-    empirical_optional = (
-        bool(empirical) and empirical[0]["required_for_release"].lower() == "false"
+    empirical_required = (
+        bool(empirical) and empirical[0]["required_for_release"].lower() == "true"
     )
     checks.append(
         checklist_row(
-            check_id="empirical_optional_for_nonempirical_release",
+            check_id="empirical_depth_validation_required",
             category="scope",
-            description="Empirical recovery remains optional for the nonempirical release.",
-            status="PASS" if empirical_optional else "FAIL",
+            description=(
+                "Sockeye empirical depth validation is part of the publication "
+                "reviewer-all release scope."
+            ),
+            status="PASS" if empirical_required else "FAIL",
             blocking=True,
             evidence=(
-                "C11 required_for_release=false"
-                if empirical_optional
-                else "C11 not optional"
+                "C11 required_for_release=true"
+                if empirical_required
+                else "C11 missing or not release-required"
             ),
             notes="",
         )

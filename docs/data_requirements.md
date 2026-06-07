@@ -25,7 +25,7 @@ external/ddRadSeqWebTool/backend/service/DigestSequence.py
 
 Install helpers live in `scripts/comparators/`. Version metadata is written into generated comparator outputs.
 
-## Optional empirical inputs
+## Publication empirical inputs
 
 Empirical BAM/CRAM/FASTQ/SRA inputs are declared in `config/empirical_libraries.tsv`; depth-validation cases are declared in `config/empirical_depth_validation_cases.tsv`.
 The initial local-testing contract is BAM-directory first. The default row uses
@@ -33,18 +33,15 @@ the public Sockeye reference `GCF_034236695.1_Oner_Uvic_2.0`, downloaded through
 `config/references.tsv`, and private BAM files or symlinks under
 `data/empirical/sockeye_ecori_msei/bam/`.
 
-Example local setup:
+Example publication setup:
 
 ```bash
 make empirical-references THREADS=8
 ln -s /absolute/path/to/library_01.bam data/empirical/sockeye_ecori_msei/bam/library_01.bam
 ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam/library_01.bam.bai
-# repeat for each BAM, then set enabled=true in config/empirical_libraries.tsv
-make empirical-check
-make empirical-tlens THREADS=8
-make empirical-predictions THREADS=8
-make empirical-depth-validation THREADS=8
-make empirical THREADS=8
+# repeat for each BAM/BAI, then run the full reviewer path
+make reviewer-all THREADS=8
+make audit
 ```
 
 The `reference_path` entry must point to the exact reference build used for the

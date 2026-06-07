@@ -45,23 +45,19 @@ results/manuscript/figures/figure_04_matched_tool_timing.pdf
 
 The table and R/ggplot2 figure are generated from `config/matched_tool_timing_cases.tsv`. They are intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only. The required matched-tool set includes complete small-yeast and moderate-cannabis groups plus a large-wheat subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits.
 
-## Stage 6 empirical scaffold
+## Stage 6 empirical depth validation
 
-Optional empirical recovery remains artifact `C11`. The current empirical stage
-declares the local/private input contract in `config/empirical_libraries.tsv` and
-keeps `C11 required_for_release=false` until empirical model fitting, manuscript
-figures, and public input provenance are wired. The Sockeye
-`GCF_034236695.1_Oner_Uvic_2.0` reference is downloadable through `make
-empirical-references`, while private BAMs stay ignored under
-`data/empirical/sockeye_ecori_msei/bam/`. Enabled BAM-directory rows now produce
-`bam_manifest.tsv`, per-BAM `tlens.txt`/`tlen_histogram.tsv`/`tlen_qc.tsv`, and
-pooled per-library TLEN, histogram, and QC outputs. Enabled rows also produce
-broad raw and hard-window radigest prediction fragments, length histograms, and
-prediction summaries under `results/empirical/{library_id}/predictions/`.
-Depth-validation cases in `config/empirical_depth_validation_cases.tsv` add a
-configured `radigest-design` run, predicted-locus BED depth calculation across BAMs,
-`results/empirical/{library_id}/depth_validation/summary.tsv`, and the
-manuscript table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
+Sockeye empirical depth validation is artifact `C11` and is part of the publication
+`reviewer-all` release scope. The workflow declares the local/private BAM input
+contract in `config/empirical_libraries.tsv`; private BAMs remain ignored under
+`data/empirical/sockeye_ecori_msei/bam/`, while the Sockeye
+`GCF_034236695.1_Oner_Uvic_2.0` reference is downloaded through
+`make empirical-references`. Enabled BAM-directory rows produce `bam_manifest.tsv`,
+per-BAM `tlens.txt`/`tlen_histogram.tsv`/`tlen_qc.tsv`, pooled TLEN/QC outputs,
+broad raw and hard-window radigest prediction summaries, a configured
+`radigest-design` run, predicted-locus BED depth calculation across BAMs,
+`results/empirical/{library_id}/depth_validation/summary.tsv`, and the manuscript
+table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 
 ## Stage 7a/7b audit contract
 
@@ -78,7 +74,7 @@ results/manuscript/tables/audit_passed.txt
 
 `artifact_status.tsv` reports file existence, size, modification time, and PASS/WARN/FAIL status for every claim row. `claim_audit.tsv` adds a manuscript-facing claim boundary and release status. `environment.tsv` records Git, Python, Snakemake, radigest, radigest-design, cached-screening-binary, platform, and conda provenance.
 
-`audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure and all required release-checklist rows pass. Optional empirical artifacts can remain WARN while `C11 required_for_release=false`.
+`audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure and all required release-checklist rows pass. `C11` is release-required for the publication reviewer path, so missing Sockeye empirical depth-validation outputs are release-blocking until the local BAM inputs are supplied and the empirical workflow has run.
 
 ## Stage 7b release checklist and output index
 

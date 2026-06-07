@@ -72,7 +72,7 @@ def claim_boundary(row: dict[str, str]) -> str:
     if category == "performance":
         return "Performance timing or throughput claim; no empirical recovery or cross-tool equivalence claim unless explicitly stated."
     if category == "empirical":
-        return "Optional empirical recovery claim; not required for nonempirical release while required_for_release=false."
+        return "Empirical depth-validation claim; part of reviewer-all when Sockeye BAM/BAI inputs are supplied."
     return "Claim boundary is declared by config/artifacts.tsv notes."
 
 

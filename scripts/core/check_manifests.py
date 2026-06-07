@@ -248,7 +248,6 @@ EXTRA_REQUIRED_FILES = [
     "scripts/core/check_empirical_libraries.py",
     "scripts/core/check_empirical_depth_validation_cases.py",
     "scripts/empirical/write_bam_manifest.py",
-    "scripts/empirical/write_publication_empirical_manifest.py",
     "scripts/empirical/extract_tlens.py",
     "scripts/empirical/combine_tlens.py",
     "scripts/empirical/summarize_radigest_prediction.py",

@@ -6,7 +6,6 @@ RADIGEST_REPO ?= https://github.com/ericksamera/radigest.git
 RADIGEST_REF ?= main
 EMPIRICAL_LIBRARIES ?= config/empirical_libraries.tsv
 EMPIRICAL_DEPTH_VALIDATION_CASES ?= config/empirical_depth_validation_cases.tsv
-SOCKEYE_EMPIRICAL_LIBRARIES ?= .local/config/empirical_libraries.sockeye.tsv
 ifeq ($(dir $(RADIGEST)),./)
 RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
 RADIGEST_DESIGN ?= radigest-design
@@ -36,12 +35,80 @@ EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS ?= data/empirical/anopheles_ecori_msei/fastq/S
 EMPIRICAL_ANOPHELES_BAM_OUTPUTS ?= data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam.bai data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam.bai
 EMPIRICAL_ANOPHELES_OUTPUTS ?= results/empirical/anopheles_ecori_msei/figures/size_model_overlay.pdf results/empirical/anopheles_ecori_msei/size_model_grid.tsv results/empirical/anopheles_ecori_msei/best_size_model.tsv
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation publication-sockeye-manifest reviewer-all-sockeye _empirical-sockeye-run empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
-	  'Targets:' \
+	  'Targets are grouped by the usual reviewer flow.' \
+	  '' \
+	  'Reviewer / publication:' \
+	  '  make reviewer-all THREADS=8' \
+	  '      Full publication rerun: setup, static checks, nonempirical workflow,' \
+	  '      Sockeye empirical validation, manuscript tables/figures.' \
+	  '      Before running: place Sockeye BAM/BAI files in:' \
+	  '        data/empirical/sockeye_ecori_msei/bam/' \
+	  '  make audit' \
+	  '      Release/artifact audit after reviewer-all.' \
+	  '  make reviewer-nonempirical THREADS=8' \
+	  '      Public-reference validation, comparators, and performance only.' \
+	  '  make reviewer-empirical THREADS=8' \
+	  '      Empirical branch only; requires Sockeye BAM/BAI inputs.' \
+	  '' \
+	  'Setup / checks:' \
 	  '  make check' \
+	  '      Static manifest checks + smoke DAG dry-run; does not require BAMs.' \
+	  '  make empirical-check' \
+	  '      Empirical input preflight; requires enabled BAM inputs.' \
+	  '  make install-radigest' \
+	  '      Build local radigest helper binaries.' \
+	  '  make install-all' \
+	  '      Build radigest and install comparator tools.' \
+	  '  make show-radigest' \
+	  '      Show resolved radigest binaries and versions.' \
+	  '' \
+	  'Common components under reviewer-all:' \
+	  '  nonempirical:' \
+	  '    make smoke' \
+	  '    make references THREADS=8' \
+	  '    make comparators THREADS=8' \
+	  '    make performance THREADS=8' \
+	  '  empirical Sockeye:' \
+	  '    make empirical-sockeye THREADS=8' \
+	  '    make empirical-depth-validation THREADS=8' \
+	  '    make empirical THREADS=8' \
+	  '  manuscript:' \
+	  '    make manuscript THREADS=8' \
+	  '    make figures THREADS=8' \
+	  '' \
+	  'Focused performance targets:' \
+	  '  make performance-screening-speed THREADS=8' \
+	  '  make performance-pair-screen-scaling THREADS=8' \
+	  '  make performance-thread-scaling THREADS=8' \
+	  '  make performance-matched-tools THREADS=8' \
+	  '  make performance-input-format THREADS=8' \
+	  '' \
+	  'Focused comparator/setup targets:' \
+	  '  make comparator-smoke THREADS=8' \
+	  '  make comparator-small-yeast THREADS=8' \
+	  '  make install-comparators' \
+	  '  make install-digital-rads | install-ddradseqtools | install-simrad | install-ddgrader' \
+	  '' \
+	  'Focused empirical targets:' \
+	  '  make empirical-references THREADS=8' \
+	  '  make empirical-tlens THREADS=8' \
+	  '  make empirical-predictions THREADS=8' \
+	  '  make empirical-curves THREADS=8' \
+	  '  make empirical-model-grid THREADS=8' \
+	  '  make empirical-model-fit-ranking THREADS=8' \
+	  '  make empirical-figures THREADS=8' \
+	  '' \
+	  'Use `make help-all` for the complete flat target list.'
+
+help-all:
+	@printf '%s\n' \
+	  'All targets:' \
+	  '  make check' \
+	  '  make check-manifests' \
 	  '  make install-radigest' \
 	  '  make show-radigest' \
 	  '  make smoke' \
@@ -57,14 +124,13 @@ help:
 	  '  make comparators' \
 	  '  make performance-input-format' \
 	  '  make performance-screening-speed' \
-	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance-thread-scaling THREADS=8' \
 	  '  make performance-pair-screen-scaling THREADS=8' \
 	  '  make performance-matched-tools THREADS=8' \
-	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance THREADS=8' \
 	  '  make figures THREADS=8' \
 	  '  make empirical-check' \
+	  '  make empirical-check-inputs' \
 	  '  make empirical-sockeye THREADS=8' \
 	  '  make empirical-trichoderma THREADS=8' \
 	  '  make empirical-anopheles-reference THREADS=8' \
@@ -79,13 +145,11 @@ help:
 	  '  make empirical-model-fit-ranking THREADS=8' \
 	  '  make empirical-figures THREADS=8' \
 	  '  make empirical-depth-validation THREADS=8' \
-	  '  make publication-sockeye-manifest' \
-	  '  make reviewer-all-sockeye THREADS=8' \
 	  '  make empirical THREADS=8' \
 	  '  make reviewer-nonempirical THREADS=8' \
 	  '  make reviewer-empirical THREADS=8' \
 	  '  make reviewer-all THREADS=8' \
-	  '  make manuscript' \
+	  '  make manuscript THREADS=8' \
 	  '  make audit'
 
 install-radigest build-radigest radigest-build:
@@ -163,8 +227,9 @@ reviewer-nonempirical: install-all
 	$(MAKE) check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-empirical-check:
+empirical-check empirical-check-inputs:
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 
 empirical-references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_references_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -202,11 +267,9 @@ empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
-empirical-sockeye: publication-sockeye-manifest
-	$(MAKE) _empirical-sockeye-run EMPIRICAL_LIBRARIES="$(SOCKEYE_EMPIRICAL_LIBRARIES)" THREADS=$(THREADS)
-
-_empirical-sockeye-run: $(RADIGEST_BUILD_PREREQ)
+empirical-sockeye: $(RADIGEST_BUILD_PREREQ)
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled sockeye_ecori_msei
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_SOCKEYE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-trichoderma: $(RADIGEST_BUILD_PREREQ)
@@ -228,24 +291,14 @@ empirical-anopheles: $(RADIGEST_BUILD_PREREQ) empirical-anopheles-align
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-publication-sockeye-manifest:
-	mkdir -p $(dir $(SOCKEYE_EMPIRICAL_LIBRARIES))
-	python3 scripts/empirical/write_publication_empirical_manifest.py \
-	  --input config/empirical_libraries.tsv \
-	  --library-id sockeye_ecori_msei \
-	  --out "$(SOCKEYE_EMPIRICAL_LIBRARIES)" \
-	  --include-for-manuscript \
-	  --disable-other-libraries
-
-reviewer-all-sockeye: publication-sockeye-manifest
-	$(MAKE) reviewer-all EMPIRICAL_LIBRARIES="$(SOCKEYE_EMPIRICAL_LIBRARIES)" THREADS=$(THREADS)
 
 reviewer-empirical: $(RADIGEST_BUILD_PREREQ)
-	$(MAKE) empirical-check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
 reviewer-all: install-all
 	$(MAKE) check
+	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 manuscript: $(RADIGEST_BUILD_PREREQ)
@@ -263,7 +316,7 @@ check-manifests:
 	python3 scripts/core/check_pair_screen_scaling_cases.py
 	python3 scripts/core/check_large_genome_cases.py
 	python3 scripts/core/check_matched_tool_timing_cases.py
-	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --allow-missing-enabled-inputs
 	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
 	python3 scripts/core/check_artifacts.py
 

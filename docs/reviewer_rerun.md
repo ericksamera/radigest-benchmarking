@@ -78,7 +78,7 @@ results/manuscript/tables/output_index.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 
-`make audit` fails if any `required_for_release=true` artifact is missing or zero bytes. Optional empirical artifacts remain nonblocking while `required_for_release=false`.
+`make audit` fails if any `required_for_release=true` artifact is missing or zero bytes. Sockeye empirical depth-validation artifacts are release-blocking for the publication reviewer path once `C11 required_for_release=true`; supply BAM/BAI files locally before running `make reviewer-all`.
 
 ## Stage 7b release checklist
 

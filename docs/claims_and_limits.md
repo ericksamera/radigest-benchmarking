@@ -13,7 +13,7 @@ ddgRADer backend     binned fragment-screening behavior only
 
 SimRAD and ddgRADer outputs must not be described as same-fragment or coordinate-equivalence validation outputs unless a future workflow normalizes them to the same interval model.
 
-A claim is release-required only when `required_for_release` is `true`. Empirical recovery remains optional until public empirical inputs are configured.
+A claim is release-required only when `required_for_release` is `true`. Sockeye empirical depth validation is release-required for the publication reviewer path; the BAM/BAI inputs remain private and must be supplied locally before `make reviewer-all`.
 
 Stage 5b screening-speed outputs are cached `radigest-screen-pairs-cached` performance measurements. They support a throughput claim for candidate-pair screening only; they do not support cross-tool coordinate equivalence or biological recovery claims. Cut-index build workers are pinned to `radigest_threads` so screening-speed and job-scaling cases do not accidentally vary cache-build parallelism when `jobs` changes.
 

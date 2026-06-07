@@ -132,7 +132,7 @@ When using a manual upstream radigest for screening benchmarks, make sure it was
 
 ## Empirical scaffold
 
-Declare optional local empirical libraries in `config/empirical_libraries.tsv`; depth-validation cases are declared in `config/empirical_depth_validation_cases.tsv`.
+The publication empirical branch is declared in `config/empirical_libraries.tsv`; depth-validation cases are declared in `config/empirical_depth_validation_cases.tsv`.
 The default row points to the public Sockeye `GCF_034236695.1_Oner_Uvic_2.0`
 reference and the local BAM drop-off directory
 `data/empirical/sockeye_ecori_msei/bam/`.
@@ -147,9 +147,4 @@ make empirical-depth-validation THREADS=8
 make empirical THREADS=8
 ```
 
-With the default manifest, no empirical library is enabled. `make empirical-references`
-downloads the Sockeye reference; set `enabled=true` after local BAM symlinks exist
-under `data/empirical/sockeye_ecori_msei/bam/`. Enabled rows produce BAM
-inventories plus TLEN files, histograms, and QC summaries for every matching BAM,
-then generate raw score-window and hard nominal-window radigest prediction
-outputs for empirical distribution plots.
+`sockeye_ecori_msei` is enabled in the default publication manifest. `make check` is static and does not require BAMs, but `make reviewer-all` and `make empirical-check` require BAM/BAI files under `data/empirical/sockeye_ecori_msei/bam/`. Enabled rows produce BAM inventories plus TLEN files, histograms, QC summaries, raw/hard radigest predictions, and depth-validation summaries.
