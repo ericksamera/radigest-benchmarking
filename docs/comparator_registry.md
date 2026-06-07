@@ -20,7 +20,7 @@ Stage 4c adds two comparator coverage targets:
 
 ```bash
 make comparator-smoke RADIGEST=/path/to/radigest
-make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=8 RADIGEST=/path/to/radigest
 ```
 
 The smoke matrix uses the same tracked FASTA, enzyme pair, and size window for all comparator tools, but each tool keeps its own claim boundary:

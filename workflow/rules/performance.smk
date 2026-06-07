@@ -484,6 +484,8 @@ rule run_radigest_screening_speed_case:
         "results/performance/screening_speed/raw/{case_id}.runs.tsv"
     log:
         "benchmark/logs/performance/screening_speed/{case_id}.timing.log"
+    threads:
+        lambda wc: max(screening_int(wc, "jobs"), screening_int(wc, "radigest_threads"))
     params:
         screen_binary=lambda wildcards: config.get(
             "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"

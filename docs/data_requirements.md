@@ -36,15 +36,15 @@ the public Sockeye reference `GCF_034236695.1_Oner_Uvic_2.0`, downloaded through
 Example local setup:
 
 ```bash
-make empirical-references THREADS=4
+make empirical-references THREADS=8
 ln -s /absolute/path/to/library_01.bam data/empirical/sockeye_ecori_msei/bam/library_01.bam
 ln -s /absolute/path/to/library_01.bam.bai data/empirical/sockeye_ecori_msei/bam/library_01.bam.bai
 # repeat for each BAM, then set enabled=true in config/empirical_libraries.tsv
 make empirical-check
-make empirical-tlens THREADS=4
-make empirical-predictions THREADS=4
-make empirical-depth-validation THREADS=4
-make empirical THREADS=4
+make empirical-tlens THREADS=8
+make empirical-predictions THREADS=8
+make empirical-depth-validation THREADS=8
+make empirical THREADS=8
 ```
 
 The `reference_path` entry must point to the exact reference build used for the
@@ -67,7 +67,7 @@ Stage 5b screening-speed runs use the public small yeast reference and the track
 
 ```text
 data/reference/small_yeast_s288c.fa
-config/candidate_enzymes.txt
+config/candidate_enzymes_30.txt
 ```
 
 Stage 5b uses the `radigest-screen-pairs-cached` binary. The Makefile derives `RADIGEST_SCREEN_PAIRS_CACHED` from `RADIGEST` when `RADIGEST` is a path, or uses `radigest-screen-pairs-cached` from `PATH`; override it explicitly when needed. Upstream radigest now installs cached screening through its development/helper surface, so manual installs used for these targets should use `make install-dev` or provide an explicit cached-screening binary path.
@@ -78,16 +78,16 @@ Stage 5c thread-scaling runs use the moderate public cannabis Pink Pepper refere
 data/reference/moderate_cannabis_pink-pepper.fa
 ```
 
-The default reviewer thread-scaling tier uses 1, 2, and 4 radigest threads. Run it with `make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest` to avoid Snakemake thread downscaling.
+The default reviewer thread-scaling tier uses 1, 2, and 4 radigest threads. Run it with `make performance-thread-scaling THREADS=8 RADIGEST=/path/to/radigest` to avoid Snakemake thread downscaling.
 
 Stage 5d pair-screen job-scaling runs also use the moderate public cannabis Pink Pepper reference and the tracked candidate-enzyme list:
 
 ```text
 data/reference/moderate_cannabis_pink-pepper.fa
-config/candidate_enzymes.txt
+config/candidate_enzymes_30.txt
 ```
 
-The default reviewer pair-screen job-scaling tier uses 1, 2, and 4 `radigest-screen-pairs-cached` jobs with one radigest thread per pair. Run it with `make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest` to avoid Snakemake job downscaling.
+The default reviewer pair-screen job-scaling tier uses 1, 2, 4, and 8 `radigest-screen-pairs-cached` jobs with one radigest thread per pair. Run it with `make performance-pair-screen-scaling THREADS=8 RADIGEST=/path/to/radigest` to avoid Snakemake job downscaling.
 
 Stage 5e true large-reference timing uses the required wheat reference:
 
@@ -95,7 +95,7 @@ Stage 5e true large-reference timing uses the required wheat reference:
 large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz and data/reference/large_wheat_chinese-spring.fa
 ```
 
-`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing subset are included in `make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest`. SimRAD is intentionally excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
+`make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing subset are included in `make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest`. SimRAD is intentionally excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
 ## Radigest source and local binaries
 

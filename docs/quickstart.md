@@ -22,7 +22,7 @@ After `make install-radigest`, the explicit `RADIGEST=` assignment can be omitte
 ## References
 
 ```bash
-make references THREADS=4
+make references THREADS=8
 ```
 
 This downloads the public references declared in `config/references.tsv`, writes gzipped and plain FASTA files under `data/reference/`, and records checksums in `results/references/reference_checksums.tsv`.
@@ -42,7 +42,7 @@ The individual installer targets still exist: `make install-digital-rads`, `make
 Then run:
 
 ```bash
-make comparators THREADS=4 RADIGEST=/path/to/radigest
+make comparators THREADS=8 RADIGEST=/path/to/radigest
 ```
 
 The comparator target writes exact normalized interval comparison summaries for Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py`, a SimRAD count-level sanity comparison, a ddgRADer binned-screening comparison, and two manuscript-facing tables:
@@ -55,13 +55,13 @@ results/manuscript/tables/table_03_comparator_semantics.tsv
 ## Performance
 
 ```bash
-make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
-make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
-make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+make performance-input-format THREADS=8 RADIGEST=/path/to/radigest
+make performance-screening-speed THREADS=8 RADIGEST=/path/to/radigest
+make performance-thread-scaling THREADS=8 RADIGEST=/path/to/radigest
+make performance-pair-screen-scaling THREADS=8 RADIGEST=/path/to/radigest
+make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
-make performance-screening-speed THREADS=4 \
+make performance-screening-speed THREADS=8 \
   RADIGEST=/path/to/radigest \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
@@ -92,14 +92,14 @@ The figures are written under `results/manuscript/figures/`; `figure_04_matched_
 Stage 5e/5f large-reference timing is part of the required reference and matched-tools path; the wheat matched-tool subset excludes SimRAD:
 
 ```bash
-make references THREADS=4
-make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+make references THREADS=8
+make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 ```
 
 ## Full nonempirical reviewer run
 
 ```bash
-make reviewer-nonempirical THREADS=4
+make reviewer-nonempirical THREADS=8
 ```
 
 This target runs `make install-all`, `make check`, the nonempirical reviewer workflow, and the manuscript performance figures.
@@ -139,12 +139,12 @@ reference and the local BAM drop-off directory
 
 ```bash
 make empirical-check
-make empirical-references THREADS=4
-make empirical-tlens THREADS=4
-make empirical-predictions THREADS=4
-make empirical-depth-validation THREADS=4
+make empirical-references THREADS=8
+make empirical-tlens THREADS=8
+make empirical-predictions THREADS=8
+make empirical-depth-validation THREADS=8
 # or run the current full empirical workflow:
-make empirical THREADS=4
+make empirical THREADS=8
 ```
 
 With the default manifest, no empirical library is enabled. `make empirical-references`

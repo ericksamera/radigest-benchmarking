@@ -61,7 +61,7 @@ prediction summaries under `results/empirical/{library_id}/predictions/`.
 Depth-validation cases in `config/empirical_depth_validation_cases.tsv` add a
 configured `radigest-design` run, predicted-locus BED depth calculation across BAMs,
 `results/empirical/{library_id}/depth_validation/summary.tsv`, and the
-manuscript table `results/manuscript/tables/table_08_empirical_recovery.tsv`.
+manuscript table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 
 ## Stage 7a/7b audit contract
 

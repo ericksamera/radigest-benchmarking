@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCREENING_CASES = ROOT / "config" / "screening_speed_cases.tsv"
 DATASETS = ROOT / "config" / "datasets.tsv"
 CONDITIONS = ROOT / "config" / "conditions.tsv"
-CANDIDATE_ENZYMES = ROOT / "config" / "candidate_enzymes.txt"
+CANDIDATE_ENZYMES = ROOT / "config" / "candidate_enzymes_30.txt"
 
 REQUIRED_COLUMNS = [
     "case_id",
@@ -146,7 +146,7 @@ def main() -> int:
         if candidate_path.resolve() != canonical_candidate_path:
             fail(
                 f"config/screening_speed_cases.tsv:{line_number} candidate_enzymes "
-                "must use config/candidate_enzymes.txt for the reviewer contract"
+                "must use config/candidate_enzymes_30.txt for the reviewer throughput contract"
             )
         read_candidate_names(candidate_path)
 

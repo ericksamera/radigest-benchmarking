@@ -9,10 +9,10 @@ import csv
 import re
 from pathlib import Path
 
-EMPIRICAL_LIBRARY_MANIFEST = "config/empirical_libraries.tsv"
+EMPIRICAL_LIBRARY_MANIFEST = config.get("empirical_libraries", "config/empirical_libraries.tsv")
 EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
-EMPIRICAL_DEPTH_VALIDATION_CASES = "config/empirical_depth_validation_cases.tsv"
-EMPIRICAL_DEPTH_VALIDATION_TABLE = "results/manuscript/tables/table_08_empirical_recovery.tsv"
+EMPIRICAL_DEPTH_VALIDATION_CASES = config.get("empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv")
+EMPIRICAL_DEPTH_VALIDATION_TABLE = "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
 # Keep pooled library outputs from matching nested per-BAM paths such as
@@ -82,6 +82,7 @@ EMPIRICAL_SRA_RUN_ROWS = [
     for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST)
     if row.get("enabled", "false").lower() == "true"
     and row.get("include", "false").lower() == "true"
+    and row.get("library_id", "") in EMPIRICAL_ENABLED_LIBRARY_IDS
 ]
 EMPIRICAL_SRA_RUNS_BY_LIBRARY = {}
 for row in EMPIRICAL_SRA_RUN_ROWS:
@@ -91,7 +92,7 @@ REFERENCE_ROWS_BY_ID_FOR_EMPIRICAL = {
     row["reference_id"]: row for row in _read_tsv_rows("config/references.tsv")
 }
 EMPIRICAL_REFERENCE_OUTPUTS = []
-for row in EMPIRICAL_LIBRARY_ROWS:
+for row in EMPIRICAL_ENABLED_ROWS:
     reference_id = row.get("reference_id", "")
     reference_path = row.get("reference_path", "")
     if reference_id in REFERENCE_ROWS_BY_ID_FOR_EMPIRICAL:
@@ -847,6 +848,7 @@ rule empirical_depth_design:
         size_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_sd"),
         size_edge_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_edge_sd"),
         read_budget=_empirical_depth_read_budget
+    threads: 4
     log:
         "benchmark/logs/empirical/{library_id}.depth_validation.design.log"
     shell:
@@ -861,6 +863,9 @@ rule empirical_depth_design:
           --samples {params.samples:q} \
           --read-layout {params.read_layout:q} \
           --read-length {params.read_length:q} \
+          --threads {threads} \
+          --jobs 1 \
+          --build-workers {threads} \
           {params.read_budget:q} \
           --usable-read-fraction {params.usable_read_fraction:q} \
           --min {params.min_size:q} \

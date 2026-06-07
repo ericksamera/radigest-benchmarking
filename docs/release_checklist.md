@@ -3,7 +3,7 @@
 Before release:
 
 1. `make check` passes.
-2. `make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest` passes.
+2. `make reviewer-nonempirical THREADS=8 RADIGEST=/path/to/radigest` passes.
 3. `make audit` passes.
 4. Every `required_for_release=true` row in `config/artifacts.tsv` has present, non-empty outputs and manuscript artifacts.
 5. Environment, artifact-status, claim-audit, output-index, and release-checklist tables are regenerated.

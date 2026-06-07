@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
-EMPIRICAL_LIBRARIES = ROOT / "config" / "empirical_libraries.tsv"
 EMPIRICAL_SRA_RUNS = ROOT / "config" / "empirical_sra_runs.tsv"
 ENZYMES = ROOT / "config" / "enzymes.tsv"
 REFERENCES = ROOT / "config" / "references.tsv"
@@ -78,7 +77,10 @@ def fail(message: str) -> NoReturn:
 
 
 def rel(path: Path) -> str:
-    return str(path.relative_to(ROOT))
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
@@ -241,6 +243,12 @@ def count_enabled_sra_runs(library_id: str, sra_rows: list[dict[str, str]]) -> i
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--manifest",
+        default=ROOT / "config" / "empirical_libraries.tsv",
+        type=Path,
+        help="Empirical library manifest to validate.",
+    )
+    parser.add_argument(
         "--require-enabled",
         action="append",
         default=[],
@@ -253,7 +261,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     required_enabled = set(args.require_enabled)
-    rows = read_tsv(EMPIRICAL_LIBRARIES, REQUIRED_COLUMNS)
+    manifest = args.manifest if args.manifest.is_absolute() else ROOT / args.manifest
+    rows = read_tsv(manifest, REQUIRED_COLUMNS)
     sra_rows = read_tsv_allow_empty(EMPIRICAL_SRA_RUNS, SRA_COLUMNS)
     enzymes = read_enzyme_ids()
     references = read_reference_rows()
@@ -283,19 +292,16 @@ def main(argv: list[str] | None = None) -> int:
     for line_number, row in enumerate(rows, start=2):
         library_id = row["library_id"]
         if library_id in seen:
-            fail(
-                f"config/empirical_libraries.tsv:{line_number} "
-                f"duplicate library_id={library_id}"
-            )
+            fail(f"{rel(manifest)}:{line_number} " f"duplicate library_id={library_id}")
         seen.add(library_id)
 
         for column in REQUIRED_COLUMNS:
             if row.get(column, "") == "":
-                fail(f"config/empirical_libraries.tsv:{line_number} empty {column}")
+                fail(f"{rel(manifest)}:{line_number} empty {column}")
         for column in BOOLEAN_COLUMNS:
             parse_bool(
                 row[column],
-                f"config/empirical_libraries.tsv:{line_number} {column}",
+                f"{rel(manifest)}:{line_number} {column}",
             )
 
         enabled = parse_bool(row["enabled"], f"library {library_id} enabled")
@@ -305,7 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         if include_for_manuscript and not enabled:
             fail(
-                f"config/empirical_libraries.tsv:{line_number} library {library_id} "
+                f"{rel(manifest)}:{line_number} library {library_id} "
                 "sets include_for_manuscript=true but enabled=false"
             )
         if enabled:
@@ -317,19 +323,15 @@ def main(argv: list[str] | None = None) -> int:
         source_type = row["source_type"]
         if source_type not in VALID_SOURCE_TYPES:
             fail(
-                f"config/empirical_libraries.tsv:{line_number} invalid "
-                f"source_type={source_type!r}"
+                f"{rel(manifest)}:{line_number} invalid " f"source_type={source_type!r}"
             )
         size_model = row["size_model"]
         if size_model not in VALID_SIZE_MODELS:
-            fail(
-                f"config/empirical_libraries.tsv:{line_number} invalid "
-                f"size_model={size_model!r}"
-            )
+            fail(f"{rel(manifest)}:{line_number} invalid " f"size_model={size_model!r}")
         for column in ["enzyme_1", "enzyme_2"]:
             if row[column] not in enzymes:
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} unknown "
+                    f"{rel(manifest)}:{line_number} unknown "
                     f"{column}={row[column]!r}"
                 )
 
@@ -347,37 +349,31 @@ def main(argv: list[str] | None = None) -> int:
         min_mapq = parse_int(row["min_mapq"], f"library {library_id} min_mapq")
         max_tlen = parse_int(row["max_tlen"], f"library {library_id} max_tlen")
         if min_size < 0 or max_size <= min_size:
-            fail(f"config/empirical_libraries.tsv:{line_number} invalid size interval")
+            fail(f"{rel(manifest)}:{line_number} invalid size interval")
         if score_min < 0 or score_max <= score_min:
-            fail(f"config/empirical_libraries.tsv:{line_number} invalid score interval")
+            fail(f"{rel(manifest)}:{line_number} invalid score interval")
         if score_min > min_size or score_max < max_size:
             fail(
-                f"config/empirical_libraries.tsv:{line_number} score_min/score_max "
+                f"{rel(manifest)}:{line_number} score_min/score_max "
                 "must cover min_size/max_size"
             )
         if size_edge_sd <= 0:
-            fail(
-                f"config/empirical_libraries.tsv:{line_number} "
-                "size_edge_sd must be > 0"
-            )
+            fail(f"{rel(manifest)}:{line_number} " "size_edge_sd must be > 0")
         if protocol_prior_beta < 0:
             fail(
-                f"config/empirical_libraries.tsv:{line_number} "
+                f"{rel(manifest)}:{line_number} "
                 "protocol_prior_length_bias_beta_per_bp must be >= 0"
             )
         if min_mapq < 0:
-            fail(f"config/empirical_libraries.tsv:{line_number} min_mapq must be >= 0")
+            fail(f"{rel(manifest)}:{line_number} min_mapq must be >= 0")
         if max_tlen <= 0:
-            fail(f"config/empirical_libraries.tsv:{line_number} max_tlen must be > 0")
+            fail(f"{rel(manifest)}:{line_number} max_tlen must be > 0")
 
         validate_reference_path_shape(
             row["reference_path"], f"library {library_id} reference_path"
         )
         if is_na(row["reference_id"]):
-            fail(
-                f"config/empirical_libraries.tsv:{line_number} "
-                "reference_id must not be NA"
-            )
+            fail(f"{rel(manifest)}:{line_number} " "reference_id must not be NA")
         is_downloaded_reference = reference_is_downloaded_public(
             row["reference_id"], row["reference_path"], references
         )
@@ -385,7 +381,7 @@ def main(argv: list[str] | None = None) -> int:
             "data/reference/"
         ):
             fail(
-                f"config/empirical_libraries.tsv:{line_number} unknown "
+                f"{rel(manifest)}:{line_number} unknown "
                 f"reference_id={row['reference_id']!r}; add downloadable "
                 "data/reference/ references to config/references.tsv"
             )
@@ -393,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
             candidate = ROOT / row["reference_path"]
             if enabled and not candidate.exists():
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} enabled library "
+                    f"{rel(manifest)}:{line_number} enabled library "
                     f"{library_id} missing non-downloadable reference_path: "
                     f"{row['reference_path']}"
                 )
@@ -414,14 +410,14 @@ def main(argv: list[str] | None = None) -> int:
                 bam_dir = ROOT / row["bam_dir"]
                 if not bam_dir.is_dir():
                     fail(
-                        f"config/empirical_libraries.tsv:{line_number} enabled "
+                        f"{rel(manifest)}:{line_number} enabled "
                         f"library {library_id} missing bam_dir: {row['bam_dir']}"
                     )
                 bam_count = count_matching_bams(row["bam_dir"], row["bam_glob"])
                 sra_count = count_enabled_sra_runs(library_id, sra_rows)
                 if bam_count < 1 and sra_count < 1:
                     fail(
-                        f"config/empirical_libraries.tsv:{line_number} enabled "
+                        f"{rel(manifest)}:{line_number} enabled "
                         f"library {library_id} found no BAMs matching "
                         f"{row['bam_dir']}/{row['bam_glob']} and no enabled SRA runs"
                     )
@@ -439,13 +435,13 @@ def main(argv: list[str] | None = None) -> int:
             )
             if enabled:
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} source_type "
+                    f"{rel(manifest)}:{line_number} source_type "
                     "'local_cram_dir' is reserved but not wired yet"
                 )
         else:
             if enabled:
                 fail(
-                    f"config/empirical_libraries.tsv:{line_number} source_type "
+                    f"{rel(manifest)}:{line_number} source_type "
                     f"{source_type!r} is not wired into the empirical workflow yet"
                 )
 

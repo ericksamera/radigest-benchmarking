@@ -16,24 +16,24 @@ Stage 7b adds artifact, claim, environment, output-index, and release-checklist 
 make check
 make install-all
 make smoke
-make references THREADS=4
+make references THREADS=8
 make install-comparators
-make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
-make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
-make comparators THREADS=4
-make performance-input-format THREADS=4
-make performance-screening-speed THREADS=4
-make performance-thread-scaling THREADS=4
-make performance-pair-screen-scaling THREADS=4
-make performance-matched-tools THREADS=4
+make comparator-smoke THREADS=8 RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=8 RADIGEST=/path/to/radigest
+make comparators THREADS=8
+make performance-input-format THREADS=8
+make performance-screening-speed THREADS=8
+make performance-thread-scaling THREADS=8
+make performance-pair-screen-scaling THREADS=8
+make performance-matched-tools THREADS=8
 make empirical-check
-make empirical-references THREADS=4
-make empirical-tlens THREADS=4
-make empirical-predictions THREADS=4
-make empirical-depth-validation THREADS=4
-make empirical THREADS=4
+make empirical-references THREADS=8
+make empirical-tlens THREADS=8
+make empirical-predictions THREADS=8
+make empirical-depth-validation THREADS=8
+make empirical THREADS=8
 # Optional when the cached binary is not next to RADIGEST or on PATH:
-make performance-screening-speed THREADS=4 \
+make performance-screening-speed THREADS=8 \
   RADIGEST=/path/to/radigest \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
@@ -132,18 +132,27 @@ data/empirical/sockeye_ecori_msei/bam/
 Download the associated reference with:
 
 ```bash
-make empirical-references THREADS=4
+make empirical-references THREADS=8
 ```
+
+For the publication Sockeye EcoRI-MseI validation run, copy or symlink BAM/BAI files into `data/empirical/sockeye_ecori_msei/bam/`, then run:
+
+```bash
+make reviewer-all-sockeye THREADS=8
+make audit
+```
+
+This target writes a local manifest under `.local/config/` that enables the Sockeye row for the run without changing the tracked default empirical manifest.
 
 For local testing, copy or symlink every BAM for that library set into the BAM
 directory, set `enabled=true` in `config/empirical_libraries.tsv`, and run:
 
 ```bash
 make empirical-check
-make empirical-tlens THREADS=4
-make empirical-predictions THREADS=4
-make empirical-depth-validation THREADS=4
-make empirical THREADS=4
+make empirical-tlens THREADS=8
+make empirical-predictions THREADS=8
+make empirical-depth-validation THREADS=8
+make empirical THREADS=8
 ```
 
 The first wired empirical source type is `local_bam_dir`. Enabled rows inventory
@@ -162,7 +171,7 @@ runs the configured `radigest-design` prediction, regenerates the hard-selected 
 set for the validation size window as BED, calculates per-sample mean read-pair depth
 across those predicted loci from the BAMs, and writes
 `results/empirical/{library_id}/depth_validation/summary.tsv` plus the
-manuscript table `results/manuscript/tables/table_08_empirical_recovery.tsv`.
+manuscript table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 The default Sockeye depth-validation case mirrors the EcoRI-MseI
 200-400 bp run: target 1.5% weighted genome recovery, 20x target
 mean locus depth, 37 samples, 50M read pairs per flowcell, PE300 reads, and a
@@ -195,22 +204,22 @@ data/synthetic/comparator_ecori_msei_smoke.fa
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
-make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
-make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
+make comparator-smoke THREADS=8 RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=8 RADIGEST=/path/to/radigest
 make install-comparators
 make install-all
-make performance-input-format THREADS=4
-make performance-screening-speed THREADS=4
-make performance-thread-scaling THREADS=4
-make performance-pair-screen-scaling THREADS=4
-make performance-matched-tools THREADS=4
+make performance-input-format THREADS=8
+make performance-screening-speed THREADS=8
+make performance-thread-scaling THREADS=8
+make performance-pair-screen-scaling THREADS=8
+make performance-matched-tools THREADS=8
 make empirical-check
-make empirical-references THREADS=4
-make empirical-tlens THREADS=4
-make empirical THREADS=4
-make reviewer-nonempirical THREADS=4 RADIGEST=/path/to/radigest
-make reviewer-empirical THREADS=4
-make reviewer-all THREADS=4 RADIGEST=/path/to/radigest
+make empirical-references THREADS=8
+make empirical-tlens THREADS=8
+make empirical THREADS=8
+make reviewer-nonempirical THREADS=8 RADIGEST=/path/to/radigest
+make reviewer-empirical THREADS=8
+make reviewer-all THREADS=8 RADIGEST=/path/to/radigest
 make audit
 ```
 
@@ -235,8 +244,8 @@ Primary contracts live in:
 Stage 5e/5f large-reference timing is part of the required nonempirical path. `make references` now materializes the wheat reference, and `make performance-matched-tools` includes the large-reference matched-tool subset and figures. The wheat subset excludes SimRAD because SimRAD concatenates FASTA records into an R string and cannot process the full wheat assembly:
 
 ```bash
-make references THREADS=4
-make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+make references THREADS=8
+make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 ```
 
 Expected audit outputs:

@@ -1,9 +1,12 @@
-THREADS ?= 4
+THREADS ?= 8
 LOCAL_BIN ?= .local/bin
 RADIGEST_SRC ?= external/radigest
 RADIGEST ?= $(LOCAL_BIN)/radigest
 RADIGEST_REPO ?= https://github.com/ericksamera/radigest.git
 RADIGEST_REF ?= main
+EMPIRICAL_LIBRARIES ?= config/empirical_libraries.tsv
+EMPIRICAL_DEPTH_VALIDATION_CASES ?= config/empirical_depth_validation_cases.tsv
+SOCKEYE_EMPIRICAL_LIBRARIES ?= .local/config/empirical_libraries.sockeye.tsv
 ifeq ($(dir $(RADIGEST)),./)
 RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
 RADIGEST_DESIGN ?= radigest-design
@@ -21,19 +24,19 @@ SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
-SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)"
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
 COMPARATOR_INSTALL_MARKERS ?= .local/comparators/digital_rads.ready .local/comparators/ddradseqtools.ready .local/comparators/simrad.ready .local/comparators/ddgrader.ready
-EMPIRICAL_SOCKEYE_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay.pdf results/empirical/sockeye_ecori_msei/size_model_grid.tsv results/empirical/sockeye_ecori_msei/best_size_model.tsv results/empirical/sockeye_ecori_msei/depth_validation/summary.tsv results/manuscript/tables/table_08_empirical_recovery.tsv
+EMPIRICAL_SOCKEYE_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay.pdf results/empirical/sockeye_ecori_msei/size_model_grid.tsv results/empirical/sockeye_ecori_msei/best_size_model.tsv results/empirical/sockeye_ecori_msei/depth_validation/summary.tsv results/manuscript/tables/table_08_empirical_depth_validation.tsv
 EMPIRICAL_TRICHODERMA_OUTPUTS ?= results/empirical/trichoderma_sphi_mspi/figures/size_model_overlay.pdf results/empirical/trichoderma_sphi_mspi/size_model_grid.tsv results/empirical/trichoderma_sphi_mspi/best_size_model.tsv
 EMPIRICAL_ANOPHELES_REFERENCE_OUTPUTS ?= data/reference/anopheles_darlingi_gcf943734745.fa.gz data/reference/anopheles_darlingi_gcf943734745.fa
 EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS ?= data/empirical/anopheles_ecori_msei/fastq/SRR3173372_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173372_2.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_2.fastq.gz
 EMPIRICAL_ANOPHELES_BAM_OUTPUTS ?= data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam.bai data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam.bai
 EMPIRICAL_ANOPHELES_OUTPUTS ?= results/empirical/anopheles_ecori_msei/figures/size_model_overlay.pdf results/empirical/anopheles_ecori_msei/size_model_grid.tsv results/empirical/anopheles_ecori_msei/best_size_model.tsv
 
-.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation publication-sockeye-manifest reviewer-all-sockeye _empirical-sockeye-run empirical-check reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -55,31 +58,33 @@ help:
 	  '  make performance-input-format' \
 	  '  make performance-screening-speed' \
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
-	  '  make performance-thread-scaling THREADS=4' \
-	  '  make performance-pair-screen-scaling THREADS=4' \
-	  '  make performance-matched-tools THREADS=4' \
+	  '  make performance-thread-scaling THREADS=8' \
+	  '  make performance-pair-screen-scaling THREADS=8' \
+	  '  make performance-matched-tools THREADS=8' \
 	  '    # Uses RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached when set.' \
 	  '  make performance THREADS=8' \
-	  '  make figures THREADS=4' \
+	  '  make figures THREADS=8' \
 	  '  make empirical-check' \
-	  '  make empirical-sockeye THREADS=4' \
-	  '  make empirical-trichoderma THREADS=4' \
-	  '  make empirical-anopheles-reference THREADS=4' \
-	  '  make empirical-anopheles-fetch THREADS=4' \
-	  '  make empirical-anopheles-align THREADS=4' \
-	  '  make empirical-anopheles THREADS=4' \
-	  '  make empirical-references THREADS=4' \
-	  '  make empirical-tlens THREADS=4' \
-	  '  make empirical-predictions THREADS=4' \
-	  '  make empirical-curves THREADS=4' \
-	  '  make empirical-model-grid THREADS=4' \
-	  '  make empirical-model-fit-ranking THREADS=4' \
-	  '  make empirical-figures THREADS=4' \
-	  '  make empirical-depth-validation THREADS=4' \
-	  '  make empirical THREADS=4' \
-	  '  make reviewer-nonempirical THREADS=4' \
-	  '  make reviewer-empirical THREADS=4' \
-	  '  make reviewer-all THREADS=4' \
+	  '  make empirical-sockeye THREADS=8' \
+	  '  make empirical-trichoderma THREADS=8' \
+	  '  make empirical-anopheles-reference THREADS=8' \
+	  '  make empirical-anopheles-fetch THREADS=8' \
+	  '  make empirical-anopheles-align THREADS=8' \
+	  '  make empirical-anopheles THREADS=8' \
+	  '  make empirical-references THREADS=8' \
+	  '  make empirical-tlens THREADS=8' \
+	  '  make empirical-predictions THREADS=8' \
+	  '  make empirical-curves THREADS=8' \
+	  '  make empirical-model-grid THREADS=8' \
+	  '  make empirical-model-fit-ranking THREADS=8' \
+	  '  make empirical-figures THREADS=8' \
+	  '  make empirical-depth-validation THREADS=8' \
+	  '  make publication-sockeye-manifest' \
+	  '  make reviewer-all-sockeye THREADS=8' \
+	  '  make empirical THREADS=8' \
+	  '  make reviewer-nonempirical THREADS=8' \
+	  '  make reviewer-empirical THREADS=8' \
+	  '  make reviewer-all THREADS=8' \
 	  '  make manuscript' \
 	  '  make audit'
 
@@ -159,7 +164,7 @@ reviewer-nonempirical: install-all
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 empirical-check:
-	python3 scripts/core/check_empirical_libraries.py
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
 
 empirical-references:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_references_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -190,34 +195,50 @@ empirical-figures: $(RADIGEST_BUILD_PREREQ)
 
 empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_depth_validation_all $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
-empirical-sockeye: $(RADIGEST_BUILD_PREREQ)
-	python3 scripts/core/check_empirical_libraries.py --require-enabled sockeye_ecori_msei
+empirical-sockeye: publication-sockeye-manifest
+	$(MAKE) _empirical-sockeye-run EMPIRICAL_LIBRARIES="$(SOCKEYE_EMPIRICAL_LIBRARIES)" THREADS=$(THREADS)
+
+_empirical-sockeye-run: $(RADIGEST_BUILD_PREREQ)
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled sockeye_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_SOCKEYE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-trichoderma: $(RADIGEST_BUILD_PREREQ)
-	python3 scripts/core/check_empirical_libraries.py --require-enabled trichoderma_sphi_mspi
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled trichoderma_sphi_mspi
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_TRICHODERMA_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-anopheles-reference:
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_REFERENCE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-anopheles-fetch: empirical-anopheles-reference
-	python3 scripts/core/check_empirical_libraries.py --require-enabled anopheles_ecori_msei
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-anopheles-align: empirical-anopheles-fetch
-	python3 scripts/core/check_empirical_libraries.py --require-enabled anopheles_ecori_msei
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_BAM_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-anopheles: $(RADIGEST_BUILD_PREREQ) empirical-anopheles-align
-	python3 scripts/core/check_empirical_libraries.py --require-enabled anopheles_ecori_msei
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+publication-sockeye-manifest:
+	mkdir -p $(dir $(SOCKEYE_EMPIRICAL_LIBRARIES))
+	python3 scripts/empirical/write_publication_empirical_manifest.py \
+	  --input config/empirical_libraries.tsv \
+	  --library-id sockeye_ecori_msei \
+	  --out "$(SOCKEYE_EMPIRICAL_LIBRARIES)" \
+	  --include-for-manuscript \
+	  --disable-other-libraries
+
+reviewer-all-sockeye: publication-sockeye-manifest
+	$(MAKE) reviewer-all EMPIRICAL_LIBRARIES="$(SOCKEYE_EMPIRICAL_LIBRARIES)" THREADS=$(THREADS)
 
 reviewer-empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check
@@ -242,7 +263,8 @@ check-manifests:
 	python3 scripts/core/check_pair_screen_scaling_cases.py
 	python3 scripts/core/check_large_genome_cases.py
 	python3 scripts/core/check_matched_tool_timing_cases.py
-	python3 scripts/core/check_empirical_libraries.py
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
 	python3 scripts/core/check_artifacts.py
 
 check: check-manifests

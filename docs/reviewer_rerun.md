@@ -5,7 +5,7 @@ The intended nonempirical reviewer path is:
 ```bash
 mamba env create -f workflow/envs/driver.yml
 mamba activate radigest-benchmark-driver
-make reviewer-nonempirical THREADS=4
+make reviewer-nonempirical THREADS=8
 make audit
 ```
 
@@ -15,24 +15,24 @@ At Stage 5e/7b, `make reviewer-nonempirical` wraps setup, checks, the nonempiric
 
 ```bash
 make smoke RADIGEST=/path/to/radigest
-make references THREADS=4
+make references THREADS=8
 make install-comparators
-make comparator-smoke THREADS=4 RADIGEST=/path/to/radigest
-make comparator-small-yeast THREADS=4 RADIGEST=/path/to/radigest
-make comparators THREADS=4 RADIGEST=/path/to/radigest
-make performance-input-format THREADS=4 RADIGEST=/path/to/radigest
-make performance-screening-speed THREADS=4 RADIGEST=/path/to/radigest
-make performance-thread-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-pair-screen-scaling THREADS=4 RADIGEST=/path/to/radigest
-make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+make comparator-smoke THREADS=8 RADIGEST=/path/to/radigest
+make comparator-small-yeast THREADS=8 RADIGEST=/path/to/radigest
+make comparators THREADS=8 RADIGEST=/path/to/radigest
+make performance-input-format THREADS=8 RADIGEST=/path/to/radigest
+make performance-screening-speed THREADS=8 RADIGEST=/path/to/radigest
+make performance-thread-scaling THREADS=8 RADIGEST=/path/to/radigest
+make performance-pair-screen-scaling THREADS=8 RADIGEST=/path/to/radigest
+make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 make empirical-check
-make empirical-references THREADS=4
-make empirical-tlens THREADS=4
-make empirical-predictions THREADS=4 RADIGEST=/path/to/radigest
-make empirical-depth-validation THREADS=4 RADIGEST=/path/to/radigest
-make empirical THREADS=4 RADIGEST=/path/to/radigest
+make empirical-references THREADS=8
+make empirical-tlens THREADS=8
+make empirical-predictions THREADS=8 RADIGEST=/path/to/radigest
+make empirical-depth-validation THREADS=8 RADIGEST=/path/to/radigest
+make empirical THREADS=8 RADIGEST=/path/to/radigest
 # Optional when the cached binary is not next to RADIGEST or on PATH:
-make performance-screening-speed THREADS=4 \
+make performance-screening-speed THREADS=8 \
   RADIGEST=/path/to/radigest \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
@@ -55,8 +55,8 @@ Stage 5a adds the radigest input-format performance workflow. Stage 5b adds cach
 Stage 5e/5f large-reference timing is included in the required reference and matched-tools path:
 
 ```bash
-make references THREADS=4
-make performance-matched-tools THREADS=4 RADIGEST=/path/to/radigest
+make references THREADS=8
+make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 ```
 
 ## Audit

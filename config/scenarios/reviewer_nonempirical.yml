@@ -21,7 +21,7 @@ screening_speed:
   target: performance_screening_speed_all
   dataset: small_yeast_s288c_plain
   reference: data/reference/small_yeast_s288c.fa
-  candidate_enzymes: config/candidate_enzymes.txt
+  candidate_enzymes: config/candidate_enzymes_30.txt
   min_size: 300
   max_size: 600
   score_min: 1
@@ -62,8 +62,8 @@ pair_screen_scaling:
   target: performance_pair_screen_scaling_all
   dataset: moderate_cannabis_pink-pepper_plain
   reference: data/reference/moderate_cannabis_pink-pepper.fa
-  candidate_enzymes: config/candidate_enzymes.txt
-  jobs: [1, 2, 4]
+  candidate_enzymes: config/candidate_enzymes_30.txt
+  jobs: [1, 2, 4, 8]
   runs: 3
   radigest_threads: 1
   command_template: radigest-screen-pairs-cached

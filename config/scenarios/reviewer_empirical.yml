@@ -29,4 +29,4 @@ empirical:
     depth_per_sample: results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
     depth_summary: results/empirical/{library_id}/depth_validation/summary.tsv
     summary: results/empirical/empirical_recovery_summary.tsv
-    table: results/manuscript/tables/table_08_empirical_recovery.tsv
+    table: results/manuscript/tables/table_08_empirical_depth_validation.tsv
