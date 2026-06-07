@@ -1032,7 +1032,8 @@ rule empirical_depth_validation_manuscript_table:
 rule empirical_depth_validation_figure:
     input:
         per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
-        summary="results/empirical/{library_id}/depth_validation/summary.tsv"
+        summary="results/empirical/{library_id}/depth_validation/summary.tsv",
+        script="scripts/empirical/plot_depth_validation.R"
     output:
         figure="results/empirical/{library_id}/depth_validation/depth_validation.pdf"
     log:

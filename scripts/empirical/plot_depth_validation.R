@@ -39,6 +39,13 @@ log_breaks_from_range <- function(values) {
   10^(seq(lower_exp, upper_exp))
 }
 
+log_depth_labels <- function(values) {
+  case_when(
+    values >= 1 ~ format(values, trim = TRUE, scientific = FALSE),
+    TRUE ~ format(values, trim = TRUE, scientific = FALSE, nsmall = 1)
+  )
+}
+
 per_sample_path <- arg_value("--per-sample-depth")
 summary_path <- arg_value("--summary")
 out_path <- arg_value("--out")
@@ -138,6 +145,7 @@ depth_breaks <- log_breaks_from_range(c(
   observed_median_depth,
   read_normalized_prediction
 ))
+depth_limits <- range(depth_breaks, na.rm = TRUE)
 
 p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   geom_point(color = "#2B5CAD", size = 1.5, alpha = 0.82) +
@@ -145,7 +153,8 @@ p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   scale_linetype_manual(values = setNames(line_df$line_type, line_df$label)) +
   scale_y_log10(
     breaks = depth_breaks,
-    labels = label_number(accuracy = 0.1, trim = TRUE)
+    labels = log_depth_labels,
+    limits = depth_limits
   ) +
   scale_x_continuous(breaks = pretty_breaks(n = 8)) +
   labs(
@@ -172,14 +181,17 @@ p_calibration <- ggplot(
   geom_abline(intercept = 0, slope = 1, linetype = "longdash", color = "grey15", linewidth = 0.45) +
   scale_x_log10(
     breaks = depth_breaks,
-    labels = label_number(accuracy = 0.1, trim = TRUE)
+    labels = log_depth_labels,
+    limits = depth_limits
   ) +
   scale_y_log10(
     breaks = depth_breaks,
-    labels = label_number(accuracy = 0.1, trim = TRUE)
+    labels = log_depth_labels,
+    limits = depth_limits
   ) +
+  coord_equal() +
   labs(
-    x = "Read-normalized predicted mean locus depth",
+    x = "Read-normalized predicted depth",
     y = "Observed mean locus depth"
   ) +
   theme_minimal(base_size = 9) +
