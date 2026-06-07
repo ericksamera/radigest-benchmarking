@@ -129,13 +129,14 @@ if (nrow(plot_df) == 0) {
 
 line_df <- tibble(
   label = c(
-    sprintf("Budget pred. %.1fx", predicted_budget_depth),
-    sprintf("Read-norm. %.1fx", read_normalized_prediction),
-    sprintf("Median %.1fx", observed_median_depth)
+    sprintf("Predicted at modeled budget (%.1fx)", predicted_budget_depth),
+    sprintf("Read-normalized prediction (%.1fx)", read_normalized_prediction),
+    sprintf("Observed median (%.1fx)", observed_median_depth)
   ),
   depth = c(predicted_budget_depth, read_normalized_prediction, observed_median_depth),
   line_type = c("solid", "longdash", "dotted")
 )
+line_df$label <- factor(line_df$label, levels = line_df$label)
 
 depth_breaks <- log_breaks_from_range(c(
   plot_df$mean_pairs_per_locus,
@@ -145,25 +146,11 @@ depth_breaks <- log_breaks_from_range(c(
   read_normalized_prediction
 ))
 depth_limits <- range(depth_breaks, na.rm = TRUE)
-sample_label_x <- max(plot_df$sample_order) + 3
-line_label_df <- line_df |>
-  mutate(x = sample_label_x)
 
 p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   geom_point(color = "#2B5CAD", size = 1.5, alpha = 0.82) +
-  geom_hline(data = line_df, aes(yintercept = depth, linetype = line_type), color = "grey15", linewidth = 0.45, show.legend = FALSE) +
-  geom_label(
-    data = line_label_df,
-    aes(x = x, y = depth, label = label),
-    inherit.aes = FALSE,
-    hjust = 1,
-    size = 2.4,
-    label.size = 0.15,
-    label.padding = unit(0.11, "lines"),
-    fill = "white",
-    color = "grey15"
-  ) +
-  scale_linetype_identity() +
+  geom_hline(data = line_df, aes(yintercept = depth, linetype = label), color = "grey15", linewidth = 0.45) +
+  scale_linetype_manual(values = setNames(line_df$line_type, line_df$label)) +
   scale_y_log10(
     breaks = depth_breaks,
     labels = log_depth_labels,
@@ -171,17 +158,21 @@ p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   ) +
   scale_x_continuous(
     breaks = pretty_breaks(n = 8),
-    limits = c(1, sample_label_x),
     expand = expansion(mult = c(0.01, 0.02))
   ) +
-  coord_cartesian(clip = "off") +
   labs(
     x = "Sample (sorted by observed depth)",
-    y = "Observed mean locus depth"
+    y = "Observed mean locus depth",
+    linetype = NULL
   ) +
   theme_minimal(base_size = 9) +
   theme(
     panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    legend.box = "horizontal",
+    legend.text = element_text(size = 8),
+    legend.key.width = unit(1.15, "lines"),
     plot.margin = margin(5.5, 8, 5.5, 12)
   )
 
@@ -213,12 +204,13 @@ p_calibration <- ggplot(
   )
 
 combined <- (p_sorted | p_calibration) +
-  plot_layout(widths = c(1.8, 1.1)) +
+  plot_layout(widths = c(1.8, 1.1), guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(
     plot.tag = element_text(face = "bold", size = 13),
     plot.tag.position = "topleft",
-    plot.tag.location = "margin"
+    plot.tag.location = "margin",
+    legend.position = "bottom"
   )
 
 base_stem <- tools::file_path_sans_ext(out_path)
@@ -235,8 +227,8 @@ for (output in requested_outputs) {
   dir.create(dirname(output), recursive = TRUE, showWarnings = FALSE)
   fmt <- tolower(tools::file_ext(output))
   if (identical(fmt, "pdf") && isTRUE(capabilities("cairo"))) {
-    ggsave(output, plot = combined, width = 7.4, height = 3.6, device = cairo_pdf)
+    ggsave(output, plot = combined, width = 7.4, height = 3.9, device = cairo_pdf)
   } else {
-    ggsave(output, plot = combined, width = 7.4, height = 3.6)
+    ggsave(output, plot = combined, width = 7.4, height = 3.9)
   }
 }
