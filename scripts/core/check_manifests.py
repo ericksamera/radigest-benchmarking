@@ -253,6 +253,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/empirical/summarize_radigest_prediction.py",
     "scripts/empirical/calculate_locus_depth.py",
     "scripts/empirical/summarize_depth_validation.py",
+    "scripts/empirical/plot_depth_validation.R",
     "scripts/empirical/make_size_model_curves.py",
     "scripts/manuscript/make_empirical_depth_validation_table.py",
     "scripts/empirical/plot_size_model_overlay.R",

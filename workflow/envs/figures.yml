@@ -6,6 +6,7 @@ dependencies:
   - r-dplyr
   - r-forcats
   - r-ggplot2
+  - r-patchwork
   - r-readr
   - r-scales
   - r-stringr

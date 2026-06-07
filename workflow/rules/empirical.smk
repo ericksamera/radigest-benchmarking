@@ -13,6 +13,7 @@ EMPIRICAL_LIBRARY_MANIFEST = config.get("empirical_libraries", "config/empirical
 EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
 EMPIRICAL_DEPTH_VALIDATION_CASES = config.get("empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv")
 EMPIRICAL_DEPTH_VALIDATION_TABLE = "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
+EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE = "results/manuscript/figures/figure_07_empirical_depth_validation.pdf"
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
 # Keep pooled library outputs from matching nested per-BAM paths such as
@@ -267,6 +268,20 @@ for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS:
             f"{prefix}/summary.tsv",
         ]
     )
+EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS = [
+    f"results/empirical/{library_id}/depth_validation/depth_validation.pdf"
+    for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
+]
+EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS = (
+    [EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE]
+    if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
+    else []
+)
+EMPIRICAL_PRIMARY_DEPTH_VALIDATION_LIBRARY_ID = (
+    EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS[0]
+    if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
+    else None
+)
 EMPIRICAL_CURVE_OUTPUTS = []
 for row in EMPIRICAL_ENABLED_ROWS:
     prefix = f"results/empirical/{row['library_id']}"
@@ -298,7 +313,10 @@ EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS = (
     else []
 )
 EMPIRICAL_FIGURE_OUTPUTS = (
-    EMPIRICAL_OVERLAY_FIGURE_OUTPUTS + EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
+    EMPIRICAL_OVERLAY_FIGURE_OUTPUTS
+    + EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
+    + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
+    + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS
 )
 EMPIRICAL_ALL_OUTPUTS = (
     [EMPIRICAL_LIBRARY_MANIFEST]
@@ -506,7 +524,10 @@ rule empirical_predictions_all:
 
 rule empirical_depth_validation_all:
     input:
-        EMPIRICAL_DEPTH_VALIDATION_OUTPUTS + EMPIRICAL_DEPTH_VALIDATION_TABLES
+        EMPIRICAL_DEPTH_VALIDATION_OUTPUTS
+        + EMPIRICAL_DEPTH_VALIDATION_TABLES
+        + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
+        + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS
 
 
 rule empirical_curves_all:
@@ -1005,6 +1026,41 @@ rule empirical_depth_validation_manuscript_table:
           --summaries {input.summaries:q} \
           --out {output.table:q} \
           > {log:q} 2>&1
+        """
+
+
+rule empirical_depth_validation_figure:
+    input:
+        per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
+        summary="results/empirical/{library_id}/depth_validation/summary.tsv"
+    output:
+        figure="results/empirical/{library_id}/depth_validation/depth_validation.pdf"
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.figure.log"
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
+        Rscript scripts/empirical/plot_depth_validation.R \
+          --per-sample-depth {input.per_sample_depth:q} \
+          --summary {input.summary:q} \
+          --out {output.figure:q} \
+          --formats pdf \
+          > {log:q} 2>&1
+        """
+
+rule empirical_depth_validation_manuscript_figure:
+    input:
+        figure=lambda wildcards: f"results/empirical/{EMPIRICAL_PRIMARY_DEPTH_VALIDATION_LIBRARY_ID}/depth_validation/depth_validation.pdf"
+    output:
+        figure=EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE
+    log:
+        "benchmark/logs/empirical/depth_validation.manuscript_figure.log"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/manuscript/figures
+        cp {input.figure:q} {output.figure:q}
         """
 
 rule empirical_fit_size_model_grid:
