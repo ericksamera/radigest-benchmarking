@@ -20,6 +20,7 @@ EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 wildcard_constraints:
     library_id=r"[^/]+",
     bam_id=r"[^/]+",
+    run_accession=r"SRR[0-9]+",
     prediction_mode=r"raw|hard"
 
 
@@ -537,6 +538,8 @@ rule empirical_sra_fastq:
     output:
         r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
         r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
     threads: 4
     log:
         "benchmark/logs/empirical/{library_id}.{run_accession}.fasterq_dump.log"
@@ -547,11 +550,11 @@ rule empirical_sra_fastq:
         mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/fastq
         tmpdir="$(mktemp -d)"
         trap 'rm -rf "$tmpdir"' EXIT
-        fasterq-dump {wildcards.run_accession:q}           --split-files           --threads {threads}           --outdir "$tmpdir"           > {log:q} 2>&1
-        test -s "$tmpdir/{wildcards.run_accession}_1.fastq"
-        test -s "$tmpdir/{wildcards.run_accession}_2.fastq"
-        gzip -c "$tmpdir/{wildcards.run_accession}_1.fastq" > {output.r1:q}
-        gzip -c "$tmpdir/{wildcards.run_accession}_2.fastq" > {output.r2:q}
+        fasterq-dump {params.sra_run:q}           --split-files           --threads {threads}           --outdir "$tmpdir"           > {log:q} 2>&1
+        test -s "$tmpdir/{params.sra_run}_1.fastq"
+        test -s "$tmpdir/{params.sra_run}_2.fastq"
+        gzip -c "$tmpdir/{params.sra_run}_1.fastq" > {output.r1:q}
+        gzip -c "$tmpdir/{params.sra_run}_2.fastq" > {output.r2:q}
         """
 
 
@@ -559,6 +562,8 @@ rule empirical_fastp_trim:
     input:
         r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
         r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
     output:
         r1="data/empirical/{library_id}/trimmed/{run_accession}_1.trimmed.fastq.gz",
         r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
@@ -602,6 +607,8 @@ rule empirical_align_sra_bam:
         r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
         reference=lambda wildcards: EMPIRICAL_ROWS_BY_ID[wildcards.library_id]["reference_path"],
         index=_empirical_bwa_index_files
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
     output:
         bam="data/empirical/{library_id}/bam/{run_accession}.bam",
         bai="data/empirical/{library_id}/bam/{run_accession}.bam.bai"

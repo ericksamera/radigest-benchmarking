@@ -171,8 +171,9 @@ The default Sockeye depth-validation case mirrors the EcoRI-MseI
 mean locus depth, 37 samples, 50M read pairs per flowcell, PE300 reads, and a
 soft-window size model with edge SD 50 bp.
 
-The manifest also reserves source types for later CRAM, FASTQ, and SRA-backed
-ingestion without committing private sequence data to the repository.
+Sockeye is a local BAM drop-off validation set. The public Anopheles validation row is an SRA-backed FASTQ/alignment workflow and is enabled for reviewer runs through `source_type=sra_fastq`; SRA rules are restricted to SRR accessions so local BAM sample IDs are never treated as NCBI accessions.
+
+The manifest also reserves source types for later CRAM and FASTQ ingestion without committing private sequence data to the repository.
 
 ## Comparator matrix boundaries
 
