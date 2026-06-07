@@ -29,6 +29,7 @@ RUN_COLUMNS = [
     "size_model",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "run_index",
     "wall_seconds",
     "exit_code",
@@ -168,6 +169,7 @@ def build_cached_command(
     size_model: str,
     jobs: int,
     radigest_threads: int,
+    build_workers: int,
     run_dir: Path,
 ) -> list[str]:
     return [
@@ -190,6 +192,8 @@ def build_cached_command(
         str(jobs),
         "--threads",
         str(radigest_threads),
+        "--build-workers",
+        str(build_workers),
         "--out-dir",
         str(run_dir),
         "--force",
@@ -210,6 +214,7 @@ def run_once(
     size_model: str,
     jobs: int,
     radigest_threads: int,
+    build_workers: int,
     case_id: str,
     dataset_id: str,
     condition_id: str,
@@ -234,6 +239,7 @@ def run_once(
         size_model=size_model,
         jobs=jobs,
         radigest_threads=radigest_threads,
+        build_workers=build_workers,
         run_dir=run_dir,
     )
     exit_code, elapsed = execute_command(
@@ -261,6 +267,7 @@ def run_once(
         "size_model": size_model,
         "jobs": str(jobs),
         "radigest_threads": str(radigest_threads),
+        "build_workers": str(build_workers),
         "run_index": str(run_index),
         "wall_seconds": f"{elapsed:.6f}",
         "exit_code": str(exit_code),
@@ -292,6 +299,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--size-model", required=True)
     parser.add_argument("--jobs", required=True, type=positive_int)
     parser.add_argument("--radigest-threads", required=True, type=positive_int)
+    parser.add_argument(
+        "--build-workers",
+        type=positive_int,
+        default=None,
+        help=(
+            "Parallel cut-index build workers for radigest-screen-pairs-cached. "
+            "Defaults to --radigest-threads so job-scaling benchmarks only vary "
+            "pair-scoring jobs."
+        ),
+    )
     parser.add_argument("--runs", required=True, type=positive_int)
     parser.add_argument("--command-template", required=True)
     parser.add_argument("--raw-dir", required=True, type=Path)
@@ -322,6 +339,7 @@ def main() -> int:
     candidate_names = read_candidate_enzymes(args.candidate_enzymes)
     candidate_pairs_evaluated = len(candidate_names) * (len(candidate_names) - 1) // 2
     args.raw_dir.mkdir(parents=True, exist_ok=True)
+    build_workers = args.build_workers or args.radigest_threads
 
     rows = [
         run_once(
@@ -337,6 +355,7 @@ def main() -> int:
             size_model=args.size_model,
             jobs=args.jobs,
             radigest_threads=args.radigest_threads,
+            build_workers=build_workers,
             case_id=args.case_id,
             dataset_id=args.dataset_id,
             condition_id=args.condition_id,

@@ -253,6 +253,7 @@ for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS:
     prefix = f"results/empirical/{library_id}/depth_validation"
     EMPIRICAL_DEPTH_VALIDATION_OUTPUTS.extend(
         [
+            f"{prefix}/design.summary.tsv",
             f"{prefix}/design.tsv",
             f"{prefix}/design.json",
             f"{prefix}/loci.bed",
@@ -763,8 +764,11 @@ rule empirical_radigest_prediction:
           -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
           -min {params.min_size:q} \
           -max {params.max_size:q} \
+          -score-min {params.min_size:q} \
+          -score-max {params.max_size:q} \
+          -size-model hard \
           -threads {threads} \
-          -bed {output.bed:q} \
+          -fragments-tsv {output.fragments:q} \
           -json {output.json:q} \
           > {log:q} 2>&1
         """
@@ -820,6 +824,7 @@ rule empirical_depth_design:
     input:
         reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
     output:
+        summary_tsv="results/empirical/{library_id}/depth_validation/design.summary.tsv",
         tsv="results/empirical/{library_id}/depth_validation/design.tsv",
         json="results/empirical/{library_id}/depth_validation/design.json"
     params:
@@ -869,6 +874,7 @@ rule empirical_depth_design:
           --out-dir results/empirical/{wildcards.library_id}/depth_validation \
           --force \
           > {log:q} 2>&1
+        test -s {output.summary_tsv:q}
         test -s {output.tsv:q}
         test -s {output.json:q}
         """

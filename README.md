@@ -38,6 +38,8 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
+Screening-speed and pair-screen-scaling targets require the radigest development/helper binary set. The local `make install-radigest` target builds that set with upstream `make build-dev`; for manual radigest installs, run upstream `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
+
 Comparator installers are run through Snakemake conda environments. `make install-comparators` installs or updates Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer; `make install-all` also builds the local radigest binaries when the default `RADIGEST=.local/bin/radigest` is in use.
 
 Expected smoke outputs:
@@ -152,7 +154,7 @@ Enabled rows also generate two radigest fragment-prediction tracks: a broad
 `raw` score-window prediction for distribution plots and a `hard` nominal-window
 prediction for showing how a strict size filter differs from the empirical TLEN
 distribution. The default Sockeye row uses a 200-400 bp nominal window with
-`soft-window` edge SD 55 for downstream model interpretation.
+`soft-window` edge SD 50 for downstream model interpretation.
 
 Depth-validation settings live in `config/empirical_depth_validation_cases.tsv`.
 When the matching empirical library is enabled, `make empirical-depth-validation`
@@ -259,7 +261,7 @@ make install-radigest
 make show-radigest
 ```
 
-This clones `https://github.com/ericksamera/radigest.git` into `external/radigest` and builds:
+This clones `https://github.com/ericksamera/radigest.git` into `external/radigest` and builds the upstream development/helper target (`make build-dev`):
 
 ```text
 .local/bin/radigest
@@ -279,3 +281,5 @@ Manual overrides still work:
 ```bash
 make smoke RADIGEST=/path/to/radigest
 ```
+
+For manual installs used with screening-speed or pair-screen-scaling targets, build the upstream helper surface with `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.

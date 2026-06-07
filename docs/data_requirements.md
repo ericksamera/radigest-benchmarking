@@ -56,7 +56,7 @@ manifest using the row-level MAPQ, duplicate, and maximum-TLEN filters.
 `make empirical-predictions` then runs radigest twice per enabled library: a
 broad `raw` prediction using `score_min`/`score_max` and a strict `hard`
 prediction using `min_size`/`max_size`. For the default Sockeye EcoRI-MseI row,
-the nominal experimental guess is 200-400 bp with `soft-window` edge SD 55; the
+the nominal experimental guess is 200-400 bp with `soft-window` edge SD 50; the
 broad prediction remains available for plotting the unselected fragment
 distribution against empirical TLENs. `make empirical-depth-validation` uses
 `config/empirical_depth_validation_cases.tsv` to run `radigest-design`, compute
@@ -70,7 +70,7 @@ data/reference/small_yeast_s288c.fa
 config/candidate_enzymes.txt
 ```
 
-Stage 5b uses the `radigest-screen-pairs-cached` binary. The Makefile derives `RADIGEST_SCREEN_PAIRS_CACHED` from `RADIGEST` when `RADIGEST` is a path, or uses `radigest-screen-pairs-cached` from `PATH`; override it explicitly when needed.
+Stage 5b uses the `radigest-screen-pairs-cached` binary. The Makefile derives `RADIGEST_SCREEN_PAIRS_CACHED` from `RADIGEST` when `RADIGEST` is a path, or uses `radigest-screen-pairs-cached` from `PATH`; override it explicitly when needed. Upstream radigest now installs cached screening through its development/helper surface, so manual installs used for these targets should use `make install-dev` or provide an explicit cached-screening binary path.
 
 Stage 5c thread-scaling runs use the moderate public cannabis Pink Pepper reference:
 

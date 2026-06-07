@@ -162,6 +162,7 @@ results/empirical/{library_id}/predictions/raw.summary.tsv
 results/empirical/{library_id}/predictions/hard.fragments.tsv
 results/empirical/{library_id}/predictions/hard.length_histogram.tsv
 results/empirical/{library_id}/predictions/hard.summary.tsv
+results/empirical/{library_id}/depth_validation/design.summary.tsv
 results/empirical/{library_id}/depth_validation/design.tsv
 results/empirical/{library_id}/depth_validation/design.json
 results/empirical/{library_id}/depth_validation/loci.bed

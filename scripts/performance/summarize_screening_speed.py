@@ -26,6 +26,7 @@ SUMMARY_COLUMNS = [
     "size_model",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "configured_runs",
     "observed_runs",
     "successful_runs",
@@ -70,6 +71,7 @@ RUN_COLUMNS = [
     "candidate_pairs_reported",
     "candidate_pairs_evaluated",
     "screening_binary",
+    "build_workers",
     "status",
 ]
 
@@ -174,6 +176,11 @@ def summarize_case(
             if row.get("screening_binary", "")
         }
     )
+    build_worker_values = {
+        parse_int(row["build_workers"], path_label=f"case {case_id} build_workers")
+        for row in successes
+        if row.get("build_workers") not in {None, "", "NA"}
+    }
     evaluated_value = (
         parse_int(case.get("candidate_pairs_evaluated", "0"), path_label=case_id)
         if not evaluated_unique
@@ -188,6 +195,11 @@ def summarize_case(
     )
     screening_binary = (
         ";".join(screening_binaries) if len(screening_binaries) == 1 else "NA"
+    )
+    build_workers = (
+        str(next(iter(sorted(build_worker_values))))
+        if len(build_worker_values) == 1
+        else "NA"
     )
 
     wall_min: float | None = None
@@ -222,6 +234,12 @@ def summarize_case(
     if len(screening_binaries) != 1:
         status = "FAIL"
         notes += " Screening binary path is missing or inconsistent across runs."
+    if len(build_worker_values) != 1:
+        status = "FAIL"
+        notes += " Build-worker count is missing or inconsistent across runs."
+    elif build_workers != case["radigest_threads"]:
+        status = "FAIL"
+        notes += " Cut-index build worker count is not pinned to radigest_threads."
 
     return {
         "case_id": case_id,
@@ -238,6 +256,7 @@ def summarize_case(
         "size_model": case["size_model"],
         "jobs": case["jobs"],
         "radigest_threads": case["radigest_threads"],
+        "build_workers": build_workers,
         "configured_runs": str(configured_runs),
         "observed_runs": str(len(run_rows)),
         "successful_runs": str(len(successes)),

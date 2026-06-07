@@ -138,7 +138,6 @@ TSV_SPECS = {
         "required_for_nonempirical",
         "notes",
     ],
-
     "config/empirical_depth_validation_cases.tsv": [
         "library_id",
         "display_name",
@@ -546,13 +545,14 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
             if runs < 1:
                 fail(f"{path}: case {case} runs must be >= 1")
 
-
     if path == "config/empirical_depth_validation_cases.tsv":
         valid_models = {"hard", "normal", "triangular", "soft-window"}
         for row in rows:
             library_id = row["library_id"]
             if row["size_model"] not in valid_models:
-                fail(f"{path}: library {library_id} invalid size_model={row['size_model']!r}")
+                fail(
+                    f"{path}: library {library_id} invalid size_model={row['size_model']!r}"
+                )
             if row["read_layout"] not in {"pe", "se"}:
                 fail(f"{path}: library {library_id} read_layout must be pe or se")
             try:
@@ -572,16 +572,35 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                 fail(f"{path}: library {library_id} numeric fields are invalid")
             if min_size < 0 or max_size <= min_size:
                 fail(f"{path}: library {library_id} invalid size interval")
-            if score_min < 0 or score_max <= score_min or score_min > min_size or score_max < max_size:
-                fail(f"{path}: library {library_id} score interval must cover size interval")
+            if (
+                score_min < 0
+                or score_max <= score_min
+                or score_min > min_size
+                or score_max < max_size
+            ):
+                fail(
+                    f"{path}: library {library_id} score interval must cover size interval"
+                )
             if samples < 1 or read_length < 1 or lanes < 1 or min_mapq < 0:
-                fail(f"{path}: library {library_id} samples/read_length/lanes must be positive and min_mapq nonnegative")
-            if target <= 0 or tolerance < 0 or desired_depth <= 0 or usable <= 0 or usable > 1:
-                fail(f"{path}: library {library_id} target/depth/usable values are out of range")
+                fail(
+                    f"{path}: library {library_id} samples/read_length/lanes must be positive and min_mapq nonnegative"
+                )
+            if (
+                target <= 0
+                or tolerance < 0
+                or desired_depth <= 0
+                or usable <= 0
+                or usable > 1
+            ):
+                fail(
+                    f"{path}: library {library_id} target/depth/usable values are out of range"
+                )
             has_flowcell = row["flowcell_read_pairs"] not in {"", "NA"}
             has_lane = row["lane_read_pairs"] not in {"", "NA"}
             if has_flowcell == has_lane:
-                fail(f"{path}: library {library_id} must set exactly one of flowcell_read_pairs or lane_read_pairs")
+                fail(
+                    f"{path}: library {library_id} must set exactly one of flowcell_read_pairs or lane_read_pairs"
+                )
     if path == "config/artifacts.tsv":
         for row in rows:
             claim = row["claim_id"]

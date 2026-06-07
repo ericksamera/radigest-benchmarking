@@ -54,12 +54,8 @@ def to_table_row(row: dict[str, str]) -> dict[str, str]:
         "modeled_read_pairs_per_sample": row["modeled_read_pairs_per_sample"],
         "observed_samples": row["observed_samples"],
         "observed_loci": row["observed_loci"],
-        "mean_observed_read_pairs_at_loci": row[
-            "mean_observed_read_pairs_at_loci"
-        ],
-        "median_observed_read_pairs_at_loci": row[
-            "median_observed_read_pairs_at_loci"
-        ],
+        "mean_observed_read_pairs_at_loci": row["mean_observed_read_pairs_at_loci"],
+        "median_observed_read_pairs_at_loci": row["median_observed_read_pairs_at_loci"],
         "mean_observed_depth": row["mean_observed_pairs_per_locus"],
         "median_observed_depth": row["median_observed_pairs_per_locus"],
         "read_normalized_prediction_mean_budget": row[
@@ -81,7 +77,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        rows = []
+        rows: list[dict[str, str]] = []
         for path in args.summaries:
             rows.extend(to_table_row(row) for row in read_tsv(path))
         if not rows:

@@ -64,7 +64,8 @@ rule build_environment_table:
         radigest=lambda wildcards: config.get("radigest", "radigest"),
         screen_pairs_cached=lambda wildcards: config.get(
             "radigest_screen_pairs_cached", "auto"
-        )
+        ),
+        radigest_design=lambda wildcards: config.get("radigest_design", "radigest-design")
     conda:
         "../envs/benchmark.yml"
     shell:
@@ -75,6 +76,7 @@ rule build_environment_table:
           --root . \
           --radigest {params.radigest:q} \
           --radigest-screen-pairs-cached {params.screen_pairs_cached:q} \
+          --radigest-design {params.radigest_design:q} \
           > {log:q} 2>&1
         """
 

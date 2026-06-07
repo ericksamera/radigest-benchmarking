@@ -37,6 +37,8 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
+Screening-speed and pair-screen-scaling targets require the radigest development/helper binary set. The local `make install-radigest` target builds that set with upstream `make build-dev`; for manual radigest installs, run upstream `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
+
 `comparator-smoke` exercises Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer on the same tracked synthetic FASTA and condition `D1`. `comparator-small-yeast` exercises the same tools on the small public yeast reference and condition `B1`.
 
 The assertion is still tool-specific:
@@ -105,4 +107,4 @@ make install-radigest
 make show-radigest
 ```
 
-After this, `RADIGEST` and `RADIGEST_SCREEN_PAIRS_CACHED` default to `.local/bin/` paths.
+After this, `RADIGEST`, `RADIGEST_SCREEN_PAIRS_CACHED`, and `RADIGEST_DESIGN` default to `.local/bin/` paths. The local build uses upstream `make build-dev`; manual installs used for performance targets should use upstream `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED` explicitly.

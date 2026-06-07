@@ -66,6 +66,8 @@ make performance-screening-speed THREADS=4 \
   RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
 ```
 
+Screening-speed and pair-screen-scaling targets require the radigest development/helper binary set. The local `make install-radigest` target builds that set with upstream `make build-dev`; for manual radigest installs, run upstream `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
+
 The input-format target compares plain and gzip FASTA timing on the small public yeast reference. The screening-speed target benchmarks `radigest-screen-pairs-cached` candidate-pair screening using `config/screening_speed_cases.tsv`. The thread-scaling target benchmarks radigest on the moderate public cannabis Pink Pepper reference using `config/thread_scaling_cases.tsv`. The pair-screen job-scaling target benchmarks `radigest-screen-pairs-cached` across 1, 2, and 4 jobs using `config/pair_screen_scaling_cases.tsv`. The matched-tools target includes both the standalone large-reference wheat timing artifact and required large-reference matched-tool subset; SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
 Expected manuscript-facing performance tables are:
@@ -114,14 +116,19 @@ This writes:
 ```text
 .local/bin/radigest
 .local/bin/radigest-screen-pairs-cached
+.local/bin/radigest-design
 .local/radigest/build_info.tsv
 ```
+
+The local build uses upstream `make build-dev` so the cached screening helper is available for performance targets.
 
 Use a pinned release or commit with:
 
 ```bash
 make install-radigest RADIGEST_REF=<tag-or-commit>
 ```
+
+When using a manual upstream radigest for screening benchmarks, make sure it was installed with the development/helper target, for example `make install-dev`, or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
 
 ## Empirical scaffold
 

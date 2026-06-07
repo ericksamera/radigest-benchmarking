@@ -81,7 +81,9 @@ def read_loci_bed(path: Path) -> IntervalIndex:
                 continue
             fields = line.split("\t")
             if len(fields) < 3:
-                raise ValueError(f"{path}: row {row_number}: BED requires at least 3 columns")
+                raise ValueError(
+                    f"{path}: row {row_number}: BED requires at least 3 columns"
+                )
             chrom = fields[0]
             start = int(fields[1])
             end = int(fields[2])
@@ -120,7 +122,9 @@ def count_overlaps(index: IntervalIndex, chrom: str, start: int, end: int) -> in
     return count
 
 
-def usable_positive_template(record: Any, *, min_mapq: int, exclude_duplicates: bool) -> bool:
+def usable_positive_template(
+    record: Any, *, min_mapq: int, exclude_duplicates: bool
+) -> bool:
     if record.is_secondary or record.is_supplementary or record.is_qcfail:
         return False
     if exclude_duplicates and record.is_duplicate:
@@ -229,7 +233,9 @@ def main(argv: list[str]) -> int:
                     ),
                     "read_pairs_outside_loci": str(stats["read_pairs_outside_loci"]),
                     "assigned_read_pair_fraction": (
-                        "NA" if filtered == 0 else f"{int(stats['read_pairs_overlapping_loci']) / filtered:.12g}"
+                        "NA"
+                        if filtered == 0
+                        else f"{int(stats['read_pairs_overlapping_loci']) / filtered:.12g}"
                     ),
                     "min_mapq": str(args.min_mapq),
                     "exclude_duplicates": str(exclude_duplicates).lower(),

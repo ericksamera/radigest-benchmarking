@@ -114,7 +114,9 @@ def safe_ratio(numerator: float, denominator: float) -> str:
 def build_summary_row(args: argparse.Namespace) -> dict[str, str]:
     design_rows = read_tsv(args.design_tsv)
     depth_rows = read_tsv(args.per_sample_depth)
-    design = find_design_row(design_rows, enzyme_1=args.enzyme_1, enzyme_2=args.enzyme_2)
+    design = find_design_row(
+        design_rows, enzyme_1=args.enzyme_1, enzyme_2=args.enzyme_2
+    )
     if not depth_rows:
         raise ValueError(f"{args.per_sample_depth}: no sample rows")
 
@@ -188,7 +190,9 @@ def build_summary_row(args: argparse.Namespace) -> dict[str, str]:
         "max_observed_pairs_per_locus": fmt(max(depths)),
         "read_normalized_predicted_depth_mean_budget": fmt(normalized_mean),
         "read_normalized_predicted_depth_median_budget": fmt(normalized_median),
-        "observed_mean_over_normalized_prediction": safe_ratio(mean_depth, normalized_mean),
+        "observed_mean_over_normalized_prediction": safe_ratio(
+            mean_depth, normalized_mean
+        ),
         "observed_median_over_normalized_prediction": safe_ratio(
             median_depth, normalized_median
         ),
@@ -211,12 +215,8 @@ def manuscript_row(row: dict[str, str]) -> dict[str, str]:
         "modeled_read_pairs_per_sample": row["modeled_read_pairs_per_sample"],
         "observed_samples": row["observed_samples"],
         "observed_loci": row["observed_loci"],
-        "mean_observed_read_pairs_at_loci": row[
-            "mean_observed_read_pairs_at_loci"
-        ],
-        "median_observed_read_pairs_at_loci": row[
-            "median_observed_read_pairs_at_loci"
-        ],
+        "mean_observed_read_pairs_at_loci": row["mean_observed_read_pairs_at_loci"],
+        "median_observed_read_pairs_at_loci": row["median_observed_read_pairs_at_loci"],
         "mean_observed_depth": row["mean_observed_pairs_per_locus"],
         "median_observed_depth": row["median_observed_pairs_per_locus"],
         "read_normalized_prediction_mean_budget": row[

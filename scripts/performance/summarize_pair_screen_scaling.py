@@ -27,6 +27,7 @@ SUMMARY_COLUMNS = [
     "size_model",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "configured_runs",
     "observed_runs",
     "successful_runs",
@@ -77,6 +78,7 @@ REQUIRED_RUN_COLUMNS = [
     "screening_binary",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "status",
 ]
 
@@ -198,6 +200,19 @@ def summarize_case(
         for row in run_rows
         if row.get("radigest_threads")
     }
+    run_build_worker_values = {
+        parse_int(
+            row["build_workers"],
+            path_label=f"case {case_id} run build_workers",
+        )
+        for row in run_rows
+        if row.get("build_workers") not in {None, "", "NA"}
+    }
+    build_workers = (
+        str(sorted(run_build_worker_values)[0])
+        if len(run_build_worker_values) == 1
+        else "NA"
+    )
 
     evaluated_unique = sorted(set(evaluated_values))
     reported_unique = sorted(set(reported_values))
@@ -236,6 +251,8 @@ def summarize_case(
         configured_radigest_threads
     }:
         status = "FAIL"
+    if run_build_worker_values != {configured_radigest_threads}:
+        status = "FAIL"
 
     return {
         "case_id": case_id,
@@ -255,6 +272,7 @@ def summarize_case(
         "size_model": case["size_model"],
         "jobs": case["jobs"],
         "radigest_threads": case["radigest_threads"],
+        "build_workers": build_workers,
         "configured_runs": str(configured_runs),
         "observed_runs": str(len(run_rows)),
         "successful_runs": str(len(successes)),

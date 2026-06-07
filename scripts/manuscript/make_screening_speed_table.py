@@ -18,6 +18,7 @@ OUTPUT_COLUMNS = [
     "screening_binary",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "runs",
     "median_wall_seconds",
     "candidate_pairs_per_second_median",
@@ -36,6 +37,7 @@ REQUIRED_SUMMARY_COLUMNS = [
     "screening_binary",
     "jobs",
     "radigest_threads",
+    "build_workers",
     "configured_runs",
     "wall_seconds_median",
     "candidate_pairs_per_second_median",
@@ -87,6 +89,7 @@ def make_rows(summary_rows: list[dict[str, str]]) -> list[dict[str, str]]:
                 "screening_binary": row["screening_binary"],
                 "jobs": row["jobs"],
                 "radigest_threads": row["radigest_threads"],
+                "build_workers": row["build_workers"],
                 "runs": row["configured_runs"],
                 "median_wall_seconds": row["wall_seconds_median"],
                 "candidate_pairs_per_second_median": row[

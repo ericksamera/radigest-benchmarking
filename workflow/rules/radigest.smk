@@ -1,6 +1,7 @@
 # Local radigest source acquisition and build rules.
-# Builds the primary radigest binary and cached pair-screening helper into
-# .local/bin so Makefile targets can run without repeated RADIGEST overrides.
+# Builds the primary radigest binary, radigest-design, and developer cached
+# pair-screening helper into .local/bin so Makefile targets can run without
+# repeated RADIGEST overrides.
 
 RADIGEST_REPO_DIR = config.get("radigest_source_dir", "external/radigest")
 RADIGEST_SOURCE_MARKER = f"{RADIGEST_REPO_DIR}/.benchmark_checkout_complete"
@@ -71,7 +72,7 @@ rule build_local_radigest:
     shell:
         r"""
         mkdir -p {params.bin_dir:q} .local/radigest benchmark/logs/radigest
-        make -C {params.repo_dir:q} build BIN_DIR="$PWD/{params.bin_dir}" > {log:q} 2>&1
+        make -C {params.repo_dir:q} build-dev BIN_DIR="$PWD/{params.bin_dir}" > {log:q} 2>&1
         test -x {output.radigest:q}
         test -x {output.screen_pairs_cached:q}
         test -x {output.design:q}
@@ -83,5 +84,7 @@ rule build_local_radigest:
           printf 'radigest_version\t%s\n' "$({output.radigest:q} --version 2>/dev/null || true)"
           printf 'screen_pairs_cached\t%s\n' {output.screen_pairs_cached:q}
           printf 'screen_pairs_cached_version\t%s\n' "$({output.screen_pairs_cached:q} --version 2>/dev/null || true)"
+          printf 'radigest_design\t%s\n' {output.design:q}
+          printf 'radigest_design_version\t%s\n' "$({output.design:q} --version 2>/dev/null || true)"
         }} > {output.build_info:q}
         """

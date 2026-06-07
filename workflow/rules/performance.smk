@@ -497,6 +497,7 @@ rule run_radigest_screening_speed_case:
         size_model=lambda wc: screening_value(wc, "size_model"),
         jobs=lambda wc: screening_int(wc, "jobs"),
         radigest_threads=lambda wc: screening_int(wc, "radigest_threads"),
+        build_workers=lambda wc: screening_int(wc, "radigest_threads"),
         runs=lambda wc: screening_int(wc, "runs"),
         command_template=lambda wc: screening_value(wc, "command_template"),
         raw_dir=lambda wc: f"results/performance/screening_speed/raw/{wc.case_id}"
@@ -519,6 +520,7 @@ rule run_radigest_screening_speed_case:
           --size-model {params.size_model:q} \
           --jobs {params.jobs} \
           --radigest-threads {params.radigest_threads} \
+          --build-workers {params.build_workers} \
           --runs {params.runs} \
           --command-template {params.command_template:q} \
           --raw-dir {params.raw_dir:q} \
@@ -684,6 +686,7 @@ rule run_radigest_pair_screen_scaling_case:
         size_model=lambda wc: pair_screen_scaling_value(wc, "size_model"),
         jobs=lambda wc: pair_screen_scaling_int(wc, "jobs"),
         radigest_threads=lambda wc: pair_screen_scaling_int(wc, "radigest_threads"),
+        build_workers=lambda wc: pair_screen_scaling_int(wc, "radigest_threads"),
         runs=lambda wc: pair_screen_scaling_int(wc, "runs"),
         command_template=lambda wc: pair_screen_scaling_value(wc, "command_template"),
         raw_dir=lambda wc: f"results/performance/pair_screen_scaling/raw/{wc.case_id}"
@@ -706,6 +709,7 @@ rule run_radigest_pair_screen_scaling_case:
           --size-model {params.size_model:q} \
           --jobs {params.jobs} \
           --radigest-threads {params.radigest_threads} \
+          --build-workers {params.build_workers} \
           --runs {params.runs} \
           --command-template {params.command_template:q} \
           --raw-dir {params.raw_dir:q} \

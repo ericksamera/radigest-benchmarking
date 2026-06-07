@@ -76,7 +76,7 @@ results/manuscript/tables/output_index.tsv
 results/manuscript/tables/audit_passed.txt
 ```
 
-`artifact_status.tsv` reports file existence, size, modification time, and PASS/WARN/FAIL status for every claim row. `claim_audit.tsv` adds a manuscript-facing claim boundary and release status. `environment.tsv` records Git, Python, Snakemake, radigest, cached-screening-binary, platform, and conda provenance.
+`artifact_status.tsv` reports file existence, size, modification time, and PASS/WARN/FAIL status for every claim row. `claim_audit.tsv` adds a manuscript-facing claim boundary and release status. `environment.tsv` records Git, Python, Snakemake, radigest, radigest-design, cached-screening-binary, platform, and conda provenance.
 
 `audit_passed.txt` is written only when no `required_for_release=true` claim has a release-blocking failure and all required release-checklist rows pass. Optional empirical artifacts can remain WARN while `C11 required_for_release=false`.
 

@@ -40,6 +40,10 @@ REQUIRED_ENV_KEYS = {
     "snakemake_version",
     "radigest_path",
     "radigest_version",
+    "radigest_screen_pairs_cached_version",
+    "radigest_screen_pairs_cached_path",
+    "radigest_design_path",
+    "radigest_design_version",
 }
 
 
