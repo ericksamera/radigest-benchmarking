@@ -85,6 +85,7 @@ def rows_for(args: argparse.Namespace) -> list[dict[str, str]]:
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     radigest_path = resolve_executable(args.radigest)
     screen_path = resolve_executable(args.radigest_screen_pairs_cached)
+    bench_path = resolve_executable(args.radigest_bench_screen_cached)
     design_path = resolve_executable(args.radigest_design)
     snakemake_path = shutil.which("snakemake") or "NA"
     return [
@@ -146,6 +147,16 @@ def rows_for(args: argparse.Namespace) -> list[dict[str, str]]:
             "source": "radigest-screen-pairs-cached --version",
         },
         {
+            "key": "radigest_bench_screen_cached_path",
+            "value": bench_path,
+            "source": "workflow config radigest_bench_screen_cached",
+        },
+        {
+            "key": "radigest_bench_screen_cached_version",
+            "value": executable_version(args.radigest_bench_screen_cached),
+            "source": "radigest-bench-screen-cached --version",
+        },
+        {
             "key": "radigest_design_path",
             "value": design_path,
             "source": "workflow config radigest_design",
@@ -172,6 +183,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root", default=Path("."), type=Path)
     parser.add_argument("--radigest", default="radigest")
     parser.add_argument("--radigest-screen-pairs-cached", default="auto")
+    parser.add_argument("--radigest-bench-screen-cached", default="auto")
     parser.add_argument("--radigest-design", default="radigest-design")
     return parser.parse_args()
 

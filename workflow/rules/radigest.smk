@@ -1,6 +1,6 @@
 # Local radigest source acquisition and build rules.
 # Builds the primary radigest binary, radigest-design, and developer cached
-# pair-screening helper into .local/bin so Makefile targets can run without
+# pair-screening and phase-timed benchmark helpers into .local/bin so Makefile targets can run without
 # repeated RADIGEST overrides.
 
 RADIGEST_REPO_DIR = config.get("radigest_source_dir", "external/radigest")
@@ -10,10 +10,12 @@ RADIGEST_SOURCE_COMMIT = ".local/radigest/source_commit.txt"
 RADIGEST_BUILD_INFO = ".local/radigest/build_info.tsv"
 RADIGEST_LOCAL_BIN = f"{LOCAL_BIN_DIR}/radigest"
 RADIGEST_LOCAL_SCREEN_PAIRS_CACHED = f"{LOCAL_BIN_DIR}/radigest-screen-pairs-cached"
+RADIGEST_LOCAL_BENCH_SCREEN_CACHED = f"{LOCAL_BIN_DIR}/radigest-bench-screen-cached"
 RADIGEST_LOCAL_DESIGN = f"{LOCAL_BIN_DIR}/radigest-design"
 RADIGEST_BUILD_OUTPUTS = [
     RADIGEST_LOCAL_BIN,
     RADIGEST_LOCAL_SCREEN_PAIRS_CACHED,
+    RADIGEST_LOCAL_BENCH_SCREEN_CACHED,
     RADIGEST_LOCAL_DESIGN,
     RADIGEST_BUILD_INFO,
 ]
@@ -60,6 +62,7 @@ rule build_local_radigest:
     output:
         radigest=RADIGEST_LOCAL_BIN,
         screen_pairs_cached=RADIGEST_LOCAL_SCREEN_PAIRS_CACHED,
+        bench_screen_cached=RADIGEST_LOCAL_BENCH_SCREEN_CACHED,
         design=RADIGEST_LOCAL_DESIGN,
         build_info=RADIGEST_BUILD_INFO
     log:
@@ -75,6 +78,7 @@ rule build_local_radigest:
         make -C {params.repo_dir:q} build-dev BIN_DIR="$PWD/{params.bin_dir}" > {log:q} 2>&1
         test -x {output.radigest:q}
         test -x {output.screen_pairs_cached:q}
+        test -x {output.bench_screen_cached:q}
         test -x {output.design:q}
         {{
           printf 'field\tvalue\n'
@@ -84,6 +88,8 @@ rule build_local_radigest:
           printf 'radigest_version\t%s\n' "$({output.radigest:q} --version 2>/dev/null || true)"
           printf 'screen_pairs_cached\t%s\n' {output.screen_pairs_cached:q}
           printf 'screen_pairs_cached_version\t%s\n' "$({output.screen_pairs_cached:q} --version 2>/dev/null || true)"
+          printf 'radigest_bench_screen_cached\t%s\n' {output.bench_screen_cached:q}
+          printf 'radigest_bench_screen_cached_version\t%s\n' "$({output.bench_screen_cached:q} --version 2>/dev/null || true)"
           printf 'radigest_design\t%s\n' {output.design:q}
           printf 'radigest_design_version\t%s\n' "$({output.design:q} --version 2>/dev/null || true)"
         }} > {output.build_info:q}

@@ -31,10 +31,11 @@ make manuscript THREADS=8
 # Optional when the cached binary is not next to RADIGEST or on PATH:
 make performance-screening-speed THREADS=8 \
   RADIGEST=/path/to/radigest \
-  RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached
+  RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached \
+  RADIGEST_BENCH_SCREEN_CACHED=/path/to/radigest-bench-screen-cached
 ```
 
-Screening-speed and pair-screen-scaling targets require the radigest development/helper binary set. The local `make install-radigest` target builds that set with upstream `make build-dev`; for manual radigest installs, run upstream `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
+Screening-speed and pair-screen-scaling targets require the radigest development/helper binary set. Pair-screen job scaling uses radigest-bench-screen-cached with a reused cut index and output disabled so Figure S03 reflects score-pair phase scaling rather than end-to-end JSON-writing time. The local `make install-radigest` target builds that set with upstream `make build-dev`; for manual radigest installs, run upstream `make install-dev` or pass both `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached` and `RADIGEST_BENCH_SCREEN_CACHED=/path/to/radigest-bench-screen-cached`.
 
 Comparator installers are run through Snakemake conda environments. `make install-comparators` installs or updates Digital_RADs.py, DDRADSEQTOOLS, SimRAD, and ddgRADer; `make install-all` also builds the local radigest binaries when the default `RADIGEST=.local/bin/radigest` is in use.
 
@@ -270,6 +271,7 @@ This clones `https://github.com/ericksamera/radigest.git` into `external/radiges
 ```text
 .local/bin/radigest
 .local/bin/radigest-screen-pairs-cached
+.local/bin/radigest-bench-screen-cached
 .local/bin/radigest-design
 .local/radigest/build_info.tsv
 ```
@@ -286,4 +288,4 @@ Manual overrides still work:
 make smoke RADIGEST=/path/to/radigest
 ```
 
-For manual installs used with screening-speed or pair-screen-scaling targets, build the upstream helper surface with `make install-dev` or pass `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached`.
+For manual installs used with screening-speed or pair-screen-scaling targets, build the upstream helper surface with `make install-dev` or pass both `RADIGEST_SCREEN_PAIRS_CACHED=/path/to/radigest-screen-pairs-cached` and `RADIGEST_BENCH_SCREEN_CACHED=/path/to/radigest-bench-screen-cached`.

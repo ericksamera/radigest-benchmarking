@@ -8,9 +8,11 @@ EMPIRICAL_LIBRARIES ?= config/empirical_libraries.tsv
 EMPIRICAL_DEPTH_VALIDATION_CASES ?= config/empirical_depth_validation_cases.tsv
 ifeq ($(dir $(RADIGEST)),./)
 RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
+RADIGEST_BENCH_SCREEN_CACHED ?= radigest-bench-screen-cached
 RADIGEST_DESIGN ?= radigest-design
 else
 RADIGEST_SCREEN_PAIRS_CACHED ?= $(dir $(RADIGEST))radigest-screen-pairs-cached
+RADIGEST_BENCH_SCREEN_CACHED ?= $(dir $(RADIGEST))radigest-bench-screen-cached
 RADIGEST_DESIGN ?= $(dir $(RADIGEST))radigest-design
 endif
 ifeq ($(abspath $(RADIGEST)),$(abspath $(LOCAL_BIN)/radigest))
@@ -23,7 +25,7 @@ SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
-SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_bench_screen_cached="$(RADIGEST_BENCH_SCREEN_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
@@ -158,11 +160,13 @@ install-radigest build-radigest radigest-build:
 show-radigest:
 	@printf 'RADIGEST=%s\n' "$(RADIGEST)"
 	@printf 'RADIGEST_SCREEN_PAIRS_CACHED=%s\n' "$(RADIGEST_SCREEN_PAIRS_CACHED)"
+	@printf 'RADIGEST_BENCH_SCREEN_CACHED=%s\n' "$(RADIGEST_BENCH_SCREEN_CACHED)"
 	@printf 'RADIGEST_DESIGN=%s\n' "$(RADIGEST_DESIGN)"
 	@printf 'RADIGEST_REPO=%s\n' "$(RADIGEST_REPO)"
 	@printf 'RADIGEST_REF=%s\n' "$(RADIGEST_REF)"
 	@if [ -x "$(RADIGEST)" ]; then "$(RADIGEST)" --version 2>/dev/null || "$(RADIGEST)" -version 2>/dev/null || true; else printf 'radigest binary missing; run make install-radigest\n'; fi
 	@if [ -x "$(RADIGEST_SCREEN_PAIRS_CACHED)" ]; then "$(RADIGEST_SCREEN_PAIRS_CACHED)" --version 2>/dev/null || "$(RADIGEST_SCREEN_PAIRS_CACHED)" -version 2>/dev/null || true; else printf 'cached screening binary missing; run make install-radigest\n'; fi
+	@if [ -x "$(RADIGEST_BENCH_SCREEN_CACHED)" ]; then "$(RADIGEST_BENCH_SCREEN_CACHED)" --version 2>/dev/null || true; else printf 'cached screening benchmark binary missing; run make install-radigest\n'; fi
 	@if [ -x "$(RADIGEST_DESIGN)" ]; then "$(RADIGEST_DESIGN)" --version 2>/dev/null || true; else printf 'design binary missing; run make install-radigest\n'; fi
 
 smoke: $(RADIGEST_BUILD_PREREQ)

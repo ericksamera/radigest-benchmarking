@@ -428,7 +428,7 @@ plot_pair_screen_scaling <- function(path) {
   if (is.null(df) || nrow(df) == 0) return(invisible(FALSE))
   require_columns(
     df,
-    c("dataset_id", "condition_id", "jobs", "speedup_vs_1_job_median"),
+    c("dataset_id", "condition_id", "jobs", "timed_phase", "speedup_vs_1_job_median"),
     "pair-screen scaling figure"
   )
   df <- df |>
@@ -465,9 +465,9 @@ plot_pair_screen_scaling <- function(path) {
       limits = c(y_min, y_max),
       expand = expansion(mult = c(0.02, 0.05))
     ) +
-    labs(x = "Screening jobs", y = "Median speedup vs. 1 job") +
+    labs(x = "Pair-scoring jobs", y = "Median score-pair speedup vs. 1 job") +
     base_theme()
-  write_plot(p, "figure_s03_pair_screen_job_scaling", width = 6.2, height = 3.8)
+  write_plot(p, "figure_s03_pair_screen_job_scaling", width = 6.6, height = 3.8)
 }
 
 plot_large_genome <- function(path) {

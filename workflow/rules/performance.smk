@@ -490,6 +490,9 @@ rule run_radigest_screening_speed_case:
         screen_binary=lambda wildcards: config.get(
             "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"
         ),
+        bench_screen_binary=lambda wildcards: config.get(
+            "radigest_bench_screen_cached", "radigest-bench-screen-cached"
+        ),
         dataset=lambda wc: screening_value(wc, "dataset_id"),
         condition=lambda wc: screening_value(wc, "condition_id"),
         min_size=lambda wc: screening_int(wc, "min_size"),
@@ -510,6 +513,7 @@ rule run_radigest_screening_speed_case:
         mkdir -p results/performance/screening_speed/raw benchmark/logs/performance/screening_speed
         python3 scripts/performance/run_radigest_screening.py \
           --screen-binary {params.screen_binary:q} \
+          --bench-screen-binary {params.bench_screen_binary:q} \
           --reference {input.ref:q} \
           --case-id {wildcards.case_id:q} \
           --dataset-id {params.dataset:q} \
@@ -679,6 +683,9 @@ rule run_radigest_pair_screen_scaling_case:
         screen_binary=lambda wildcards: config.get(
             "radigest_screen_pairs_cached", "radigest-screen-pairs-cached"
         ),
+        bench_screen_binary=lambda wildcards: config.get(
+            "radigest_bench_screen_cached", "radigest-bench-screen-cached"
+        ),
         dataset=lambda wc: pair_screen_scaling_value(wc, "dataset_id"),
         condition=lambda wc: pair_screen_scaling_value(wc, "condition_id"),
         min_size=lambda wc: pair_screen_scaling_int(wc, "min_size"),
@@ -699,6 +706,7 @@ rule run_radigest_pair_screen_scaling_case:
         mkdir -p results/performance/pair_screen_scaling/raw benchmark/logs/performance/pair_screen_scaling
         python3 scripts/performance/run_radigest_screening.py \
           --screen-binary {params.screen_binary:q} \
+          --bench-screen-binary {params.bench_screen_binary:q} \
           --reference {input.ref:q} \
           --case-id {wildcards.case_id:q} \
           --dataset-id {params.dataset:q} \

@@ -32,7 +32,12 @@ REQUIRED_COLUMNS = [
     "notes",
 ]
 VALID_SIZE_MODELS = {"hard"}
-VALID_COMMAND_TEMPLATES = {"radigest-screen-pairs-cached", "cached"}
+VALID_COMMAND_TEMPLATES = {
+    "radigest-screen-pairs-cached",
+    "cached",
+    "radigest-bench-screen-cached",
+    "bench-cached",
+}
 
 
 def fail(message: str) -> NoReturn:
@@ -184,7 +189,16 @@ def main() -> int:
         if row["command_template"] not in VALID_COMMAND_TEMPLATES:
             fail(
                 f"config/pair_screen_scaling_cases.tsv:{line_number} command_template "
-                "must be radigest-screen-pairs-cached"
+                "must be radigest-screen-pairs-cached or radigest-bench-screen-cached"
+            )
+
+        if row["required_for_nonempirical"].lower() == "true" and row[
+            "command_template"
+        ] not in {"radigest-bench-screen-cached", "bench-cached"}:
+            fail(
+                f"config/pair_screen_scaling_cases.tsv:{line_number} "
+                "release pair-screen scaling rows must use radigest-bench-screen-cached "
+                "so speedups are based on score_pairs_seconds with a reused index"
             )
         group = row["comparison_group"]
         group_jobs.setdefault(group, set()).add(jobs)

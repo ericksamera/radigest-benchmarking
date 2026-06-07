@@ -42,6 +42,8 @@ REQUIRED_ENV_KEYS = {
     "radigest_version",
     "radigest_screen_pairs_cached_version",
     "radigest_screen_pairs_cached_path",
+    "radigest_bench_screen_cached_path",
+    "radigest_bench_screen_cached_version",
     "radigest_design_path",
     "radigest_design_version",
 }

@@ -20,10 +20,14 @@ TABLE_COLUMNS = [
     "jobs",
     "radigest_threads",
     "build_workers",
+    "timing_backend",
+    "timed_phase",
     "runs",
     "successful_runs",
-    "median_wall_seconds",
+    "median_timed_phase_seconds",
+    "median_total_seconds",
     "candidate_pairs_per_second_median",
+    "pairs_per_second_score_phase_median",
     "speedup_vs_1_job_median",
     "job_scaling_efficiency_vs_1_job",
     "reported_pair_coverage",
@@ -32,9 +36,11 @@ TABLE_COLUMNS = [
 ]
 
 CLAIM_BOUNDARY = (
-    "Cached radigest-screen-pairs-cached job scaling only. Each job-count row "
-    "must report the full candidate-pair set before speedup is interpreted; this "
-    "is not a cross-tool coordinate-equivalence claim."
+    "Phase-timed radigest-bench-screen-cached score-pair job scaling only. "
+    "The cut index is reused and JSON/file output is disabled, so speedup is "
+    "interpreted for score_pairs_seconds rather than end-to-end screening time. "
+    "Each job-count row must report the full candidate-pair set before speedup "
+    "is interpreted; this is not a cross-tool coordinate-equivalence claim."
 )
 
 
@@ -103,11 +109,17 @@ def build_table_rows(
                 "jobs": row["jobs"],
                 "radigest_threads": row["radigest_threads"],
                 "build_workers": row["build_workers"],
+                "timing_backend": row["timing_backend"],
+                "timed_phase": row["timed_phase"],
                 "runs": row["configured_runs"],
                 "successful_runs": row["successful_runs"],
-                "median_wall_seconds": row["wall_seconds_median"],
+                "median_timed_phase_seconds": row["wall_seconds_median"],
+                "median_total_seconds": row["total_seconds_median"],
                 "candidate_pairs_per_second_median": row[
                     "candidate_pairs_per_second_median"
+                ],
+                "pairs_per_second_score_phase_median": row[
+                    "pairs_per_second_score_phase_median"
                 ],
                 "speedup_vs_1_job_median": row["speedup_vs_1_job_median"],
                 "job_scaling_efficiency_vs_1_job": row[
@@ -153,10 +165,14 @@ def main() -> int:
             "jobs",
             "radigest_threads",
             "build_workers",
+            "timing_backend",
+            "timed_phase",
             "configured_runs",
             "successful_runs",
             "wall_seconds_median",
+            "total_seconds_median",
             "candidate_pairs_per_second_median",
+            "pairs_per_second_score_phase_median",
             "speedup_vs_1_job_median",
             "job_scaling_efficiency_vs_1_job",
             "reported_pair_coverage",

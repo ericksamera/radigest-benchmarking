@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize radigest-screen-pairs-cached job-scaling timing rows."""
+"""Summarize cached pair-screen score-phase job-scaling timing rows."""
 
 from __future__ import annotations
 
@@ -35,12 +35,17 @@ SUMMARY_COLUMNS = [
     "reported_pair_consistency",
     "reported_pair_coverage",
     "screening_binary",
+    "timing_backend",
+    "timed_phase",
     "wall_seconds_min",
     "wall_seconds_median",
     "wall_seconds_mean",
     "wall_seconds_max",
     "wall_seconds_stdev",
+    "score_pairs_seconds_median",
+    "total_seconds_median",
     "candidate_pairs_per_second_median",
+    "pairs_per_second_score_phase_median",
     "speedup_vs_1_job_median",
     "job_scaling_efficiency_vs_1_job",
     "status",
@@ -71,6 +76,11 @@ REQUIRED_RUN_COLUMNS = [
     "dataset_id",
     "condition_id",
     "wall_seconds",
+    "timing_backend",
+    "timed_phase",
+    "score_pairs_seconds",
+    "total_seconds",
+    "pairs_per_second_score_phase",
     "exit_code",
     "candidate_pairs_reported",
     "candidate_pairs_evaluated",
@@ -142,10 +152,22 @@ def parse_float(value: str, *, path_label: str) -> float:
         fail(f"{path_label}: expected float, observed {value!r}")
 
 
+def maybe_float(value: str, *, path_label: str) -> float | None:
+    if value in {"", "NA"}:
+        return None
+    return parse_float(value, path_label=path_label)
+
+
 def fmt_float(value: float | None) -> str:
     if value is None:
         return "NA"
     return f"{value:.6f}"
+
+
+def median_or_none(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return statistics.median(values)
 
 
 def summarize_case(
@@ -161,6 +183,40 @@ def summarize_case(
     durations = [
         parse_float(row["wall_seconds"], path_label=f"case {case_id} wall_seconds")
         for row in successes
+        if row.get("wall_seconds") not in {"", "NA"}
+    ]
+    score_pair_durations = [
+        value
+        for value in (
+            maybe_float(
+                row.get("score_pairs_seconds", "NA"),
+                path_label=f"case {case_id} score_pairs_seconds",
+            )
+            for row in successes
+        )
+        if value is not None
+    ]
+    total_durations = [
+        value
+        for value in (
+            maybe_float(
+                row.get("total_seconds", "NA"),
+                path_label=f"case {case_id} total_seconds",
+            )
+            for row in successes
+        )
+        if value is not None
+    ]
+    score_phase_rates = [
+        value
+        for value in (
+            maybe_float(
+                row.get("pairs_per_second_score_phase", "NA"),
+                path_label=f"case {case_id} pairs_per_second_score_phase",
+            )
+            for row in successes
+        )
+        if value is not None
     ]
     evaluated_values = [
         parse_int(
@@ -186,6 +242,16 @@ def summarize_case(
         row["screening_binary"]
         for row in successes
         if row.get("screening_binary") not in {None, "", "NA"}
+    }
+    timing_backends = {
+        row["timing_backend"]
+        for row in successes
+        if row.get("timing_backend") not in {None, "", "NA"}
+    }
+    timed_phases = {
+        row["timed_phase"]
+        for row in successes
+        if row.get("timed_phase") not in {None, "", "NA"}
     }
     run_job_values = {
         parse_int(row["jobs"], path_label=f"case {case_id} run jobs")
@@ -253,6 +319,10 @@ def summarize_case(
         status = "FAIL"
     if run_build_worker_values != {configured_radigest_threads}:
         status = "FAIL"
+    if len(timing_backends) != 1 or len(timed_phases) != 1:
+        status = "FAIL"
+    if timed_phases and timed_phases != {"score_pairs_seconds"}:
+        status = "FAIL"
 
     return {
         "case_id": case_id,
@@ -282,12 +352,19 @@ def summarize_case(
         "reported_pair_consistency": reported_pair_consistency,
         "reported_pair_coverage": reported_pair_coverage,
         "screening_binary": next(iter(sorted(screening_binaries)), "NA"),
+        "timing_backend": next(iter(sorted(timing_backends)), "NA"),
+        "timed_phase": next(iter(sorted(timed_phases)), "NA"),
         "wall_seconds_min": fmt_float(wall_min),
         "wall_seconds_median": fmt_float(wall_median),
         "wall_seconds_mean": fmt_float(wall_mean),
         "wall_seconds_max": fmt_float(wall_max),
         "wall_seconds_stdev": fmt_float(wall_stdev),
+        "score_pairs_seconds_median": fmt_float(median_or_none(score_pair_durations)),
+        "total_seconds_median": fmt_float(median_or_none(total_durations)),
         "candidate_pairs_per_second_median": fmt_float(pairs_per_second),
+        "pairs_per_second_score_phase_median": fmt_float(
+            median_or_none(score_phase_rates)
+        ),
         "speedup_vs_1_job_median": "NA",
         "job_scaling_efficiency_vs_1_job": "NA",
         "status": status,
@@ -312,6 +389,16 @@ def add_group_consistency_and_speedups(rows: list[dict[str, str]]) -> None:
                 row["notes"] = (
                     row["notes"]
                     + " Group candidate-pair counts differ across job counts."
+                )
+
+        phases = {
+            row["timed_phase"] for row in group_rows if row["timed_phase"] != "NA"
+        }
+        if phases != {"score_pairs_seconds"}:
+            for row in group_rows:
+                row["status"] = "FAIL"
+                row["notes"] = (
+                    row["notes"] + " Pair-screen scaling must use score_pairs_seconds."
                 )
 
         baselines = [
@@ -359,28 +446,30 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    case_by_id = read_case_rows(args.cases)
-    rows_by_case: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in read_run_rows(args.runs):
-        rows_by_case[row["case_id"]].append(row)
+    cases = read_case_rows(args.cases)
+    run_rows = read_run_rows(args.runs)
+    grouped_runs: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in run_rows:
+        if row["case_id"] in cases:
+            grouped_runs[row["case_id"]].append(row)
 
-    summaries = [
-        summarize_case(case, rows_by_case.get(case_id, []))
-        for case_id, case in sorted(case_by_id.items())
+    summary_rows = [
+        summarize_case(case, grouped_runs.get(case_id, []))
+        for case_id, case in sorted(cases.items())
     ]
-    add_group_consistency_and_speedups(summaries)
-    write_rows(args.out, summaries)
+    add_group_consistency_and_speedups(summary_rows)
+    write_rows(args.out, summary_rows)
 
-    failed = [row for row in summaries if row["status"] != "PASS"]
+    failed = [row for row in summary_rows if row["status"] != "PASS"]
     if args.require_pass and failed:
         print(
-            f"{len(failed)} of {len(summaries)} pair-screen scaling summaries failed; "
+            f"{len(failed)} of {len(summary_rows)} pair-screen scaling summaries failed; "
             f"see {args.out}",
             file=sys.stderr,
         )
         return 1
 
-    print(f"Wrote {len(summaries)} pair-screen scaling summary rows to {args.out}")
+    print(f"Wrote {len(summary_rows)} pair-screen scaling summaries to {args.out}")
     return 0
 
 

@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Benchmark radigest-screen-pairs-cached candidate-pair screening cases."""
+"""Benchmark cached radigest candidate-pair screening cases.
+
+Two backends are supported:
+
+* radigest-screen-pairs-cached: end-to-end cached screening with JSON output.
+* radigest-bench-screen-cached: phase-timed benchmark output; pair-screen scaling
+  uses --reuse-index and --output-mode none so speedups measure score_pairs_seconds.
+"""
 
 from __future__ import annotations
 
@@ -32,23 +39,61 @@ RUN_COLUMNS = [
     "build_workers",
     "run_index",
     "wall_seconds",
+    "timing_backend",
+    "timed_phase",
+    "build_cut_index_seconds",
+    "score_pairs_seconds",
+    "json_marshal_seconds",
+    "write_json_seconds",
+    "total_seconds",
+    "pairs_per_second_score_phase",
+    "pairs_per_second_end_to_end",
     "exit_code",
     "candidate_pairs_reported",
     "screening_binary",
     "screening_output",
     "json_output",
+    "benchmark_tsv",
     "stdout_log",
     "stderr_log",
     "status",
     "command",
 ]
 
-ALLOWED_BACKENDS = {"radigest-screen-pairs-cached", "cached"}
+CACHED_BACKENDS = {"radigest-screen-pairs-cached", "cached"}
+BENCH_BACKENDS = {"radigest-bench-screen-cached", "bench-cached", "bench"}
+ALLOWED_BACKENDS = CACHED_BACKENDS | BENCH_BACKENDS
+BENCH_REQUIRED_COLUMNS = {
+    "run",
+    "candidate_enzymes",
+    "candidate_pairs",
+    "jobs",
+    "build_workers",
+    "build_cut_index_seconds",
+    "score_pairs_seconds",
+    "json_marshal_seconds",
+    "write_json_seconds",
+    "total_seconds",
+    "pairs_per_second_score_phase",
+    "pairs_per_second_end_to_end",
+    "summaries",
+}
 
 
 def fail(message: str) -> NoReturn:
     print(f"ERROR: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def normalize_backend(value: str) -> str:
+    if value in CACHED_BACKENDS:
+        return "cached"
+    if value in BENCH_BACKENDS:
+        return "bench"
+    fail(
+        "Unsupported screening command_template "
+        f"{value!r}; expected radigest-screen-pairs-cached or radigest-bench-screen-cached"
+    )
 
 
 def resolve_executable(executable: str, *, label: str) -> str:
@@ -200,7 +245,91 @@ def build_cached_command(
     ]
 
 
-def run_once(
+def build_bench_command(
+    *,
+    bench_binary: str,
+    reference: Path,
+    candidate_enzymes: Path,
+    min_size: int,
+    max_size: int,
+    score_min: int,
+    score_max: int,
+    size_model: str,
+    jobs: int,
+    radigest_threads: int,
+    build_workers: int,
+    runs: int,
+) -> list[str]:
+    return [
+        bench_binary,
+        "--fasta",
+        str(reference),
+        "--enzymes",
+        str(candidate_enzymes),
+        "--min",
+        str(min_size),
+        "--max",
+        str(max_size),
+        "--score-min",
+        str(score_min),
+        "--score-max",
+        str(score_max),
+        "--size-model",
+        size_model,
+        "--jobs",
+        str(jobs),
+        "--threads",
+        str(radigest_threads),
+        "--build-workers",
+        str(build_workers),
+        "--runs",
+        str(runs),
+        "--reuse-index",
+        "--output-mode",
+        "none",
+    ]
+
+
+def base_row(
+    *,
+    case_id: str,
+    dataset_id: str,
+    condition_id: str,
+    reference: Path,
+    candidate_enzymes: Path,
+    candidate_enzyme_count: int,
+    candidate_pairs_evaluated: int,
+    min_size: int,
+    max_size: int,
+    score_min: int,
+    score_max: int,
+    size_model: str,
+    jobs: int,
+    radigest_threads: int,
+    build_workers: int,
+    run_index: int,
+) -> dict[str, str]:
+    return {
+        "case_id": case_id,
+        "dataset_id": dataset_id,
+        "condition_id": condition_id,
+        "reference_path": str(reference),
+        "candidate_enzymes": str(candidate_enzymes),
+        "candidate_enzyme_count": str(candidate_enzyme_count),
+        "candidate_pairs_evaluated": str(candidate_pairs_evaluated),
+        "min_size": str(min_size),
+        "max_size": str(max_size),
+        "score_min": str(score_min),
+        "score_max": str(score_max),
+        "size_model": size_model,
+        "jobs": str(jobs),
+        "radigest_threads": str(radigest_threads),
+        "build_workers": str(build_workers),
+        "run_index": str(run_index),
+    }
+
+
+def run_cached_once(
     *,
     screen_binary: str,
     reference: Path,
@@ -252,41 +381,234 @@ def run_once(
         else "FAIL"
     )
 
-    return {
-        "case_id": case_id,
-        "dataset_id": dataset_id,
-        "condition_id": condition_id,
-        "reference_path": str(reference),
-        "candidate_enzymes": str(candidate_enzymes),
-        "candidate_enzyme_count": str(candidate_enzyme_count),
-        "candidate_pairs_evaluated": str(candidate_pairs_evaluated),
-        "min_size": str(min_size),
-        "max_size": str(max_size),
-        "score_min": str(score_min),
-        "score_max": str(score_max),
-        "size_model": size_model,
-        "jobs": str(jobs),
-        "radigest_threads": str(radigest_threads),
-        "build_workers": str(build_workers),
-        "run_index": str(run_index),
-        "wall_seconds": f"{elapsed:.6f}",
-        "exit_code": str(exit_code),
-        "candidate_pairs_reported": (
-            "NA" if reported_count is None else str(reported_count)
-        ),
-        "screening_binary": screen_binary,
-        "screening_output": str(run_dir),
-        "json_output": str(json_dir),
-        "stdout_log": str(stdout_log),
-        "stderr_log": str(stderr_log),
-        "status": status,
-        "command": shlex.join(cmd),
-    }
+    row = base_row(
+        case_id=case_id,
+        dataset_id=dataset_id,
+        condition_id=condition_id,
+        reference=reference,
+        candidate_enzymes=candidate_enzymes,
+        candidate_enzyme_count=candidate_enzyme_count,
+        candidate_pairs_evaluated=candidate_pairs_evaluated,
+        min_size=min_size,
+        max_size=max_size,
+        score_min=score_min,
+        score_max=score_max,
+        size_model=size_model,
+        jobs=jobs,
+        radigest_threads=radigest_threads,
+        build_workers=build_workers,
+        run_index=run_index,
+    )
+    row.update(
+        {
+            "wall_seconds": f"{elapsed:.6f}",
+            "timing_backend": "radigest-screen-pairs-cached",
+            "timed_phase": "end_to_end_wall",
+            "build_cut_index_seconds": "NA",
+            "score_pairs_seconds": "NA",
+            "json_marshal_seconds": "NA",
+            "write_json_seconds": "NA",
+            "total_seconds": f"{elapsed:.6f}",
+            "pairs_per_second_score_phase": "NA",
+            "pairs_per_second_end_to_end": (
+                f"{candidate_pairs_evaluated / elapsed:.6f}" if elapsed > 0 else "NA"
+            ),
+            "exit_code": str(exit_code),
+            "candidate_pairs_reported": (
+                "NA" if reported_count is None else str(reported_count)
+            ),
+            "screening_binary": screen_binary,
+            "screening_output": str(run_dir),
+            "json_output": str(json_dir),
+            "benchmark_tsv": "NA",
+            "stdout_log": str(stdout_log),
+            "stderr_log": str(stderr_log),
+            "status": status,
+            "command": shlex.join(cmd),
+        }
+    )
+    return row
+
+
+def read_bench_rows(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        fieldnames = reader.fieldnames or []
+        missing = sorted(BENCH_REQUIRED_COLUMNS - set(fieldnames))
+        if missing:
+            fail(
+                f"{path}: radigest-bench-screen-cached output missing columns: {', '.join(missing)}"
+            )
+        return [
+            {
+                key: "" if value is None else value
+                for key, value in row.items()
+                if key is not None
+            }
+            for row in reader
+            if any((value or "").strip() for value in row.values())
+        ]
+
+
+def run_bench_case(
+    *,
+    bench_binary: str,
+    reference: Path,
+    candidate_enzymes: Path,
+    candidate_enzyme_count: int,
+    candidate_pairs_evaluated: int,
+    min_size: int,
+    max_size: int,
+    score_min: int,
+    score_max: int,
+    size_model: str,
+    jobs: int,
+    radigest_threads: int,
+    build_workers: int,
+    runs: int,
+    case_id: str,
+    dataset_id: str,
+    condition_id: str,
+    raw_dir: Path,
+) -> list[dict[str, str]]:
+    run_dir = raw_dir / f"{case_id}.bench"
+    clean_run_dir(run_dir)
+    stdout_log = run_dir / f"{case_id}.bench.tsv"
+    stderr_log = run_dir / f"{case_id}.bench.stderr.log"
+    cmd = build_bench_command(
+        bench_binary=bench_binary,
+        reference=reference,
+        candidate_enzymes=candidate_enzymes,
+        min_size=min_size,
+        max_size=max_size,
+        score_min=score_min,
+        score_max=score_max,
+        size_model=size_model,
+        jobs=jobs,
+        radigest_threads=radigest_threads,
+        build_workers=build_workers,
+        runs=runs,
+    )
+    exit_code, elapsed = execute_command(
+        cmd=cmd, stdout_log=stdout_log, stderr_log=stderr_log
+    )
+
+    parsed_rows: list[dict[str, str]] = []
+    if exit_code == 0:
+        parsed_rows = read_bench_rows(stdout_log)
+
+    if exit_code != 0 or not parsed_rows:
+        rows: list[dict[str, str]] = []
+        for run_index in range(1, runs + 1):
+            row = base_row(
+                case_id=case_id,
+                dataset_id=dataset_id,
+                condition_id=condition_id,
+                reference=reference,
+                candidate_enzymes=candidate_enzymes,
+                candidate_enzyme_count=candidate_enzyme_count,
+                candidate_pairs_evaluated=candidate_pairs_evaluated,
+                min_size=min_size,
+                max_size=max_size,
+                score_min=score_min,
+                score_max=score_max,
+                size_model=size_model,
+                jobs=jobs,
+                radigest_threads=radigest_threads,
+                build_workers=build_workers,
+                run_index=run_index,
+            )
+            row.update(
+                {
+                    "wall_seconds": "NA",
+                    "timing_backend": "radigest-bench-screen-cached",
+                    "timed_phase": "score_pairs_seconds",
+                    "build_cut_index_seconds": "NA",
+                    "score_pairs_seconds": "NA",
+                    "json_marshal_seconds": "NA",
+                    "write_json_seconds": "NA",
+                    "total_seconds": f"{elapsed:.6f}",
+                    "pairs_per_second_score_phase": "NA",
+                    "pairs_per_second_end_to_end": "NA",
+                    "exit_code": str(exit_code),
+                    "candidate_pairs_reported": "NA",
+                    "screening_binary": bench_binary,
+                    "screening_output": str(run_dir),
+                    "json_output": "NA",
+                    "benchmark_tsv": str(stdout_log),
+                    "stdout_log": str(stdout_log),
+                    "stderr_log": str(stderr_log),
+                    "status": "FAIL",
+                    "command": shlex.join(cmd),
+                }
+            )
+            rows.append(row)
+        return rows
+
+    rows = []
+    for bench_row in parsed_rows:
+        run_index = int(bench_row["run"])
+        candidate_pairs_reported = int(bench_row["candidate_pairs"])
+        summaries = int(bench_row["summaries"])
+        status = (
+            "PASS"
+            if exit_code == 0
+            and candidate_pairs_reported == candidate_pairs_evaluated
+            and summaries == candidate_pairs_evaluated
+            else "FAIL"
+        )
+        row = base_row(
+            case_id=case_id,
+            dataset_id=dataset_id,
+            condition_id=condition_id,
+            reference=reference,
+            candidate_enzymes=candidate_enzymes,
+            candidate_enzyme_count=candidate_enzyme_count,
+            candidate_pairs_evaluated=candidate_pairs_evaluated,
+            min_size=min_size,
+            max_size=max_size,
+            score_min=score_min,
+            score_max=score_max,
+            size_model=size_model,
+            jobs=jobs,
+            radigest_threads=radigest_threads,
+            build_workers=build_workers,
+            run_index=run_index,
+        )
+        row.update(
+            {
+                "wall_seconds": bench_row["score_pairs_seconds"],
+                "timing_backend": "radigest-bench-screen-cached",
+                "timed_phase": "score_pairs_seconds",
+                "build_cut_index_seconds": bench_row["build_cut_index_seconds"],
+                "score_pairs_seconds": bench_row["score_pairs_seconds"],
+                "json_marshal_seconds": bench_row["json_marshal_seconds"],
+                "write_json_seconds": bench_row["write_json_seconds"],
+                "total_seconds": bench_row["total_seconds"],
+                "pairs_per_second_score_phase": bench_row[
+                    "pairs_per_second_score_phase"
+                ],
+                "pairs_per_second_end_to_end": bench_row["pairs_per_second_end_to_end"],
+                "exit_code": str(exit_code),
+                "candidate_pairs_reported": str(candidate_pairs_reported),
+                "screening_binary": bench_binary,
+                "screening_output": str(run_dir),
+                "json_output": "NA",
+                "benchmark_tsv": str(stdout_log),
+                "stdout_log": str(stdout_log),
+                "stderr_log": str(stderr_log),
+                "status": status,
+                "command": shlex.join(cmd),
+            }
+        )
+        rows.append(row)
+    return rows
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--screen-binary", default="radigest-screen-pairs-cached")
+    parser.add_argument("--bench-screen-binary", default="radigest-bench-screen-cached")
     parser.add_argument("--reference", required=True, type=Path)
     parser.add_argument("--case-id", required=True)
     parser.add_argument("--dataset-id", required=True)
@@ -304,9 +626,8 @@ def parse_args() -> argparse.Namespace:
         type=positive_int,
         default=None,
         help=(
-            "Parallel cut-index build workers for radigest-screen-pairs-cached. "
-            "Defaults to --radigest-threads so job-scaling benchmarks only vary "
-            "pair-scoring jobs."
+            "Parallel cut-index build workers. Defaults to --radigest-threads so "
+            "job-scaling benchmarks only vary pair-scoring jobs."
         ),
     )
     parser.add_argument("--runs", required=True, type=positive_int)
@@ -322,28 +643,50 @@ def main() -> int:
         fail("--max must be greater than --min")
     if args.score_max <= args.score_min:
         fail("--score-max must be greater than --score-min")
-    if args.command_template not in ALLOWED_BACKENDS:
-        fail(
-            "Stage 5b uses radigest-screen-pairs-cached; "
-            "set command_template=radigest-screen-pairs-cached in "
-            "config/screening_speed_cases.tsv"
-        )
+    backend = normalize_backend(args.command_template)
     if not args.reference.exists():
         fail(f"reference does not exist: {args.reference}")
     if not args.candidate_enzymes.exists():
         fail(f"candidate enzyme file does not exist: {args.candidate_enzymes}")
 
-    screen_binary = resolve_executable(
-        args.screen_binary, label="radigest-screen-pairs-cached"
-    )
     candidate_names = read_candidate_enzymes(args.candidate_enzymes)
     candidate_pairs_evaluated = len(candidate_names) * (len(candidate_names) - 1) // 2
     args.raw_dir.mkdir(parents=True, exist_ok=True)
     build_workers = args.build_workers or args.radigest_threads
 
-    rows = [
-        run_once(
-            screen_binary=screen_binary,
+    if backend == "cached":
+        screen_binary = resolve_executable(
+            args.screen_binary, label="radigest-screen-pairs-cached"
+        )
+        rows = [
+            run_cached_once(
+                screen_binary=screen_binary,
+                reference=args.reference,
+                candidate_enzymes=args.candidate_enzymes,
+                candidate_enzyme_count=len(candidate_names),
+                candidate_pairs_evaluated=candidate_pairs_evaluated,
+                min_size=args.min_size,
+                max_size=args.max_size,
+                score_min=args.score_min,
+                score_max=args.score_max,
+                size_model=args.size_model,
+                jobs=args.jobs,
+                radigest_threads=args.radigest_threads,
+                build_workers=build_workers,
+                case_id=args.case_id,
+                dataset_id=args.dataset_id,
+                condition_id=args.condition_id,
+                run_index=run_index,
+                raw_dir=args.raw_dir,
+            )
+            for run_index in range(1, args.runs + 1)
+        ]
+    else:
+        bench_binary = resolve_executable(
+            args.bench_screen_binary, label="radigest-bench-screen-cached"
+        )
+        rows = run_bench_case(
+            bench_binary=bench_binary,
             reference=args.reference,
             candidate_enzymes=args.candidate_enzymes,
             candidate_enzyme_count=len(candidate_names),
@@ -356,14 +699,12 @@ def main() -> int:
             jobs=args.jobs,
             radigest_threads=args.radigest_threads,
             build_workers=build_workers,
+            runs=args.runs,
             case_id=args.case_id,
             dataset_id=args.dataset_id,
             condition_id=args.condition_id,
-            run_index=run_index,
             raw_dir=args.raw_dir,
         )
-        for run_index in range(1, args.runs + 1)
-    ]
 
     write_rows(args.out, rows)
     failed = [row for row in rows if row["status"] != "PASS"]
