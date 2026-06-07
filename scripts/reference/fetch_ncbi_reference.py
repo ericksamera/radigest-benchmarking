@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -145,14 +146,18 @@ def looks_like_fasta(path: Path) -> bool:
     return False
 
 
-def download_ncbi_package(accession: str, package_zip: Path, force: bool) -> None:
+def download_ncbi_package(
+    accession: str,
+    package_zip: Path,
+    force: bool,
+    retries: int,
+    retry_wait_seconds: float,
+) -> None:
     require_command("datasets")
     if package_zip.exists() and not force:
         return
     package_zip.parent.mkdir(parents=True, exist_ok=True)
     tmp_zip = package_zip.with_name(package_zip.name + ".tmp")
-    if tmp_zip.exists():
-        tmp_zip.unlink()
     cmd = [
         "datasets",
         "download",
@@ -164,8 +169,40 @@ def download_ncbi_package(accession: str, package_zip: Path, force: bool) -> Non
         "--filename",
         str(tmp_zip),
     ]
-    subprocess.run(cmd, check=True)
-    tmp_zip.replace(package_zip)
+    last_error: subprocess.CalledProcessError | None = None
+    for attempt in range(1, retries + 1):
+        if tmp_zip.exists():
+            tmp_zip.unlink()
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as exc:
+            last_error = exc
+            if tmp_zip.exists():
+                tmp_zip.unlink()
+            if attempt >= retries:
+                break
+            delay = retry_wait_seconds * (2 ** (attempt - 1))
+            print(
+                f"warning: datasets download failed for {accession} "
+                f"(attempt {attempt}/{retries}, exit {exc.returncode}); "
+                f"retrying in {delay:.1f}s",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+            continue
+        if not tmp_zip.exists() or tmp_zip.stat().st_size == 0:
+            if tmp_zip.exists():
+                tmp_zip.unlink()
+            raise RuntimeError(
+                f"datasets download for {accession} produced an empty package"
+            )
+        tmp_zip.replace(package_zip)
+        return
+    if last_error is not None:
+        raise RuntimeError(
+            f"datasets download failed for {accession} after {retries} attempts"
+        ) from last_error
+    raise RuntimeError(f"datasets download failed for {accession}")
 
 
 def copy_package_metadata(extract_dir: Path, reference_id: str) -> None:
@@ -178,7 +215,13 @@ def copy_package_metadata(extract_dir: Path, reference_id: str) -> None:
                 break
 
 
-def fetch_ncbi(row: dict[str, str], output: Path, force: bool) -> None:
+def fetch_ncbi(
+    row: dict[str, str],
+    output: Path,
+    force: bool,
+    retries: int,
+    retry_wait_seconds: float,
+) -> None:
     reference_id = row["reference_id"]
     accession = row["accession"]
     if accession.upper() in PLACEHOLDERS:
@@ -187,7 +230,13 @@ def fetch_ncbi(row: dict[str, str], output: Path, force: bool) -> None:
     package_zip = (
         Path("data/reference/ncbi_packages") / f"{reference_id}__{accession}.zip"
     )
-    download_ncbi_package(accession, package_zip, force=force)
+    download_ncbi_package(
+        accession,
+        package_zip,
+        force=force,
+        retries=retries,
+        retry_wait_seconds=retry_wait_seconds,
+    )
 
     with tempfile.TemporaryDirectory(prefix=f"{reference_id}.ncbi.") as tmp_raw:
         tmpdir = Path(tmp_raw)
@@ -225,9 +274,26 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--reference-id", required=True)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--download-retries",
+        type=int,
+        default=5,
+        help="number of attempts for NCBI datasets downloads (default: 5)",
+    )
+    parser.add_argument(
+        "--download-retry-wait-seconds",
+        type=float,
+        default=15.0,
+        help="initial wait between NCBI datasets download retries; doubles after each failure",
+    )
     args = parser.parse_args(argv)
 
     try:
+        if args.download_retries < 1:
+            raise ValueError("--download-retries must be >= 1")
+        if args.download_retry_wait_seconds < 0:
+            raise ValueError("--download-retry-wait-seconds must be >= 0")
+
         rows = read_manifest(args.manifest)
         if args.reference_id not in rows:
             raise ValueError(
@@ -245,7 +311,13 @@ def main(argv: list[str]) -> int:
             return 0
         source_type = row["source_type"]
         if source_type == "ncbi_datasets":
-            fetch_ncbi(row, args.output, force=args.force)
+            fetch_ncbi(
+                row,
+                args.output,
+                force=args.force,
+                retries=args.download_retries,
+                retry_wait_seconds=args.download_retry_wait_seconds,
+            )
         elif source_type == "url":
             fetch_url(row, args.output, force=args.force)
         else:
