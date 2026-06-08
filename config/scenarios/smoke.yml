@@ -1,0 +1,24 @@
+synthetic_validation:
+  enabled: true
+  fasta: data/synthetic/synthetic_validation.fa
+  expected: config/synthetic_expected.tsv
+  cases: all
+  runs: 1
+
+comparator_smoke:
+  enabled: true
+  target: comparator_smoke_all
+  dataset: comparator_smoke_single
+  reference: data/synthetic/comparator_ecori_msei_smoke.fa
+  condition: D1
+  tools:
+    - digital_rads
+    - ddradseqtools
+    - simrad
+    - ddgrader
+  note: >-
+    This is intentionally a separate target from smoke_all because it requires
+    external comparator tools. Use make comparator-smoke after installing them.
+
+manifest_check:
+  enabled: true

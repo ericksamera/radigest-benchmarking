@@ -1,1062 +1,131 @@
-import csv
-import os
-from itertools import product
-from pathlib import Path
+# Clean v2 scaffold Snakefile.
+# Stage 0 contains only target names and file contracts. Analysis rules are ported in later commits.
 
-configfile: os.environ.get("RADIGEST_WORKFLOW_CONFIG", "workflow/config.yml")
+include: "rules/radigest.smk"
+include: "rules/validation.smk"
+include: "rules/references.smk"
+include: "rules/comparators.smk"
+include: "rules/performance.smk"
+include: "rules/empirical.smk"
+include: "rules/manuscript.smk"
+include: "rules/audit.smk"
 
+MANIFESTS = [
+    "config/datasets.tsv",
+    "config/enzymes.tsv",
+    "config/conditions.tsv",
+    "config/comparators.tsv",
+    "config/comparator_cases.tsv",
+    "config/noncoordinate_comparator_cases.tsv",
+    "config/performance_cases.tsv",
+    "config/screening_speed_cases.tsv",
+    "config/thread_scaling_cases.tsv",
+    "config/pair_screen_scaling_cases.tsv",
+    "config/large_genome_cases.tsv",
+    "config/matched_tool_timing_cases.tsv",
+    "config/artifacts.tsv",
+    "config/empirical_libraries.tsv",
+    "config/empirical_depth_validation_cases.tsv",
+    "config/candidate_enzymes.txt",
+    "config/synthetic_expected.tsv",
+    "config/references.tsv",
+    "config/scenarios/smoke.yml",
+    "config/scenarios/reviewer_nonempirical.yml",
+    "config/scenarios/reviewer_empirical.yml",
+    "config/scenarios/reviewer_all.yml",
+]
 
-def read_tsv(path):
-    with open(path, newline="") as handle:
-        return list(csv.DictReader(handle, delimiter="\t"))
-
-
-def load_datasets(path):
-    rows = read_tsv(path)
-    out = {}
-    for row in rows:
-        dataset_id = row.get("dataset_id") or row.get("dataset")
-        if not dataset_id:
-            raise ValueError(f"dataset row has no dataset_id/dataset field: {row}")
-        out[dataset_id] = row
-    return out
-
-
-def load_conditions(path):
-    rows = read_tsv(path)
-    out = {}
-    for row in rows:
-        condition_id = row.get("condition_id") or row.get("condition")
-        if not condition_id:
-            raise ValueError(f"condition row has no condition_id/condition field: {row}")
-        out[condition_id] = row
-    return out
-
-
-DATASETS = load_datasets(config["datasets_tsv"])
-CONDITIONS = load_conditions(config["conditions_tsv"])
-
-BENCHMARK_DATASETS = list(config["benchmark"].get("datasets", []))
-BENCHMARK_CONDITIONS = list(config["benchmark"].get("conditions", []))
-OUTPUT_MODES = list(config["benchmark"].get("output_modes", ["json"]))
-REPLICATES = range(1, int(config["benchmark"].get("replicates", 1)) + 1)
-
-
-def dataset_path(dataset_id):
-    try:
-        return DATASETS[dataset_id]["local_path"]
-    except KeyError as exc:
-        raise ValueError(f"unknown dataset ID in workflow config: {dataset_id}") from exc
-
-
-def condition_row(condition_id):
-    try:
-        return CONDITIONS[condition_id]
-    except KeyError as exc:
-        raise ValueError(f"unknown condition ID in workflow config: {condition_id}") from exc
-
-
-def condition_min(row):
-    return row.get("min_size") or row.get("min")
-
-
-def condition_max(row):
-    return row.get("max_size") or row.get("max")
-
-
-def truthy(value):
-    return str(value).strip().lower() in {"1", "true", "yes", "y"}
-
-
-def behavior_flags(row):
-    flags = []
-    if truthy(row.get("include_ends", "false")):
-        flags.append("-include-ends")
-    if truthy(row.get("allow_same", "false")):
-        flags.append("-allow-same")
-    return " ".join(flags)
-
-
-def extra_condition_args(condition_id):
-    return config.get("condition_extra_args", {}).get(condition_id, "")
-
-
-def stem(dataset, condition, mode, run):
-    return f"{dataset}__{condition}__{mode}__run{run}"
-
-
-def benchmark_outputs():
-    files = []
-    for dataset, condition, mode, run in product(
-        BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
-    ):
-        s = stem(dataset, condition, mode, run)
-        files.append(f"results/raw/radigest/{s}.json")
-        files.append(f"benchmark/memory/{s}.time")
-
-        if mode == "gff":
-            files.append(f"results/raw/radigest/{s}.gff3")
-        elif mode == "fragments_tsv":
-            files.append(f"results/raw/radigest/{s}.fragments.tsv")
-        elif mode == "fragments_fasta":
-            files.append(f"results/raw/radigest/{s}.fragments.fa")
-
-    return files
-
-
-def benchmark_jsons():
-    return [
-        f"results/raw/radigest/{stem(dataset, condition, mode, run)}.json"
-        for dataset, condition, mode, run in product(
-            BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
-        )
-    ]
-
-
-def benchmark_times():
-    return [
-        f"benchmark/memory/{stem(dataset, condition, mode, run)}.time"
-        for dataset, condition, mode, run in product(
-            BENCHMARK_DATASETS, BENCHMARK_CONDITIONS, OUTPUT_MODES, REPLICATES
-        )
-    ]
-
+SCAFFOLD_PLACEHOLDERS = [
+    "results/validation/.gitkeep",
+    "results/comparators/.gitkeep",
+    "results/performance/.gitkeep",
+    "results/performance/input_format/.gitkeep",
+    "results/performance/screening_speed/.gitkeep",
+    "results/performance/thread_scaling/.gitkeep",
+    "results/performance/pair_screen_scaling/.gitkeep",
+    "results/performance/large_genome/.gitkeep",
+    "results/performance/matched_tools/.gitkeep",
+    "results/empirical/.gitkeep",
+    "results/references/.gitkeep",
+    "results/manuscript/.gitkeep",
+    "results/manuscript/tables/.gitkeep",
+    "results/manuscript/figures/.gitkeep",
+    "benchmark/logs/.gitkeep",
+    "benchmark/memory/.gitkeep",
+    "data/reference/.gitkeep",
+    "data/synthetic/synthetic_validation.fa",
+    "data/synthetic/comparator_ecori_msei_smoke.fa",
+]
 
 rule all:
     input:
-        "results/processed/environment.txt",
-        "results/processed/synthetic_validation_results.tsv"
+        MANIFESTS,
+        SCAFFOLD_PLACEHOLDERS
 
-
-rule capture_environment:
-    output:
-        "results/processed/environment.txt"
-    shell:
-        r"""
-        mkdir -p results/processed benchmark/logs
-        RADIGEST={config[radigest]:q} ./scripts/capture_environment.sh
-        """
-
-
-rule synthetic_validation:
+rule scaffold_all:
     input:
-        fasta=config["synthetic_fasta"],
-        expected=config["synthetic_expected_tsv"]
-    output:
-        "results/processed/synthetic_validation_results.tsv"
-    params:
-        outdir="results/raw/synthetic",
-        radigest=config["radigest"]
-    shell:
-        r"""
-        mkdir -p results/raw/synthetic results/processed
-        python3 scripts/validate_synthetic.py \
-          --radigest {params.radigest:q} \
-          --fasta {input.fasta:q} \
-          --expected {input.expected:q} \
-          --out-dir {params.outdir:q} \
-          --summary {output:q}
-        """
+        MANIFESTS,
+        SCAFFOLD_PLACEHOLDERS
 
-
-rule benchmark_radigest_all:
+rule radigest_build_all:
     input:
-        benchmark_outputs()
+        RADIGEST_BUILD_OUTPUTS
 
-
-rule radigest_json:
+rule smoke_all:
     input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/radigest/{dataset}__{condition}__json__run{run}.json",
-        time="benchmark/memory/{dataset}__{condition}__json__run{run}.time"
-    log:
-        stdout="benchmark/logs/{dataset}__{condition}__json__run{run}.stdout.log",
-        stderr="benchmark/logs/{dataset}__{condition}__json__run{run}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
-        /usr/bin/time -v -o {output.time:q} \
-          {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
+        MANIFESTS,
+        "config/scenarios/smoke.yml",
+        SYNTHETIC_VALIDATION_OUTPUTS
 
-
-rule radigest_gff:
+rule references_all:
     input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/radigest/{dataset}__{condition}__gff__run{run}.json",
-        gff="results/raw/radigest/{dataset}__{condition}__gff__run{run}.gff3",
-        time="benchmark/memory/{dataset}__{condition}__gff__run{run}.time"
-    log:
-        stdout="benchmark/logs/{dataset}__{condition}__gff__run{run}.stdout.log",
-        stderr="benchmark/logs/{dataset}__{condition}__gff__run{run}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
-        /usr/bin/time -v -o {output.time:q} \
-          {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -gff {output.gff:q} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
+        MANIFESTS,
+        "config/scenarios/reviewer_nonempirical.yml",
+        REFERENCE_ALL_OUTPUTS
 
-
-rule radigest_fragments_tsv:
+rule reviewer_nonempirical_all:
     input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/radigest/{dataset}__{condition}__fragments_tsv__run{run}.json",
-        tsv="results/raw/radigest/{dataset}__{condition}__fragments_tsv__run{run}.fragments.tsv",
-        time="benchmark/memory/{dataset}__{condition}__fragments_tsv__run{run}.time"
-    log:
-        stdout="benchmark/logs/{dataset}__{condition}__fragments_tsv__run{run}.stdout.log",
-        stderr="benchmark/logs/{dataset}__{condition}__fragments_tsv__run{run}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
-        /usr/bin/time -v -o {output.time:q} \
-          {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -fragments-tsv {output.tsv:q} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
+        MANIFESTS,
+        "config/scenarios/reviewer_nonempirical.yml",
+        SYNTHETIC_VALIDATION_OUTPUTS,
+        REFERENCE_ALL_OUTPUTS,
+        COMPARATOR_ALL_OUTPUTS,
+        PERFORMANCE_ALL_OUTPUTS
 
-
-rule radigest_fragments_fasta:
+rule reviewer_empirical_all:
     input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/radigest/{dataset}__{condition}__fragments_fasta__run{run}.json",
-        fasta="results/raw/radigest/{dataset}__{condition}__fragments_fasta__run{run}.fragments.fa",
-        time="benchmark/memory/{dataset}__{condition}__fragments_fasta__run{run}.time"
-    log:
-        stdout="benchmark/logs/{dataset}__{condition}__fragments_fasta__run{run}.stdout.log",
-        stderr="benchmark/logs/{dataset}__{condition}__fragments_fasta__run{run}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/radigest benchmark/memory benchmark/logs
-        /usr/bin/time -v -o {output.time:q} \
-          {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -fragments-fasta {output.fasta:q} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
+        MANIFESTS,
+        "config/scenarios/reviewer_empirical.yml",
+        EMPIRICAL_ALL_OUTPUTS
 
-
-rule summaries_all:
+rule reviewer_all:
     input:
-        "results/tables/radigest_json_summary.tsv",
-        "results/tables/radigest_memory_summary.tsv"
+        MANIFESTS,
+        "config/scenarios/reviewer_all.yml",
+        SYNTHETIC_VALIDATION_OUTPUTS,
+        REFERENCE_ALL_OUTPUTS,
+        COMPARATOR_ALL_OUTPUTS,
+        PERFORMANCE_ALL_OUTPUTS,
+        EMPIRICAL_ALL_OUTPUTS
 
-
-rule summarize_radigest_json:
+rule manuscript_all:
     input:
-        benchmark_jsons()
-    output:
-        "results/tables/radigest_json_summary.tsv"
-    shell:
-        r"""
-        mkdir -p results/tables
-        python3 scripts/summarize_radigest_json.py {input} > {output:q}
-        """
+        MANIFESTS,
+        SYNTHETIC_VALIDATION_TABLE,
+        COMPARATOR_INTERVAL_TABLE,
+        COMPARATOR_SEMANTICS_TABLE,
+        MATCHED_TOOL_TIMING_TABLE,
+        PERFORMANCE_INPUT_FORMAT_TABLE,
+        SCREENING_SPEED_TABLE,
+        THREAD_SCALING_TABLE,
+        PAIR_SCREEN_SCALING_TABLE,
+        LARGE_GENOME_TABLE,
+        EMPIRICAL_DEPTH_VALIDATION_TABLES,
+        EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS,
+        PERFORMANCE_FIGURE_OUTPUTS,
+        "results/manuscript/figures/.gitkeep"
 
-
-rule summarize_time_v:
+rule audit_all:
     input:
-        benchmark_times()
-    output:
-        "results/tables/radigest_memory_summary.tsv"
-    shell:
-        r"""
-        mkdir -p results/tables
-        python3 scripts/summarize_time_v.py {input} > {output:q}
-        """
-
-
-rule pair_screen_all:
-    input:
-        "results/tables/ranked_pairs.tsv"
-
-
-rule pair_screen:
-    input:
-        ref=lambda wc: dataset_path(config["pair_screen"]["dataset"]),
-        enzymes=config["pair_screen"]["enzymes"]
-    output:
-        ranked="results/tables/ranked_pairs.tsv"
-    log:
-        "benchmark/logs/pair_screen.log"
-    params:
-        screen=config["radigest_screen_pairs"],
-        rank=config["radigest_rank_pairs"],
-        outdir="results/raw/pair_screen",
-        min_size=config["pair_screen"]["min_size"],
-        max_size=config["pair_screen"]["max_size"],
-        score_min=config["pair_screen"]["score_min"],
-        score_max=config["pair_screen"]["score_max"],
-        size_model=config["pair_screen"]["size_model"],
-        jobs=config["pair_screen"]["jobs"],
-        radigest_threads=config["pair_screen"]["radigest_threads"],
-        objective=config["pair_screen"]["objective"]
-    shell:
-        r"""
-        mkdir -p results/raw/pair_screen results/tables benchmark/logs
-        (
-          {params.screen:q} \
-            --fasta {input.ref:q} \
-            --enzymes {input.enzymes:q} \
-            --min {params.min_size} \
-            --max {params.max_size} \
-            --score-min {params.score_min} \
-            --score-max {params.score_max} \
-            --size-model {params.size_model:q} \
-            --jobs {params.jobs} \
-            --radigest-threads {params.radigest_threads} \
-            --out-dir {params.outdir:q}
-
-          {params.rank:q} 'results/raw/pair_screen/json/*.json' \
-            --fasta {input.ref:q} \
-            --objective {params.objective:q} \
-            --out {output.ranked:q}
-        ) > {log:q} 2>&1
-        """
-
-# --- reference data and FASTA summary rules ---
-
-def fasta_summary_outputs():
-    return [
-        f"results/processed/fasta/{dataset}.summary.tsv"
-        for dataset in BENCHMARK_DATASETS
-    ]
-
-
-rule reference_data_download:
-    input:
-        datasets=config["datasets_tsv"]
-    output:
-        "results/processed/reference_checksums.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed data/reference
-        ./scripts/download_reference_data.sh \
-          --datasets {input.datasets:q} \
-          --out {output:q}
-        """
-
-
-rule fasta_summary_all:
-    input:
-        fasta_summary_outputs()
-
-
-rule summarize_fasta_dataset:
-    input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        "results/processed/fasta/{dataset}.summary.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed/fasta
-        python3 scripts/summarize_fasta.py \
-          -o {output:q} \
-          {input.ref:q}
-        """
-
-# --- interval normalization and comparison smoke rules ---
-
-rule interval_smoke_all:
-    input:
-        "results/processed/intervals/synthetic_ecori_msei.self_compare.summary.tsv"
-
-
-rule interval_smoke:
-    input:
-        fasta=config["synthetic_fasta"]
-    output:
-        raw_tsv="results/raw/interval_smoke/synthetic_ecori_msei.fragments.tsv",
-        json="results/raw/interval_smoke/synthetic_ecori_msei.json",
-        normalized="results/processed/intervals/synthetic_ecori_msei.normalized.tsv",
-        summary="results/processed/intervals/synthetic_ecori_msei.self_compare.summary.tsv",
-        matching="results/processed/intervals/synthetic_ecori_msei.self_compare.matching.tsv",
-        only_first="results/processed/intervals/synthetic_ecori_msei.self_compare.only_first.tsv",
-        only_second="results/processed/intervals/synthetic_ecori_msei.self_compare.only_second.tsv"
-    log:
-        "benchmark/logs/interval_smoke.log"
-    params:
-        radigest=config["radigest"],
-        prefix="results/processed/intervals/synthetic_ecori_msei.self_compare"
-    shell:
-        r"""
-        mkdir -p results/raw/interval_smoke results/processed/intervals benchmark/logs
-
-        (
-          {params.radigest:q} \
-            -fasta {input.fasta:q} \
-            -enzymes EcoRI,MseI \
-            -min 1 \
-            -max 100 \
-            -threads 1 \
-            -fragments-tsv {output.raw_tsv:q} \
-            -json {output.json:q}
-
-          python3 scripts/normalize_radigest_tsv.py \
-            --input {output.raw_tsv:q} \
-            --output {output.normalized:q} \
-            --source-tool radigest
-
-          python3 scripts/compare_interval_sets.py \
-            --first {output.normalized:q} \
-            --second {output.normalized:q} \
-            --first-name radigest \
-            --second-name radigest_self \
-            --mode exact \
-            --out-prefix {params.prefix:q} \
-            --fail-on-difference
-        ) > {log:q} 2>&1
-        """
-
-# --- SimRAD count-level comparator rules ---
-
-SIMRAD_DATASETS = list(config.get("simrad", {}).get("datasets", []))
-SIMRAD_CONDITIONS = list(config.get("simrad", {}).get("conditions", []))
-
-
-def simrad_comparison_outputs():
-    return [
-        f"results/processed/comparisons/simrad/{dataset}__{condition}.comparison.tsv"
-        for dataset, condition in product(SIMRAD_DATASETS, SIMRAD_CONDITIONS)
-    ]
-
-
-def enzyme_parts_for_condition(condition_id):
-    enzymes = condition_row(condition_id)["enzymes"]
-    parts = [x.strip() for x in enzymes.split(",") if x.strip()]
-    if len(parts) not in {1, 2}:
-        raise ValueError(f"condition {condition_id} must define one or two enzymes, got: {enzymes}")
-    return parts
-
-
-def simrad_enzyme1(wc):
-    return enzyme_parts_for_condition(wc.condition)[0]
-
-
-def simrad_enzyme2(wc):
-    parts = enzyme_parts_for_condition(wc.condition)
-    return parts[1] if len(parts) == 2 else "NA"
-
-
-rule compare_simrad_all:
-    input:
-        simrad_comparison_outputs()
-
-
-rule radigest_compare_json:
-    input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/comparisons/radigest/{dataset}__{condition}.json"
-    log:
-        stdout="benchmark/logs/comparison_radigest__{dataset}__{condition}.stdout.log",
-        stderr="benchmark/logs/comparison_radigest__{dataset}__{condition}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/comparisons/radigest benchmark/logs
-        {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
-
-
-rule simrad_run:
-    input:
-        ref=lambda wc: dataset_path(wc.dataset),
-        enzymes="config/enzymes.tsv"
-    output:
-        tsv="results/raw/comparators/simrad/{dataset}__{condition}.simrad.tsv",
-        version="results/raw/comparators/simrad/{dataset}__{condition}.simrad.version.txt"
-    log:
-        "benchmark/logs/simrad__{dataset}__{condition}.log"
-    params:
-        enzyme1=simrad_enzyme1,
-        enzyme2=simrad_enzyme2,
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition))
-    shell:
-        r"""
-        mkdir -p results/raw/comparators/simrad benchmark/logs
-        Rscript scripts/run_simrad_ddrad.R \
-          --reference {input.ref:q} \
-          --enzyme1 {params.enzyme1:q} \
-          --enzyme2 {params.enzyme2:q} \
-          --min {params.min_size} \
-          --max {params.max_size} \
-          --enzymes-tsv {input.enzymes:q} \
-          --out {output.tsv:q} \
-          --version-log {output.version:q} \
-          > {log:q} 2>&1
-        """
-
-
-rule compare_radigest_simrad_counts:
-    input:
-        radigest="results/raw/comparisons/radigest/{dataset}__{condition}.json",
-        simrad="results/raw/comparators/simrad/{dataset}__{condition}.simrad.tsv"
-    output:
-        "results/processed/comparisons/simrad/{dataset}__{condition}.comparison.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed/comparisons/simrad
-        python3 scripts/compare_radigest_simrad_counts.py \
-          --radigest-json {input.radigest:q} \
-          --simrad-tsv {input.simrad:q} \
-          --dataset {wildcards.dataset:q} \
-          --condition {wildcards.condition:q} \
-          --out {output:q}
-        """
-
-# --- Digital_RADs.py coordinate comparator rules ---
-
-DIGITAL_RADS_DATASETS = list(config.get("digital_rads", {}).get("datasets", []))
-DIGITAL_RADS_CONDITIONS = list(config.get("digital_rads", {}).get("conditions", []))
-
-
-def digital_rads_outputs():
-    return [
-        f"results/processed/comparisons/digital_rads/{dataset}__{condition}.summary.tsv"
-        for dataset, condition in product(DIGITAL_RADS_DATASETS, DIGITAL_RADS_CONDITIONS)
-    ]
-
-
-def digital_enzyme1(wc):
-    return enzyme_parts_for_condition(wc.condition)[0]
-
-
-def digital_enzyme2(wc):
-    parts = enzyme_parts_for_condition(wc.condition)
-    if len(parts) != 2:
-        raise ValueError(f"Digital_RADs.py comparison requires exactly two enzymes for condition {wc.condition}")
-    return parts[1]
-
-
-rule compare_digital_rads_all:
-    input:
-        digital_rads_outputs()
-
-
-rule radigest_compare_tsv_for_digital:
-    input:
-        ref=lambda wc: dataset_path(wc.dataset)
-    output:
-        json="results/raw/comparisons/radigest_tsv/{dataset}__{condition}.json",
-        tsv="results/raw/comparisons/radigest_tsv/{dataset}__{condition}.fragments.tsv"
-    log:
-        stdout="benchmark/logs/digital_radigest__{dataset}__{condition}.stdout.log",
-        stderr="benchmark/logs/digital_radigest__{dataset}__{condition}.stderr.log"
-    params:
-        radigest=config["radigest"],
-        enzymes=lambda wc: condition_row(wc.condition)["enzymes"],
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition)),
-        extra=lambda wc: " ".join(
-            x for x in [
-                behavior_flags(condition_row(wc.condition)),
-                extra_condition_args(wc.condition),
-            ] if x
-        ),
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/comparisons/radigest_tsv benchmark/logs
-        {params.radigest:q} \
-          -fasta {input.ref:q} \
-          -enzymes {params.enzymes:q} \
-          -min {params.min_size} \
-          -max {params.max_size} \
-          -threads {params.threads} \
-          {params.extra} \
-          -fragments-tsv {output.tsv:q} \
-          -json {output.json:q} \
-          > {log.stdout:q} 2> {log.stderr:q}
-        """
-
-
-rule normalize_radigest_for_digital:
-    input:
-        "results/raw/comparisons/radigest_tsv/{dataset}__{condition}.fragments.tsv"
-    output:
-        "results/processed/intervals/radigest_for_digital/{dataset}__{condition}.normalized.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed/intervals/radigest_for_digital
-        python3 scripts/normalize_radigest_tsv.py \
-          --input {input:q} \
-          --output {output:q} \
-          --source-tool radigest \
-          --hard-kept-only
-        """
-
-
-rule digital_rads_run:
-    input:
-        ref=lambda wc: dataset_path(wc.dataset),
-        script=lambda wc: config["digital_rads"]["script"],
-        enzymes="config/enzymes.tsv"
-    output:
-        raw="results/raw/comparators/digital_rads/{dataset}__{condition}.raw.tsv",
-        summary="results/raw/comparators/digital_rads/{dataset}__{condition}.run_summary.tsv",
-        version="results/raw/comparators/digital_rads/{dataset}__{condition}.version.txt",
-        stdout="benchmark/logs/digital_rads__{dataset}__{condition}.stdout.log",
-        stderr="benchmark/logs/digital_rads__{dataset}__{condition}.stderr.log"
-    params:
-        workdir=lambda wc: f"results/raw/comparators/digital_rads/work/{wc.dataset}__{wc.condition}",
-        enzyme1=digital_enzyme1,
-        enzyme2=digital_enzyme2,
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition))
-    shell:
-        r"""
-        mkdir -p results/raw/comparators/digital_rads benchmark/logs
-        bash scripts/run_digital_rads.sh \
-          --digital-rads {input.script:q} \
-          --reference {input.ref:q} \
-          --enzyme1 {params.enzyme1:q} \
-          --enzyme2 {params.enzyme2:q} \
-          --min {params.min_size} \
-          --max {params.max_size} \
-          --enzymes-tsv {input.enzymes:q} \
-          --work-dir {params.workdir:q} \
-          --raw-out {output.raw:q} \
-          --summary-out {output.summary:q} \
-          --version-out {output.version:q} \
-          --stdout-log {output.stdout:q} \
-          --stderr-log {output.stderr:q}
-        """
-
-
-rule normalize_digital_rads:
-    input:
-        raw="results/raw/comparators/digital_rads/{dataset}__{condition}.raw.tsv",
-        enzymes="config/enzymes.tsv"
-    output:
-        normalized="results/processed/intervals/digital_rads/{dataset}__{condition}.normalized.tsv",
-        summary="results/processed/intervals/digital_rads/{dataset}__{condition}.normalize_summary.tsv"
-    params:
-        enzyme1=digital_enzyme1,
-        enzyme2=digital_enzyme2,
-        min_size=lambda wc: condition_min(condition_row(wc.condition)),
-        max_size=lambda wc: condition_max(condition_row(wc.condition))
-    shell:
-        r"""
-        mkdir -p results/processed/intervals/digital_rads
-        python3 scripts/normalize_digital_rads.py \
-          --input {input.raw:q} \
-          --output {output.normalized:q} \
-          --summary {output.summary:q} \
-          --enzymes-tsv {input.enzymes:q} \
-          --enzyme1 {params.enzyme1:q} \
-          --enzyme2 {params.enzyme2:q} \
-          --min {params.min_size} \
-          --max {params.max_size}
-        """
-
-
-rule compare_radigest_digital_rads_intervals:
-    input:
-        first="results/processed/intervals/radigest_for_digital/{dataset}__{condition}.normalized.tsv",
-        second="results/processed/intervals/digital_rads/{dataset}__{condition}.normalized.tsv"
-    output:
-        summary="results/processed/comparisons/digital_rads/{dataset}__{condition}.summary.tsv",
-        matching="results/processed/comparisons/digital_rads/{dataset}__{condition}.matching.tsv",
-        only_first="results/processed/comparisons/digital_rads/{dataset}__{condition}.only_first.tsv",
-        only_second="results/processed/comparisons/digital_rads/{dataset}__{condition}.only_second.tsv"
-    params:
-        prefix=lambda wc: f"results/processed/comparisons/digital_rads/{wc.dataset}__{wc.condition}"
-    shell:
-        r"""
-        mkdir -p results/processed/comparisons/digital_rads
-        python3 scripts/compare_interval_sets.py \
-          --first {input.first:q} \
-          --second {input.second:q} \
-          --first-name radigest \
-          --second-name Digital_RADs.py \
-          --mode exact \
-          --out-prefix {params.prefix:q} \
-          --fail-on-difference
-        """
-
-# --- benchmark table and figure rules ---
-
-rule benchmark_tables_all:
-    input:
-        "results/tables/radigest_benchmark_runs.tsv",
-        "results/tables/radigest_benchmark_summary.tsv"
-
-
-rule build_benchmark_tables:
-    input:
-        json_summary="results/tables/radigest_json_summary.tsv",
-        time_summary="results/tables/radigest_memory_summary.tsv"
-    output:
-        runs="results/tables/radigest_benchmark_runs.tsv",
-        summary="results/tables/radigest_benchmark_summary.tsv"
-    shell:
-        r"""
-        mkdir -p results/tables
-        python3 scripts/build_benchmark_table.py \
-          --json-summary {input.json_summary:q} \
-          --time-summary {input.time_summary:q} \
-          --out-runs {output.runs:q} \
-          --out-summary {output.summary:q}
-        """
-
-
-rule figures_all:
-    input:
-        "results/figures/runtime_by_output_mode.png",
-        "results/figures/peak_rss_by_output_mode.png",
-        "results/figures/output_size_by_mode.png"
-
-
-rule benchmark_figures:
-    input:
-        "results/tables/radigest_benchmark_summary.tsv"
-    output:
-        runtime="results/figures/runtime_by_output_mode.png",
-        rss="results/figures/peak_rss_by_output_mode.png",
-        size="results/figures/output_size_by_mode.png"
-    shell:
-        r"""
-        mkdir -p results/figures manuscript_figures
-        python3 scripts/make_figures.py \
-          --benchmark-summary {input:q} \
-          --out-dir results/figures \
-          --manuscript-dir manuscript_figures
-        """
-
-# --- pair-screening table and figure rules ---
-
-rule pair_screen_tables_all:
-    input:
-        "results/tables/pair_screen_top.tsv",
-        "results/tables/pair_screen_matrix.tsv",
-        "results/tables/pair_screen_summary.tsv"
-
-
-rule summarize_pair_screen:
-    input:
-        ranked="results/tables/ranked_pairs.tsv",
-        enzymes=config["pair_screen"]["enzymes"]
-    output:
-        top="results/tables/pair_screen_top.tsv",
-        matrix="results/tables/pair_screen_matrix.tsv",
-        summary="results/tables/pair_screen_summary.tsv"
-    params:
-        objective=config["pair_screen"]["objective"],
-        json_dir="results/raw/pair_screen/json",
-        top_n=20
-    shell:
-        r"""
-        mkdir -p results/tables
-        python3 scripts/summarize_pair_screen.py \
-          --ranked {input.ranked:q} \
-          --out-top {output.top:q} \
-          --out-matrix {output.matrix:q} \
-          --out-summary {output.summary:q} \
-          --objective {params.objective:q} \
-          --top-n {params.top_n} \
-          --candidate-enzymes {input.enzymes:q} \
-          --json-dir {params.json_dir:q}
-        """
-
-
-rule pair_screen_figures_all:
-    input:
-        "results/figures/pair_screening_heatmap.png"
-
-
-rule pair_screen_heatmap:
-    input:
-        "results/tables/pair_screen_matrix.tsv"
-    output:
-        "results/figures/pair_screening_heatmap.png"
-    shell:
-        r"""
-        mkdir -p results/figures manuscript_figures
-        python3 scripts/make_pair_screen_figures.py \
-          --matrix {input:q} \
-          --out {output:q} \
-          --manuscript-dir manuscript_figures \
-          --log10
-        """
-
-# --- plain reference preparation rules ---
-
-rule prepare_plain_reference_all:
-    input:
-        "data/reference/yeast.fa"
-
-
-rule prepare_plain_reference_yeast:
-    input:
-        "data/reference/yeast.fa.gz"
-    output:
-        "data/reference/yeast.fa"
-    log:
-        "benchmark/logs/prepare_plain_reference_yeast.log"
-    shell:
-        r"""
-        mkdir -p data/reference results/processed benchmark/logs
-        bash scripts/prepare_plain_reference.sh \
-          --source {input:q} \
-          --dest {output:q} \
-          --out results/processed/plain_reference_checksums.tsv \
-          > {log:q} 2>&1
-        """
-
-# --- input-format comparison rules ---
-
-rule input_format_table_all:
-    input:
-        "results/tables/radigest_input_format_comparison.tsv"
-
-
-rule build_input_format_table:
-    input:
-        "results/tables/radigest_benchmark_summary.tsv"
-    output:
-        "results/tables/radigest_input_format_comparison.tsv"
-    shell:
-        r"""
-        mkdir -p results/tables
-        python3 scripts/compare_input_format_benchmark.py \
-          --summary {input:q} \
-          --gzip-dataset yeast_small \
-          --plain-dataset yeast_small_plain \
-          --out {output:q}
-        """
-
-# --- DDRADSEQTOOLS rsitesearch comparator rules ---
-
-rule compare_ddradseqtools_all:
-    input:
-        "results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.summary.tsv"
-
-
-rule ddradseqtools_rsitesearch_yeast_B1:
-    input:
-        ref="data/reference/yeast.fa",
-        rsitesearch="external/ddRADseqTools/Package/rsitesearch.py",
-        restrictionsites="external/ddRADseqTools/Package/restrictionsites.txt"
-    output:
-        frags="results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments.fasta",
-        stats="results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments-stats.txt",
-        summary="results/raw/comparators/ddradseqtools/yeast_B1_wide.summary.tsv",
-        version="results/raw/comparators/ddradseqtools/yeast_B1_wide.version.txt"
-    log:
-        stdout="benchmark/logs/ddradseqtools_yeast_B1_wide.stdout.log",
-        stderr="benchmark/logs/ddradseqtools_yeast_B1_wide.stderr.log"
-    params:
-        repo="external/ddRADseqTools",
-        work_dir="results/raw/comparators/ddradseqtools/yeast_B1_wide_work"
-    shell:
-        r"""
-        mkdir -p results/raw/comparators/ddradseqtools \
-                 results/processed/comparisons/ddradseqtools \
-                 benchmark/logs
-
-        bash scripts/run_ddradseqtools_rsitesearch.sh \
-          --repo {params.repo:q} \
-          --reference {input.ref:q} \
-          --enzyme1 EcoRI \
-          --enzyme2 MseI \
-          --min 100 \
-          --max 304 \
-          --work-dir {params.work_dir:q} \
-          --frags-out {output.frags:q} \
-          --stats-out {output.stats:q} \
-          --summary-out {output.summary:q} \
-          --version-out {output.version:q} \
-          --stdout-log {log.stdout:q} \
-          --stderr-log {log.stderr:q}
-        """
-
-
-rule normalize_ddradseqtools_yeast_B1:
-    input:
-        "results/raw/comparators/ddradseqtools/yeast_B1_wide.fragments.fasta"
-    output:
-        normalized="results/processed/comparisons/ddradseqtools/yeast_B1.normalized.tsv",
-        summary="results/processed/comparisons/ddradseqtools/yeast_B1.normalize_summary.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed/comparisons/ddradseqtools
-
-        python3 scripts/normalize_ddradseqtools_fragments.py \
-          --frags {input:q} \
-          --enzymes-tsv config/enzymes.tsv \
-          --enzyme1 EcoRI \
-          --enzyme2 MseI \
-          --min 100 \
-          --max 300 \
-          --seqid-mode first-token \
-          --out {output.normalized:q} \
-          --summary {output.summary:q}
-        """
-
-
-rule radigest_for_ddradseqtools_yeast_B1:
-    input:
-        "data/reference/yeast.fa"
-    output:
-        json="results/raw/comparators/ddradseqtools/yeast_B1.radigest.json",
-        tsv="results/raw/comparators/ddradseqtools/yeast_B1.radigest.fragments.tsv"
-    params:
-        radigest=config["radigest"],
-        threads=config.get("threads", 1)
-    shell:
-        r"""
-        mkdir -p results/raw/comparators/ddradseqtools
-
-        {params.radigest:q} \
-          -fasta {input:q} \
-          -enzymes EcoRI,MseI \
-          -min 100 \
-          -max 300 \
-          -threads {params.threads} \
-          -fragments-tsv {output.tsv:q} \
-          -json {output.json:q}
-        """
-
-
-rule normalize_radigest_for_ddradseqtools_yeast_B1:
-    input:
-        "results/raw/comparators/ddradseqtools/yeast_B1.radigest.fragments.tsv"
-    output:
-        "results/processed/comparisons/ddradseqtools/yeast_B1.radigest.normalized.tsv"
-    shell:
-        r"""
-        mkdir -p results/processed/comparisons/ddradseqtools
-
-        python3 scripts/normalize_radigest_tsv.py \
-          --input {input:q} \
-          --output {output:q} \
-          --source-tool radigest \
-          --hard-kept-only
-        """
-
-
-rule compare_ddradseqtools_intervals_yeast_B1:
-    input:
-        radigest="results/processed/comparisons/ddradseqtools/yeast_B1.radigest.normalized.tsv",
-        ddradseqtools="results/processed/comparisons/ddradseqtools/yeast_B1.normalized.tsv"
-    output:
-        summary="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.summary.tsv",
-        matching="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.matching.tsv",
-        only_first="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.only_first.tsv",
-        only_second="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare.only_second.tsv"
-    params:
-        prefix="results/processed/comparisons/ddradseqtools/yeast_B1.interval_compare"
-    shell:
-        r"""
-        python3 scripts/compare_interval_sets.py \
-          --first {input.radigest:q} \
-          --second {input.ddradseqtools:q} \
-          --first-name radigest \
-          --second-name DDRADSEQTOOLS_rsitesearch \
-          --mode exact \
-          --out-prefix {params.prefix:q} \
-          --fail-on-difference
-        """
+        MANIFESTS,
+        AUDIT_OUTPUTS

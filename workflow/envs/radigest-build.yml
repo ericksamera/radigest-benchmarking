@@ -1,0 +1,9 @@
+name: radigest-build
+channels:
+  - conda-forge
+dependencies:
+  - python >=3.11
+  - git
+  - go >=1.22
+  - make
+  - ca-certificates

@@ -1,15 +1,13 @@
-enzyme	recognition_motif	cut_offset	caret_motif	notes
-EcoRI	GAATTC	1	G^AATTC	Common rare cutter
-MseI	TTAA	1	T^TAA	Common frequent cutter
-PstI	CTGCAG	5	CTGCA^G	Common GC-rich cutter
-MspI	CCGG	1	C^CGG	Common frequent cutter; sequence-level equivalent to HpaII in radigest
-SbfI	CCTGCAGG	6	CCTGCA^GG	Rare cutter
-MluCI	AATT	0	^AATT	Frequent cutter
-ApeKI	GCWGC	1	G^CWGC	Degenerate IUPAC motif
-NlaIII	CATG	4	CATG^	Frequent cutter
-BfaI	CTAG	1	C^TAG	Frequent cutter with MseI-compatible overhang in some ddRAD designs
-SphI	GCATGC	5	GCATG^C	Used in empirical Trichoderma condition
-DpnII	GATC	0	^GATC	Coincident-cut synthetic validation with MboI
-MboI	GATC	0	^GATC	Coincident-cut synthetic validation with DpnII
-HinfI	GANTC	1	G^ANTC	Tests enzyme N motif versus reference N behavior
-NcoI	CCATGG	1	C^CATGG	Used as absent second enzyme in same-enzyme-adjacency validation
+enzyme_id	display_name	recognition_sequence	cut_offset	source	notes
+EcoRI	EcoRI	GAATTC	1	NEB	Common validation enzyme.
+MseI	MseI	TTAA	1	NEB	Common validation enzyme.
+PstI	PstI	CTGCAG	5	NEB	Candidate screening enzyme.
+SbfI	SbfI	CCTGCAGG	6	NEB	Candidate screening enzyme.
+MspI	MspI	CCGG	1	NEB	Candidate screening enzyme.
+SphI	SphI	GCATGC	5	NEB	Empirical Trichoderma ddRAD enzyme.
+MluCI	MluCI	AATT	0	NEB	Frequent cutter for single-digest synthetic validation.
+ApeKI	ApeKI	GCWGC	1	NEB	Degenerate IUPAC motif validation enzyme.
+DpnII	DpnII	GATC	0	NEB	Coincident-cut synthetic validation enzyme.
+MboI	MboI	GATC	0	NEB	Coincident-cut synthetic validation enzyme.
+HinfI	HinfI	GANTC	1	NEB	Enzyme N motif synthetic validation enzyme.
+NcoI	NcoI	CCATGG	1	NEB	Absent second enzyme for same-enzyme adjacency validation.

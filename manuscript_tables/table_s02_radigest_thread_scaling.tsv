@@ -1,1 +1,0 @@
-dataset	condition	mode	threads	n_runs	median_elapsed_wall_seconds	q1_elapsed_wall_seconds	q3_elapsed_wall_seconds	median_max_rss_kb	median_total_fragments	median_total_bases	speedup_vs_threads1	parallel_efficiency_vs_threads1	notes

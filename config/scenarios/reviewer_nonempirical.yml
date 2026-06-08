@@ -1,0 +1,139 @@
+references:
+  small_yeast_s288c_plain: data/reference/small_yeast_s288c.fa
+  small_yeast_s288c_gzip: data/reference/small_yeast_s288c.fa.gz
+  moderate_cannabis_pink-pepper_plain: data/reference/moderate_cannabis_pink-pepper.fa
+  moderate_cannabis_pink-pepper_gzip: data/reference/moderate_cannabis_pink-pepper.fa.gz
+  large_wheat_chinese-spring_plain: data/reference/large_wheat_chinese-spring.fa
+  large_wheat_chinese-spring_gzip: data/reference/large_wheat_chinese-spring.fa.gz
+
+matched_digest:
+  dataset: small_yeast_s288c_plain
+  reference: data/reference/small_yeast_s288c.fa
+  condition: B1
+  enzymes: [EcoRI, MseI]
+  min_size: 100
+  max_size: 300
+  runs: 5
+  threads: 1
+
+screening_speed:
+  cases: config/screening_speed_cases.tsv
+  target: performance_screening_speed_all
+  dataset: small_yeast_s288c_plain
+  reference: data/reference/small_yeast_s288c.fa
+  candidate_enzymes: config/candidate_enzymes_30.txt
+  min_size: 300
+  max_size: 600
+  score_min: 1
+  score_max: 2000
+  size_model: hard
+  runs: 5
+  jobs: 2
+  radigest_threads: 1
+  command_template: radigest-screen-pairs-cached
+
+thread_scaling:
+  cases: config/thread_scaling_cases.tsv
+  target: performance_thread_scaling_all
+  dataset: moderate_cannabis_pink-pepper_plain
+  reference: data/reference/moderate_cannabis_pink-pepper.fa
+  conditions: [B1, B2]
+  modes: [json, fragments_tsv]
+  threads: [1, 2, 4]
+  runs: 7
+  claim_note: Intra-tool radigest thread scaling only; output modes are interpreted separately.
+
+large_genome:
+  cases: config/large_genome_cases.tsv
+  target: performance_matched_tools_all
+  dataset: large_wheat_chinese-spring_plain
+  reference: data/reference/large_wheat_chinese-spring.fa
+  condition: B2
+  enzymes: [EcoRI, MseI]
+  min_size: 300
+  max_size: 600
+  output_mode: json
+  threads: 4
+  runs: 3
+  claim_note: True large-reference wheat timing only; no cross-tool equivalence or empirical recovery claim. The wheat reference is required for make references and the large-reference timing artifact is included in the matched-tool performance entry point.
+
+pair_screen_scaling:
+  cases: config/pair_screen_scaling_cases.tsv
+  target: performance_pair_screen_scaling_all
+  dataset: moderate_cannabis_pink-pepper_plain
+  reference: data/reference/moderate_cannabis_pink-pepper.fa
+  candidate_enzymes: config/candidate_enzymes_30.txt
+  jobs: [1, 2, 4, 8]
+  runs: 3
+  radigest_threads: 1
+  command_template: radigest-screen-pairs-cached
+  claim_note: Cached pair-screen job scaling only; candidate-pair coverage is enforced before speedups are interpreted.
+
+matched_tool_timing:
+  cases: config/matched_tool_timing_cases.tsv
+  target: performance_matched_tools_all
+  datasets:
+    [
+      small_yeast_s288c_plain,
+      moderate_cannabis_pink-pepper_plain,
+      large_wheat_chinese-spring_plain,
+    ]
+  conditions: [B1, B2]
+  tools: [radigest, digital_rads, ddradseqtools, simrad, ddgrader]
+  large_reference_tools: [radigest, digital_rads, ddradseqtools, ddgrader]
+  large_reference_excluded_tools: [simrad]
+  runs: 3
+  resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination, including the folded-in large-reference timing case.
+  claim_note: Semantics-aware raw timing interpretation only across small yeast, moderate cannabis, and required large wheat; output resolutions and allowed claims differ by tool. SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
+
+input_format:
+  cases: config/performance_cases.tsv
+  comparison_group: small_yeast_s288c_B1
+  datasets: [small_yeast_s288c_plain, small_yeast_s288c_gzip]
+  references:
+    plain: data/reference/small_yeast_s288c.fa
+    gzip: data/reference/small_yeast_s288c.fa.gz
+  condition: B1
+  enzymes: [EcoRI, MseI]
+  min_size: 100
+  max_size: 300
+  runs: 5
+  threads: 1
+
+comparators:
+  interval_cases: config/comparator_cases.tsv
+  noncoordinate_cases: config/noncoordinate_comparator_cases.tsv
+  comparator_smoke:
+    target: comparator_smoke_all
+    dataset: comparator_smoke_single
+    reference: data/synthetic/comparator_ecori_msei_smoke.fa
+    condition: D1
+    tools: [digital_rads, ddradseqtools, simrad, ddgrader]
+    claim_note: Shared synthetic smoke checks exercise all comparator adapters, but claim resolution remains tool-specific.
+  small_yeast_matrix:
+    target: comparator_small_yeast_all
+    dataset: small_yeast_s288c_plain
+    reference: data/reference/small_yeast_s288c.fa
+    condition: B1
+    tools: [digital_rads, ddradseqtools, simrad, ddgrader]
+    claim_note: Public yeast checks use radigest as the anchor. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+  digital_rads:
+    smoke_case: digital_rads_smoke_single__D1
+    small_yeast_case: digital_rads_small_yeast_s288c_B1
+    required_path: external/Digital_RADs/Digital_RADs.py
+    claim_allowed: coordinate_equivalence
+  ddradseqtools:
+    smoke_case: ddradseqtools_smoke_single__D1
+    small_yeast_case: small_yeast_s288c_B1
+    required_path: external/ddRADseqTools/Package/rsitesearch.py
+    claim_allowed: coordinate_equivalence
+  simrad:
+    smoke_case: simrad_count_comparison
+    small_yeast_case: simrad_small_yeast_s288c_B1
+    required_path: NA
+    claim_allowed: count_level_digest
+  ddgrader:
+    smoke_case: ddgrader_binned_smoke
+    small_yeast_case: ddgrader_binned_screening
+    required_path: external/ddRadSeqWebTool/backend/service/DigestSequence.py
+    claim_allowed: screening_throughput

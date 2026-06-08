@@ -1,61 +1,26 @@
 # Claims and limits
 
-This repository supports the benchmarking and empirical analyses for the
-associated radigest manuscript. It is organized to separate matched quantitative
-comparisons from qualitative scope comparisons.
+Manuscript claims are governed by `config/artifacts.tsv` and comparator semantics are governed by `config/comparators.tsv`.
 
-## Supported claim tiers
+Stage 4 comparator claim limits are explicit:
 
-### Tier 1: synthetic digest correctness
+```text
+Digital_RADs.py      coordinate-equivalence after interval normalization
+DDRADSEQTOOLS        coordinate-equivalence after interval normalization
+SimRAD               aggregate count-level digest sanity only
+ddgRADer backend     binned fragment-screening behavior only
+```
 
-Synthetic FASTA records and expected intervals validate digest semantics,
-coordinate conventions, size bounds, ambiguous motifs, terminal-fragment
-handling where supported, and GFF3 coordinate conversion.
+SimRAD and ddgRADer outputs must not be described as same-fragment or coordinate-equivalence validation outputs unless a future workflow normalizes them to the same interval model.
 
-### Tier 2: matched coordinate-level digest comparisons
+A claim is release-required only when `required_for_release` is `true`. Sockeye empirical depth validation is release-required for the publication reviewer path; the BAM/BAI inputs remain private and must be supplied locally before `make reviewer-all`.
 
-Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py` are compared only after
-normalizing their outputs to zero-based half-open cut-coordinate intervals.
+Stage 5b screening-speed outputs are cached `radigest-screen-pairs-cached` performance measurements. They support a throughput claim for candidate-pair screening only; they do not support cross-tool coordinate equivalence or biological recovery claims. Cut-index build workers are pinned to `radigest_threads` so screening-speed and job-scaling cases do not accidentally vary cache-build parallelism when `jobs` changes.
 
-### Tier 3: count-level comparisons
+Stage 5c thread-scaling outputs are intra-tool radigest performance measurements. JSON-summary and fragment-TSV output modes are not pooled; each comparison group must preserve the same retained-fragment count across thread counts before speedups are interpreted. These outputs do not support cross-tool equivalence or empirical recovery claims.
 
-SimRAD is used as a count-level comparator where digest and size-selection
-semantics overlap. It is not treated as a coordinate-level comparator.
+Stage 5d pair-screen job-scaling outputs are intra-tool `radigest-screen-pairs-cached` performance measurements. They support a scaling claim for cached candidate-pair screening across configured job counts only. Candidate-pair evaluation and reported JSON coverage must be consistent across job counts before speedups are interpreted. Cut-index build workers are held fixed across job-count rows. These outputs do not support cross-tool equivalence or empirical recovery claims.
 
-### Tier 4: screening throughput and runtime/memory
+Stage 5e large-reference outputs support a radigest-only timing claim on the Triticum aestivum Chinese Spring wheat reference. They do not support cross-tool equivalence, screening scaling, or empirical recovery claims. The required wheat row uses JSON output to avoid turning the claim into a fragment-TSV disk-output stress test. Cannabis Pink Pepper rows are retained only as optional moderate-reference guardrails.
 
-Runtime, memory, and screening throughput are measured under documented
-conditions. Claims should use medians and Q1-Q3 intervals. Do not claim linear
-scaling unless the measured speedup supports it.
-
-### Tier 5: empirical recovery modelling
-
-Observed TLEN distributions from aligned empirical ddRAD datasets are used to
-fit empirical fragment-size recovery profiles. These profiles can be applied
-back to coordinate-resolved radigest fragment sets.
-
-## Explicit non-claims
-
-radigest is not:
-
-- a read simulator;
-- a PCR simulator;
-- an adapter simulator;
-- a SNP caller;
-- a population-genetic simulator;
-- a full downstream RADseq analysis pipeline;
-- a complete replacement for interactive design tools such as ddgRADer.
-
-## Interpretation of empirical recovery models
-
-The fitted recovery curve is an empirical profile for an analysed alignment set.
-It may reflect size selection, short-fragment representation, PCR, sequencing,
-mapping, and filtering. It should not be interpreted as a pure laboratory
-size-selection probability.
-
-## Interpretation of comparator results
-
-Comparator results are valid only for shared digest-level functionality.
-Broader simulation, SNP-yield prediction, adapter/PCR modelling, read overlap,
-and downstream genotyping are qualitative scope differences unless explicitly
-benchmarked.
+Stage 5f matched-tool timing outputs are semantics-aware timing interpretations. They support a matched timing table and R/ggplot2 timing figure across complete small-yeast and medium-cannabis groups plus a required large-wheat subset. SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits. The table does not collapse all tools into a shared coordinate-equivalence claim. Each row carries the tool's comparison level, primary output type, and allowed claim.

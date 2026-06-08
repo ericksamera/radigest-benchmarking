@@ -1,0 +1,7 @@
+include_scenarios:
+  - reviewer_nonempirical
+  - reviewer_empirical
+
+release_contract:
+  artifacts: config/artifacts.tsv
+  comparators: config/comparators.tsv

@@ -1,0 +1,5 @@
+case_id	tool_id	dataset_id	condition_id	reference_path	comparison_mode	required_for_nonempirical	notes
+digital_rads_smoke_single__D1	digital_rads	comparator_smoke_single	D1	data/synthetic/comparator_ecori_msei_smoke.fa	exact	true	Synthetic two-enzyme interval-normalization smoke comparison for Digital_RADs.py.
+ddradseqtools_smoke_single__D1	ddradseqtools	comparator_smoke_single	D1	data/synthetic/comparator_ecori_msei_smoke.fa	exact	true	Synthetic two-enzyme interval-normalization smoke comparison for DDRADSEQTOOLS rsitesearch.py.
+digital_rads_small_yeast_s288c_B1	digital_rads	small_yeast_s288c_plain	B1	data/reference/small_yeast_s288c.fa	exact	true	Public yeast B1 interval comparison for Digital_RADs.py.
+small_yeast_s288c_B1	ddradseqtools	small_yeast_s288c_plain	B1	data/reference/small_yeast_s288c.fa	exact	true	Public yeast B1 interval comparison for DDRADSEQTOOLS rsitesearch.py.

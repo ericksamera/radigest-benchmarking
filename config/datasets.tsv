@@ -1,10 +1,10 @@
-dataset	species	assembly	accession_or_url	local_path	sha256	purpose
-synthetic_validation	NA	designed	NA	data/synthetic/synthetic_validation.fa	TO_BE_FILLED	synthetic validation
-yeast_small	Saccharomyces cerevisiae S288C	R64 / GCF_000146045.2	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.fna.gz	data/reference/yeast.fa.gz	1ec41f951b35f2752d5065edeafe6972455609d4383fb36dae12519a60b27a73	small genome benchmark and comparator smoke benchmark
-moderate_genome	Cannabis sativa	ASM2916894v1 / GCA_029168945.1 / Pink Pepper	GCA_029168945.1	data/reference/moderate.fa.gz	TO_BE_FILLED	moderate genome radigest scaling benchmark
-sockeye_empirical	Oncorhynchus nerka	TO_BE_FILLED	TO_BE_FILLED	data/empirical/sockeye/	TO_BE_FILLED	empirical recovery modelling
-trichoderma_empirical	Trichoderma atroviride	TO_BE_FILLED	TO_BE_FILLED	data/empirical/trichoderma/	TO_BE_FILLED	empirical recovery modelling
-simrad_smoke_single	NA	designed_single_record	NA	data/synthetic/simrad_ecori_msei_double.fa	TO_BE_FILLED	SimRAD nonzero smoke comparison
-digital_rads_smoke_single	NA	designed_single_record	NA	data/synthetic/digital_rads_ecori_msei_double.fa	TO_BE_FILLED	Digital_RADs coordinate-normalization smoke comparison
-yeast_small_plain	Saccharomyces cerevisiae S288C	R64 / GCF_000146045.2	DERIVED_FROM:yeast_small	data/reference/yeast.fa	fe42735d3e6242f8c40b457a232940e34ef15eb4502717e54a34ed118face4c1	plain FASTA input-format benchmark derived from yeast_small
-maize_b73_refgenv5	Zea mays	Zm-B73-REFERENCE-NAM-5.0 / B73 RefGen_v5	GCF_902167145.1	data/reference/maize_b73_refgenv5.fa.gz	TO_BE_FILLED	large agricultural genome radigest screening benchmark
+dataset_id	display_name	reference_path	format	scope	required_for_smoke	notes
+synthetic_tiny	Synthetic tiny validation	data/synthetic/synthetic_validation.fa	fasta	validation	true	Tracked synthetic FASTA for Stage 2 validation.
+comparator_smoke_single	Comparator EcoRI-MseI smoke synthetic	data/synthetic/comparator_ecori_msei_smoke.fa	fasta	comparators	false	Tracked single-record synthetic FASTA used for all comparator smoke checks with tool-specific claim boundaries.
+small_yeast_s288c_plain	Saccharomyces cerevisiae S288C R64 plain FASTA	data/reference/small_yeast_s288c.fa	fasta	reviewer_nonempirical	false	Small public yeast reference prepared in Stage 3.
+small_yeast_s288c_gzip	Saccharomyces cerevisiae S288C R64 gzip FASTA	data/reference/small_yeast_s288c.fa.gz	fasta_gzip	reviewer_nonempirical	false	Small public yeast reference prepared in Stage 3.
+moderate_cannabis_pink-pepper_plain	Cannabis sativa Pink Pepper ASM2916894v1 plain FASTA	data/reference/moderate_cannabis_pink-pepper.fa	fasta	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
+moderate_cannabis_pink-pepper_gzip	Cannabis sativa Pink Pepper ASM2916894v1 gzip FASTA	data/reference/moderate_cannabis_pink-pepper.fa.gz	fasta_gzip	reviewer_nonempirical	false	Moderate-size cannabis cultivar reference prepared in Stage 3.
+large_wheat_chinese-spring_plain	Triticum aestivum Chinese Spring IWGSC CS RefSeq v2.1 plain FASTA	data/reference/large_wheat_chinese-spring.fa	fasta	large_reference	false	Large public wheat reference required for nonempirical performance runs.
+large_wheat_chinese-spring_gzip	Triticum aestivum Chinese Spring IWGSC CS RefSeq v2.1 gzip FASTA	data/reference/large_wheat_chinese-spring.fa.gz	fasta_gzip	large_reference	false	Large public wheat reference required for nonempirical performance runs.
+sockeye_ecori_msei	Sockeye EcoRI-MseI empirical BAM set	data/reference/sockeye_oner_uvic_2_0.fa	empirical	empirical	false	Publication empirical BAM-directory dataset using GCF_034236695.1_Oner_Uvic_2.0; BAM/BAI files are supplied locally.

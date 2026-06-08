@@ -1,79 +1,52 @@
-# Large reference and empirical data are excluded from Git.
-data/reference/*
-data/empirical/*
-!data/reference/.gitkeep
-!data/empirical/.gitkeep
-
-# Raw genome/read/alignment data.
-*.fasta
-*.fna
-*.fa.gz
-*.fasta.gz
-*.fna.gz
-*.fastq
-*.fastq.gz
-*.fq
-*.fq.gz
-*.bam
-*.sam
-*.cram
-*.bai
-*.crai
-
-# Allow committed synthetic validation FASTA files.
-!data/synthetic/
-!data/synthetic/*.fa
-!data/synthetic/*.fasta
-!data/synthetic/*.fna
-
-# External comparator checkouts.
-external/*
-!external/.gitkeep
-
-# Raw workflow, benchmark, and processed outputs.
-results/raw/*
-results/processed/*
-results/tables/*
-results/figures/*
-benchmark/time/*
-benchmark/memory/*
-benchmark/logs/*
-!results/raw/.gitkeep
-!results/processed/.gitkeep
-!results/tables/.gitkeep
-!results/figures/.gitkeep
-!benchmark/time/.gitkeep
-!benchmark/memory/.gitkeep
-!benchmark/logs/.gitkeep
-
-# Manuscript exports.
-# Final curated artifacts can be force-added with git add -f.
-manuscript_tables/*
-manuscript_figures/*
-!manuscript_tables/.gitkeep
-!manuscript_figures/.gitkeep
-
-# Python/R/Snakemake/cache.
-.venv/
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.Rhistory
-.RData
-.julia/
+
+# Local environments
+.env
+.venv/
+env/
+venv/
+
+# Snakemake
 .snakemake/
-snakemake_cache/
-.conda/
-.mamba/
+.snakemake/conda/
+.snakemake/log/
 
-# OS/editor.
-.DS_Store
-.vscode/
-.idea/
-
-# Generated codebase snapshots.
-codebase.json
-*codebase*
-
+# Local tool checkouts and private inputs
 .local/
+external/
+/data/empirical/**
+!/data/empirical/
+!/data/empirical/**/
+!/data/empirical/**/.gitkeep
+
+# Reference data are produced by the references workflow.
+/data/reference/**
+!/data/reference/
+!/data/reference/.gitkeep
+
+# Generated outputs. Keep directory contracts only.
+/results/**
+!/results/**/
+!/results/**/.gitkeep
+
+/benchmark/logs/**
+!/benchmark/logs/
+!/benchmark/logs/.gitkeep
+
+/benchmark/memory/**
+!/benchmark/memory/
+!/benchmark/memory/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+.DS_Store
+
+*codebase*

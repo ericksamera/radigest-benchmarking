@@ -1,0 +1,12 @@
+name: radigest-figures
+channels:
+  - conda-forge
+dependencies:
+  - r-base >=4.3
+  - r-dplyr
+  - r-forcats
+  - r-ggplot2
+  - r-patchwork
+  - r-readr
+  - r-scales
+  - r-stringr

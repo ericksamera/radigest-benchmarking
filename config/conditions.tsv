@@ -1,0 +1,4 @@
+condition_id	display_name	enzyme_1	enzyme_2	min_size	max_size	size_model	notes
+B1	B1 EcoRI-MseI 100-300	EcoRI	MseI	100	300	hard	Small matched digest condition.
+B2	B2 EcoRI-MseI 300-600	EcoRI	MseI	300	600	hard	Moderate fragment condition.
+D1	D1 Digital RADs smoke 1-100	EcoRI	MseI	1	100	hard	Comparator smoke condition for Digital_RADs.py interval normalization.

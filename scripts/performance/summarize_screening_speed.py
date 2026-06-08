@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""Summarize radigest-screen-pairs-cached screening-speed timing rows."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import statistics
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import NoReturn
+
+SUMMARY_COLUMNS = [
+    "case_id",
+    "dataset_id",
+    "condition_id",
+    "reference_path",
+    "candidate_enzymes",
+    "candidate_enzyme_count",
+    "candidate_pairs_evaluated",
+    "min_size",
+    "max_size",
+    "score_min",
+    "score_max",
+    "size_model",
+    "jobs",
+    "radigest_threads",
+    "build_workers",
+    "configured_runs",
+    "observed_runs",
+    "successful_runs",
+    "candidate_pairs_reported",
+    "reported_pair_consistency",
+    "reported_pair_coverage",
+    "screening_binary",
+    "wall_seconds_min",
+    "wall_seconds_median",
+    "wall_seconds_mean",
+    "wall_seconds_max",
+    "wall_seconds_stdev",
+    "candidate_pairs_per_second_median",
+    "candidate_pairs_per_second_stdev",
+    "status",
+    "notes",
+]
+
+CASE_COLUMNS = [
+    "case_id",
+    "dataset_id",
+    "reference_path",
+    "condition_id",
+    "candidate_enzymes",
+    "min_size",
+    "max_size",
+    "score_min",
+    "score_max",
+    "size_model",
+    "jobs",
+    "radigest_threads",
+    "runs",
+    "required_for_nonempirical",
+    "notes",
+]
+
+RUN_COLUMNS = [
+    "case_id",
+    "dataset_id",
+    "condition_id",
+    "wall_seconds",
+    "exit_code",
+    "candidate_pairs_reported",
+    "candidate_pairs_evaluated",
+    "screening_binary",
+    "build_workers",
+    "status",
+]
+
+
+def fail(message: str) -> NoReturn:
+    print(f"ERROR: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def read_tsv(path: Path, required_columns: list[str]) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        fieldnames = reader.fieldnames
+        if fieldnames is None:
+            fail(f"{path}: missing header")
+        fieldname_set = set(fieldnames)
+        missing = [column for column in required_columns if column not in fieldname_set]
+        if missing:
+            fail(f"{path}: missing columns: {', '.join(missing)}")
+        rows: list[dict[str, str]] = []
+        for raw_row in reader:
+            if not any((value or "").strip() for value in raw_row.values()):
+                continue
+            row: dict[str, str] = {}
+            for key, value in raw_row.items():
+                if key is not None:
+                    row[key] = "" if value is None else value
+            rows.append(row)
+    return rows
+
+
+def read_case_rows(path: Path) -> dict[str, dict[str, str]]:
+    selected = {
+        row["case_id"]: row
+        for row in read_tsv(path, CASE_COLUMNS)
+        if row["required_for_nonempirical"].lower() == "true"
+    }
+    if not selected:
+        fail(f"{path}: no required screening-speed rows")
+    return selected
+
+
+def read_run_rows(paths: list[Path]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for path in paths:
+        rows.extend(read_tsv(path, RUN_COLUMNS))
+    return rows
+
+
+def parse_int(value: str, *, path_label: str) -> int:
+    try:
+        return int(value)
+    except ValueError:
+        fail(f"{path_label}: expected integer, observed {value!r}")
+
+
+def parse_float(value: str, *, path_label: str) -> float:
+    try:
+        return float(value)
+    except ValueError:
+        fail(f"{path_label}: expected float, observed {value!r}")
+
+
+def fmt_float(value: float | None) -> str:
+    if value is None:
+        return "NA"
+    return f"{value:.6f}"
+
+
+def summarize_case(
+    case: dict[str, str], run_rows: list[dict[str, str]]
+) -> dict[str, str]:
+    case_id = case["case_id"]
+    configured_runs = parse_int(case["runs"], path_label=f"case {case_id} runs")
+    successes = [row for row in run_rows if row.get("status") == "PASS"]
+    durations = [
+        parse_float(row["wall_seconds"], path_label=f"case {case_id} wall_seconds")
+        for row in successes
+    ]
+    evaluated_counts = [
+        parse_int(
+            row["candidate_pairs_evaluated"],
+            path_label=f"case {case_id} candidate_pairs_evaluated",
+        )
+        for row in successes
+    ]
+    reported_counts = [
+        parse_int(
+            row["candidate_pairs_reported"],
+            path_label=f"case {case_id} candidate_pairs_reported",
+        )
+        for row in successes
+        if row["candidate_pairs_reported"] != "NA"
+    ]
+
+    evaluated_unique = sorted(set(evaluated_counts))
+    reported_unique = sorted(set(reported_counts))
+    screening_binaries = sorted(
+        {
+            row.get("screening_binary", "")
+            for row in successes
+            if row.get("screening_binary", "")
+        }
+    )
+    build_worker_values = {
+        parse_int(row["build_workers"], path_label=f"case {case_id} build_workers")
+        for row in successes
+        if row.get("build_workers") not in {None, "", "NA"}
+    }
+    evaluated_value = (
+        parse_int(case.get("candidate_pairs_evaluated", "0"), path_label=case_id)
+        if not evaluated_unique
+        else evaluated_unique[0]
+    )
+    reported_consistency = "PASS" if len(reported_unique) == 1 else "FAIL"
+    reported_value = str(reported_unique[0]) if len(reported_unique) == 1 else "NA"
+    reported_coverage = (
+        "PASS"
+        if len(reported_unique) == 1 and reported_unique[0] == evaluated_value
+        else "FAIL"
+    )
+    screening_binary = (
+        ";".join(screening_binaries) if len(screening_binaries) == 1 else "NA"
+    )
+    build_workers = (
+        str(next(iter(sorted(build_worker_values))))
+        if len(build_worker_values) == 1
+        else "NA"
+    )
+
+    wall_min: float | None = None
+    wall_median: float | None = None
+    wall_mean: float | None = None
+    wall_max: float | None = None
+    wall_stdev: float | None = None
+    pairs_per_second: float | None = None
+    pairs_per_second_stdev: float | None = None
+    if durations:
+        wall_min = min(durations)
+        wall_median = statistics.median(durations)
+        wall_mean = statistics.fmean(durations)
+        wall_max = max(durations)
+        wall_stdev = statistics.stdev(durations) if len(durations) > 1 else 0.0
+        pairs_per_second = evaluated_value / wall_median if wall_median > 0 else None
+        rate_values = [evaluated_value / value for value in durations if value > 0]
+        pairs_per_second_stdev = (
+            statistics.stdev(rate_values)
+            if len(rate_values) > 1
+            else 0.0 if rate_values else None
+        )
+
+    status = "PASS"
+    notes = case["notes"]
+    if len(run_rows) != configured_runs:
+        status = "FAIL"
+    if len(successes) != configured_runs:
+        status = "FAIL"
+    if len(evaluated_unique) > 1:
+        status = "FAIL"
+        notes += " Candidate-pair evaluation counts differ across runs."
+    if reported_consistency != "PASS":
+        status = "FAIL"
+        notes += " Reported screening pair counts differ across runs."
+    if reported_coverage != "PASS":
+        status = "FAIL"
+        notes += " Reported screening pair count does not match candidate-pair count."
+    if len(screening_binaries) != 1:
+        status = "FAIL"
+        notes += " Screening binary path is missing or inconsistent across runs."
+    if len(build_worker_values) != 1:
+        status = "FAIL"
+        notes += " Build-worker count is missing or inconsistent across runs."
+    elif build_workers != case["radigest_threads"]:
+        status = "FAIL"
+        notes += " Cut-index build worker count is not pinned to radigest_threads."
+
+    return {
+        "case_id": case_id,
+        "dataset_id": case["dataset_id"],
+        "condition_id": case["condition_id"],
+        "reference_path": case["reference_path"],
+        "candidate_enzymes": case["candidate_enzymes"],
+        "candidate_enzyme_count": "NA",
+        "candidate_pairs_evaluated": str(evaluated_value),
+        "min_size": case["min_size"],
+        "max_size": case["max_size"],
+        "score_min": case["score_min"],
+        "score_max": case["score_max"],
+        "size_model": case["size_model"],
+        "jobs": case["jobs"],
+        "radigest_threads": case["radigest_threads"],
+        "build_workers": build_workers,
+        "configured_runs": str(configured_runs),
+        "observed_runs": str(len(run_rows)),
+        "successful_runs": str(len(successes)),
+        "candidate_pairs_reported": reported_value,
+        "reported_pair_consistency": reported_consistency,
+        "reported_pair_coverage": reported_coverage,
+        "screening_binary": screening_binary,
+        "wall_seconds_min": fmt_float(wall_min),
+        "wall_seconds_median": fmt_float(wall_median),
+        "wall_seconds_mean": fmt_float(wall_mean),
+        "wall_seconds_max": fmt_float(wall_max),
+        "wall_seconds_stdev": fmt_float(wall_stdev),
+        "candidate_pairs_per_second_median": fmt_float(pairs_per_second),
+        "candidate_pairs_per_second_stdev": fmt_float(pairs_per_second_stdev),
+        "status": status,
+        "notes": notes,
+    }
+
+
+def add_candidate_counts(
+    rows: list[dict[str, str]], run_rows: list[dict[str, str]]
+) -> None:
+    by_case: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in run_rows:
+        by_case[row["case_id"]].append(row)
+    for row in rows:
+        raw_counts = {
+            raw.get("candidate_enzyme_count", "")
+            for raw in by_case.get(row["case_id"], [])
+        }
+        raw_counts.discard("")
+        raw_counts.discard("NA")
+        row["candidate_enzyme_count"] = next(iter(sorted(raw_counts)), "NA")
+
+
+def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, delimiter="\t", fieldnames=SUMMARY_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cases", required=True, type=Path)
+    parser.add_argument("--runs", required=True, nargs="+", type=Path)
+    parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--require-pass", action="store_true")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    case_by_id = read_case_rows(args.cases)
+    run_rows = read_run_rows(args.runs)
+    rows_by_case: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in run_rows:
+        rows_by_case[row["case_id"]].append(row)
+
+    summaries = [
+        summarize_case(case, rows_by_case.get(case_id, []))
+        for case_id, case in sorted(case_by_id.items())
+    ]
+    add_candidate_counts(summaries, run_rows)
+    write_rows(args.out, summaries)
+
+    failed = [row for row in summaries if row["status"] != "PASS"]
+    if args.require_pass and failed:
+        print(
+            f"{len(failed)} of {len(summaries)} screening-speed summaries failed; "
+            f"see {args.out}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"Wrote {len(summaries)} screening-speed summary rows to {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

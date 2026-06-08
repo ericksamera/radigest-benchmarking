@@ -1,0 +1,31 @@
+empirical:
+  required: true
+  manifest: config/empirical_libraries.tsv
+  input_root: data/empirical
+  initial_source_type: local_bam_dir
+  default_library_id: sockeye_ecori_msei
+  bam_dropoff_dir: data/empirical/sockeye_ecori_msei/bam
+  reference_id: sockeye_oner_uvic_2_0
+  reference_accession: GCF_034236695.1
+  reference_name: GCF_034236695.1_Oner_Uvic_2.0
+  enabled_column: enabled
+  include_for_manuscript_column: include_for_manuscript
+  outputs:
+    per_library_root: results/empirical/{library_id}
+    bam_manifest: results/empirical/{library_id}/bam_manifest.tsv
+    per_bam_tlens: results/empirical/{library_id}/bams/{bam_id}/tlens.txt
+    per_bam_tlen_histogram: results/empirical/{library_id}/bams/{bam_id}/tlen_histogram.tsv
+    per_bam_tlen_qc: results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv
+    pooled_tlens: results/empirical/{library_id}/tlens.txt
+    tlen_histogram: results/empirical/{library_id}/tlen_histogram.tsv
+    tlen_qc: results/empirical/{library_id}/tlen_qc.tsv
+    raw_prediction_fragments: results/empirical/{library_id}/predictions/raw.fragments.tsv
+    raw_prediction_histogram: results/empirical/{library_id}/predictions/raw.length_histogram.tsv
+    hard_prediction_fragments: results/empirical/{library_id}/predictions/hard.fragments.tsv
+    hard_prediction_histogram: results/empirical/{library_id}/predictions/hard.length_histogram.tsv
+    depth_design_tsv: results/empirical/{library_id}/depth_validation/design.tsv
+    depth_design_json: results/empirical/{library_id}/depth_validation/design.json
+    depth_loci_bed: results/empirical/{library_id}/depth_validation/loci.bed
+    depth_per_sample: results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
+    depth_summary: results/empirical/{library_id}/depth_validation/summary.tsv
+    table: results/manuscript/tables/table_08_empirical_depth_validation.tsv

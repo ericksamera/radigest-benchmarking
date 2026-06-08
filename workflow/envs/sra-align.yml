@@ -1,0 +1,10 @@
+name: radigest-sra-align
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - sra-tools
+  - fastp
+  - bwa
+  - samtools
+  - gzip

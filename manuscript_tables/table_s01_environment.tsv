@@ -1,3 +1,0 @@
-section	item	value	source	notes
-environment	environment_metadata	MISSING	results/processed/environment.txt	Captured hardware, OS, software, and git metadata. See full environment text for details.
-reference_data	reference_checksums	MISSING	results/processed/reference_checksums.tsv	Reference-data checksum table.

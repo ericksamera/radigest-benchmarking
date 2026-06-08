@@ -1,0 +1,3 @@
+library_id	bioproject_accession	biosample_accession	experiment_accession	run_accession	platform	layout	read_length	enabled	include	notes
+anopheles_ecori_msei	PRJNA298241	SAMN04202422	SRX1428226	SRR3173372	ILLUMINA	PAIRED	150	true	true	A11G105; Anopheles darlingi EcoRI/MseI reduced representation paired-end subset for initial SRA validation.
+anopheles_ecori_msei	PRJNA298241	SAMN04202420	SRX1428228	SRR3173376	ILLUMINA	PAIRED	150	true	true	A11G102; Anopheles darlingi EcoRI/MseI reduced representation paired-end subset for initial SRA validation.

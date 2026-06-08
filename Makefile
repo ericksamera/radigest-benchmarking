@@ -1,345 +1,332 @@
-SHELL := /usr/bin/env bash
-.DEFAULT_GOAL := help
-
+THREADS ?= 8
+LOCAL_BIN ?= .local/bin
+RADIGEST_SRC ?= external/radigest
+RADIGEST ?= $(LOCAL_BIN)/radigest
+RADIGEST_REPO ?= https://github.com/ericksamera/radigest.git
+RADIGEST_REF ?= main
+EMPIRICAL_LIBRARIES ?= config/empirical_libraries.tsv
+EMPIRICAL_DEPTH_VALIDATION_CASES ?= config/empirical_depth_validation_cases.tsv
+ifeq ($(dir $(RADIGEST)),./)
+RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
+RADIGEST_BENCH_SCREEN_CACHED ?= radigest-bench-screen-cached
+RADIGEST_DESIGN ?= radigest-design
+else
+RADIGEST_SCREEN_PAIRS_CACHED ?= $(dir $(RADIGEST))radigest-screen-pairs-cached
+RADIGEST_BENCH_SCREEN_CACHED ?= $(dir $(RADIGEST))radigest-bench-screen-cached
+RADIGEST_DESIGN ?= $(dir $(RADIGEST))radigest-design
+endif
+ifeq ($(abspath $(RADIGEST)),$(abspath $(LOCAL_BIN)/radigest))
+RADIGEST_BUILD_PREREQ ?= install-radigest
+else
+RADIGEST_BUILD_PREREQ ?=
+endif
+DDGRADER_REPO ?= external/ddRadSeqWebTool
 SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
-WORKFLOW_CONFIG ?= workflow/config.yml
+SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
+SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_bench_screen_cached="$(RADIGEST_BENCH_SCREEN_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
+MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
+PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
+COMPARATOR_INSTALL_MARKERS ?= .local/comparators/digital_rads.ready .local/comparators/ddradseqtools.ready .local/comparators/simrad.ready .local/comparators/ddgrader.ready
+EMPIRICAL_SOCKEYE_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay.pdf results/empirical/sockeye_ecori_msei/size_model_grid.tsv results/empirical/sockeye_ecori_msei/best_size_model.tsv results/empirical/sockeye_ecori_msei/depth_validation/summary.tsv results/manuscript/tables/table_08_empirical_depth_validation.tsv
+EMPIRICAL_TRICHODERMA_OUTPUTS ?= results/empirical/trichoderma_sphi_mspi/figures/size_model_overlay.pdf results/empirical/trichoderma_sphi_mspi/size_model_grid.tsv results/empirical/trichoderma_sphi_mspi/best_size_model.tsv
+EMPIRICAL_ANOPHELES_REFERENCE_OUTPUTS ?= data/reference/anopheles_darlingi_gcf943734745.fa.gz data/reference/anopheles_darlingi_gcf943734745.fa
+EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS ?= data/empirical/anopheles_ecori_msei/fastq/SRR3173372_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173372_2.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_2.fastq.gz
+EMPIRICAL_ANOPHELES_BAM_OUTPUTS ?= data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam.bai data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam.bai
+EMPIRICAL_ANOPHELES_OUTPUTS ?= results/empirical/anopheles_ecori_msei/figures/size_model_overlay.pdf results/empirical/anopheles_ecori_msei/size_model_grid.tsv results/empirical/anopheles_ecori_msei/best_size_model.tsv
 
-RADIGEST ?= radigest
-RADIGEST_SCREEN_PAIRS ?= radigest-screen-pairs
-RADIGEST_RANK_PAIRS ?= radigest-rank-pairs
-
-THREADS ?= 4
-
-RADIGEST_REPO ?= ../radigest
-RADIGEST_REF ?= HEAD
-LOCAL_BIN ?= .local/bin
-LOCAL_RADIGEST ?= $(LOCAL_BIN)/radigest
-LOCAL_RADIGEST_SCREEN_PAIRS ?= $(LOCAL_BIN)/radigest-screen-pairs
-LOCAL_RADIGEST_RANK_PAIRS ?= $(LOCAL_BIN)/radigest-rank-pairs
-LOCAL_RADIGEST_FIT_SIZE_MODEL ?= $(LOCAL_BIN)/radigest-fit-size-model
-EMPIRICAL_SNAKEFILE ?= workflow/empirical_recovery.smk
-EMPIRICAL_DATASETS ?= sockeye_ddrad,trichoderma_ddrad
-RADIGEST_FIT_SIZE_MODEL ?= radigest-fit-size-model
-
-
-SMK_BASE = RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) \
-           --cores $(THREADS) \
-           --rerun-incomplete \
-           --printshellcmds
-
-SMK_CONFIG = --config \
-             radigest="$(RADIGEST)" \
-             radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-             radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
-             threads=$(THREADS)
-
-# Usage:
-#   $(call smk,<target-or-options-and-target>)
-smk = $(SMK_BASE) $(1) $(SMK_CONFIG)
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
-	@echo "Targets:"
-	@echo "  env                      Capture hardware/software metadata"
-	@echo "  radigest-local           Build radigest from RADIGEST_REPO/RADIGEST_REF into .local/bin"
-	@echo "  check-local              Build local radigest and run lightweight checks"
-	@echo "  validate-local           Build local radigest and run synthetic validation"
-	@echo "  synthetic                Show synthetic FASTA status"
-	@echo "  validate-radigest        Run synthetic interval validation via Snakemake"
-	@echo "  empirical-recovery       Run optional empirical TLEN recovery workflow"
-	@echo "  empirical-recovery-local Build local radigest and run empirical recovery"
-	@echo "  manuscript-tables        Build curated manuscript tables"
-	@echo "  benchmark-radigest       Run configured radigest output-mode benchmarks"
-	@echo "  screen-pairs             Run configured enzyme-pair screen"
-	@echo "  pair-screen-tables      Summarize ranked enzyme-pair screening table"
-	@echo "  pair-screen-figures     Generate enzyme-pair screening heatmap"
-	@echo "  download-reference-data  Download/checksum reference datasets from config/datasets.tsv"
-	@echo "  fasta-summary            Summarize FASTA files for configured benchmark datasets"
-	@echo "  prepare-plain-reference  Decompress yeast reference for input-format benchmark"
-	@echo "  summarize                Generate JSON/time summary tables"
-	@echo "  benchmark-tables         Build run-level and aggregate benchmark tables"
-	@echo "  input-format-table       Compare radigest gzipped vs plain FASTA benchmark rows"
-	@echo "  figures                  Generate benchmark figures"
-	@echo "  interval-smoke           Normalize radigest TSV intervals and compare interval set to itself"
-	@echo "  compare-simrad           Run optional SimRAD count-level comparison"
-	@echo "  compare-digital-rads     Run optional Digital_RADs.py coordinate comparison"
-	@echo "  compare-ddradseqtools    Run optional DDRADSEQTOOLS rsitesearch interval comparison"
-	@echo "  compare-cut-tools        Run installed digest-level comparator cut checks"
-	@echo "  benchmark-matched-tools Run timed matched radigest/SimRAD tasks"
-	@echo "  benchmark-matched-tools-with-digital Run optional matched Digital_RADs timing"
-	@echo "  summarize-matched-tools Summarize matched tool benchmark outputs"
-	@echo "  all                      Run lightweight default workflow"
-	@echo "  dry-run                  Show planned lightweight workflow"
-	@echo "  dag                      Write workflow DAG for configured benchmark"
-	@echo "  check                    Syntax checks + default all dry-run only"
-	@echo "  audit                    Check reproducibility repo state"
-	@echo "  audit-strict             Treat audit warnings as failures"
-	@echo "  check-benchmark          Dry-run benchmark/summary/table/figure targets"
-	@echo "  check-pair-screen       Dry-run pair-screening summary and figure targets"
-	@echo "  check-comparators        Dry-run optional comparator targets; requires reference paths to exist"
-	@echo "  clean                    Remove generated benchmark outputs"
+	@printf '%s\n' \
+	  'Targets are grouped by the usual reviewer flow.' \
+	  '' \
+	  'Reviewer / publication:' \
+	  '  make reviewer-all THREADS=8' \
+	  '      Full publication rerun: setup, static checks, nonempirical workflow,' \
+	  '      Sockeye empirical validation, manuscript tables/figures.' \
+	  '      Before running: place Sockeye BAM/BAI files in:' \
+	  '        data/empirical/sockeye_ecori_msei/bam/' \
+	  '  make audit' \
+	  '      Release/artifact audit after reviewer-all.' \
+	  '  make reviewer-nonempirical THREADS=8' \
+	  '      Public-reference validation, comparators, and performance only.' \
+	  '  make reviewer-empirical THREADS=8' \
+	  '      Empirical branch only; requires Sockeye BAM/BAI inputs.' \
+	  '' \
+	  'Setup / checks:' \
+	  '  make check' \
+	  '      Static manifest checks + smoke DAG dry-run; does not require BAMs.' \
+	  '  make empirical-check' \
+	  '      Empirical input preflight; requires enabled BAM inputs.' \
+	  '  make install-radigest' \
+	  '      Build local radigest helper binaries.' \
+	  '  make install-all' \
+	  '      Build radigest and install comparator tools.' \
+	  '  make show-radigest' \
+	  '      Show resolved radigest binaries and versions.' \
+	  '' \
+	  'Common components under reviewer-all:' \
+	  '  nonempirical:' \
+	  '    make smoke' \
+	  '    make references THREADS=8' \
+	  '    make comparators THREADS=8' \
+	  '    make performance THREADS=8' \
+	  '  empirical Sockeye:' \
+	  '    make empirical-sockeye THREADS=8' \
+	  '    make empirical-depth-validation THREADS=8' \
+	  '    make empirical THREADS=8' \
+	  '  manuscript:' \
+	  '    make manuscript THREADS=8' \
+	  '    make figures THREADS=8' \
+	  '' \
+	  'Focused performance targets:' \
+	  '  make performance-screening-speed THREADS=8' \
+	  '  make performance-pair-screen-scaling THREADS=8' \
+	  '  make performance-thread-scaling THREADS=8' \
+	  '  make performance-matched-tools THREADS=8' \
+	  '  make performance-input-format THREADS=8' \
+	  '' \
+	  'Focused comparator/setup targets:' \
+	  '  make comparator-smoke THREADS=8' \
+	  '  make comparator-small-yeast THREADS=8' \
+	  '  make install-comparators' \
+	  '  make install-digital-rads | install-ddradseqtools | install-simrad | install-ddgrader' \
+	  '' \
+	  'Focused empirical targets:' \
+	  '  make empirical-references THREADS=8' \
+	  '  make empirical-tlens THREADS=8' \
+	  '  make empirical-predictions THREADS=8' \
+	  '  make empirical-curves THREADS=8' \
+	  '  make empirical-model-grid THREADS=8' \
+	  '  make empirical-model-fit-ranking THREADS=8' \
+	  '  make empirical-figures THREADS=8' \
+	  '' \
+	  'Use `make help-all` for the complete flat target list.'
 
-env:
-	$(call smk,results/processed/environment.txt --force)
+help-all:
+	@printf '%s\n' \
+	  'All targets:' \
+	  '  make check' \
+	  '  make check-manifests' \
+	  '  make install-radigest' \
+	  '  make show-radigest' \
+	  '  make smoke' \
+	  '  make references' \
+	  '  make install-comparators' \
+	  '  make install-all' \
+	  '  make install-digital-rads' \
+	  '  make install-ddradseqtools' \
+	  '  make install-simrad' \
+	  '  make install-ddgrader' \
+	  '  make comparator-smoke' \
+	  '  make comparator-small-yeast' \
+	  '  make comparators' \
+	  '  make performance-input-format' \
+	  '  make performance-screening-speed' \
+	  '  make performance-thread-scaling THREADS=8' \
+	  '  make performance-pair-screen-scaling THREADS=8' \
+	  '  make performance-matched-tools THREADS=8' \
+	  '  make performance THREADS=8' \
+	  '  make figures THREADS=8' \
+	  '  make empirical-check' \
+	  '  make empirical-check-inputs' \
+	  '  make empirical-sockeye THREADS=8' \
+	  '  make empirical-trichoderma THREADS=8' \
+	  '  make empirical-anopheles-reference THREADS=8' \
+	  '  make empirical-anopheles-fetch THREADS=8' \
+	  '  make empirical-anopheles-align THREADS=8' \
+	  '  make empirical-anopheles THREADS=8' \
+	  '  make empirical-references THREADS=8' \
+	  '  make empirical-tlens THREADS=8' \
+	  '  make empirical-predictions THREADS=8' \
+	  '  make empirical-curves THREADS=8' \
+	  '  make empirical-model-grid THREADS=8' \
+	  '  make empirical-model-fit-ranking THREADS=8' \
+	  '  make empirical-figures THREADS=8' \
+	  '  make empirical-depth-validation THREADS=8' \
+	  '  make empirical THREADS=8' \
+	  '  make reviewer-nonempirical THREADS=8' \
+	  '  make reviewer-empirical THREADS=8' \
+	  '  make reviewer-all THREADS=8' \
+	  '  make manuscript THREADS=8' \
+	  '  make audit'
 
-synthetic:
-	@echo "Synthetic FASTA: data/synthetic/synthetic_validation.fa"
-	@seqkit stats data/synthetic/synthetic_validation.fa || true
+install-radigest build-radigest radigest-build:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) radigest_build_all $(SNAKEMAKE_CONFIG_ARGS)
 
-validate-radigest:
-	$(call smk,results/processed/synthetic_validation_results.tsv)
+show-radigest:
+	@printf 'RADIGEST=%s\n' "$(RADIGEST)"
+	@printf 'RADIGEST_SCREEN_PAIRS_CACHED=%s\n' "$(RADIGEST_SCREEN_PAIRS_CACHED)"
+	@printf 'RADIGEST_BENCH_SCREEN_CACHED=%s\n' "$(RADIGEST_BENCH_SCREEN_CACHED)"
+	@printf 'RADIGEST_DESIGN=%s\n' "$(RADIGEST_DESIGN)"
+	@printf 'RADIGEST_REPO=%s\n' "$(RADIGEST_REPO)"
+	@printf 'RADIGEST_REF=%s\n' "$(RADIGEST_REF)"
+	@if [ -x "$(RADIGEST)" ]; then "$(RADIGEST)" --version 2>/dev/null || "$(RADIGEST)" -version 2>/dev/null || true; else printf 'radigest binary missing; run make install-radigest\n'; fi
+	@if [ -x "$(RADIGEST_SCREEN_PAIRS_CACHED)" ]; then "$(RADIGEST_SCREEN_PAIRS_CACHED)" --version 2>/dev/null || "$(RADIGEST_SCREEN_PAIRS_CACHED)" -version 2>/dev/null || true; else printf 'cached screening binary missing; run make install-radigest\n'; fi
+	@if [ -x "$(RADIGEST_BENCH_SCREEN_CACHED)" ]; then "$(RADIGEST_BENCH_SCREEN_CACHED)" --version 2>/dev/null || true; else printf 'cached screening benchmark binary missing; run make install-radigest\n'; fi
+	@if [ -x "$(RADIGEST_DESIGN)" ]; then "$(RADIGEST_DESIGN)" --version 2>/dev/null || true; else printf 'design binary missing; run make install-radigest\n'; fi
 
-benchmark-radigest:
-	$(call smk,benchmark_radigest_all)
+smoke: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 $(SNAKEMAKE_CONDA_ARGS) smoke_all $(SNAKEMAKE_CONFIG_ARGS)
 
-screen-pairs:
-	$(call smk,pair_screen_all)
+references:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) references_all $(SNAKEMAKE_CONFIG_ARGS)
 
-download-reference-data:
-	$(call smk,results/processed/reference_checksums.tsv)
+install-comparators:
+	rm -f $(COMPARATOR_INSTALL_MARKERS)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_tools_all $(SNAKEMAKE_CONFIG_ARGS)
 
-fasta-summary:
-	$(call smk,fasta_summary_all)
+install-all: $(RADIGEST_BUILD_PREREQ) install-comparators
 
-summarize:
-	$(call smk,summaries_all)
+comparator-smoke: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_smoke_all $(SNAKEMAKE_CONFIG_ARGS)
 
-benchmark-tables:
-	$(call smk,benchmark_tables_all)
+comparator-small-yeast: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_small_yeast_all $(SNAKEMAKE_CONFIG_ARGS)
 
-figures:
-	$(call smk,figures_all)
+comparators: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)
 
-interval-smoke:
-	$(call smk,interval_smoke_all)
+performance-input-format: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_input_format_all $(SNAKEMAKE_CONFIG_ARGS)
 
-compare-simrad:
-	$(call smk,compare_simrad_all)
+performance-screening-speed: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_screening_speed_all $(SNAKEMAKE_CONFIG_ARGS)
 
-compare-digital-rads:
-	$(call smk,compare_digital_rads_all)
+performance-thread-scaling: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_thread_scaling_all $(SNAKEMAKE_CONFIG_ARGS)
 
-all:
-	$(call smk,all)
+performance-pair-screen-scaling: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_pair_screen_scaling_all $(SNAKEMAKE_CONFIG_ARGS) $(PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS)
 
-dry-run:
-	$(call smk,-n all)
+performance-matched-tools: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_matched_tools_all $(SNAKEMAKE_CONFIG_ARGS) $(MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS)
 
-dag:
-	mkdir -p workflow
-	$(call smk,--dag benchmark_radigest_all) > workflow/benchmark_dag.dot
+performance: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) performance_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-check:
-	bash -n scripts/capture_environment.sh
-	bash -n scripts/download_reference_data.sh
-	python3 -m py_compile scripts/*.py
-	@if compgen -G "scripts/*.R" > /dev/null; then \
-	  Rscript -e 'files <- list.files("scripts", pattern="[.]R$$", full.names=TRUE); invisible(lapply(files, parse))' ; \
-	fi
-	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
-	           threads=1
+figures: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-check-benchmark:
-	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
-	  benchmark_radigest_all summaries_all benchmark_tables_all figures_all fasta_summary_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
-	           threads=1
+install-digital-rads:
+	rm -f .local/comparators/digital_rads.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_digital_rads_install $(SNAKEMAKE_CONFIG_ARGS)
 
-check-comparators:
-	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
-	  compare_simrad_all compare_digital_rads_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
-	           threads=1
+install-ddradseqtools:
+	rm -f .local/comparators/ddradseqtools.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_ddradseqtools_install $(SNAKEMAKE_CONFIG_ARGS)
 
-clean:
-	rm -rf results/raw/* results/processed/* benchmark/time/* benchmark/memory/* benchmark/logs/*
-	touch results/raw/.gitkeep results/processed/.gitkeep benchmark/time/.gitkeep benchmark/memory/.gitkeep benchmark/logs/.gitkeep
+install-simrad:
+	rm -f .local/comparators/simrad.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_simrad_install $(SNAKEMAKE_CONFIG_ARGS)
 
-pair-screen-tables:
-	$(call smk,pair_screen_tables_all)
+install-ddgrader:
+	rm -f .local/comparators/ddgrader.ready
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_ddgrader_install $(SNAKEMAKE_CONFIG_ARGS)
 
-pair-screen-figures:
-	$(call smk,pair_screen_figures_all)
+reviewer-nonempirical: install-all
+	$(MAKE) check
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_nonempirical_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-check-pair-screen:
-	RADIGEST_WORKFLOW_CONFIG="$(WORKFLOW_CONFIG)" $(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n \
-	  pair_screen_all pair_screen_tables_all pair_screen_figures_all \
-	  --config radigest="$(RADIGEST)" \
-	           radigest_screen_pairs="$(RADIGEST_SCREEN_PAIRS)" \
-	           radigest_rank_pairs="$(RADIGEST_RANK_PAIRS)" \
-	           threads=1
+empirical-check:
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --allow-missing-enabled-inputs
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
 
-benchmark-matched-tools:
-	bash scripts/run_matched_tool_benchmarks.sh \
-	  --reference data/reference/yeast.fa.gz \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --enzymes EcoRI,MseI \
-	  --min 100 \
-	  --max 300 \
-	  --runs 5 \
-	  --threads $(THREADS) \
-	  --radigest "$(RADIGEST)" \
-	  --digital-rads external/Digital_RADs/Digital_RADs.py \
-	  --skip-digital-rads
+empirical-check-inputs:
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)"
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 
-benchmark-matched-tools-with-digital:
-	bash scripts/run_matched_tool_benchmarks.sh \
-	  --reference data/reference/yeast.fa.gz \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --enzymes EcoRI,MseI \
-	  --min 100 \
-	  --max 300 \
-	  --runs 5 \
-	  --threads $(THREADS) \
-	  --radigest "$(RADIGEST)" \
-	  --digital-rads external/Digital_RADs/Digital_RADs.py
+empirical-references:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_references_all $(SNAKEMAKE_CONFIG_ARGS)
 
-summarize-matched-tools:
-	python3 scripts/summarize_matched_tool_benchmarks.py \
-	  --root results/raw/matched_tool_benchmarks \
-	  --time-dir benchmark/memory/matched_tools \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --out-runs results/tables/matched_tool_benchmark_runs.tsv \
-	  --out-summary results/tables/matched_tool_benchmark_summary.tsv
+empirical-tlens:
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_tlens_all $(SNAKEMAKE_CONFIG_ARGS)
 
-benchmark-simrad-warm:
-	mkdir -p results/tables benchmark/memory/matched_tools benchmark/logs/matched_tools
-	/usr/bin/time -v \
-	  -o benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
-	    --reference data/reference/yeast.fa.gz \
-	    --enzyme1 EcoRI \
-	    --enzyme2 MseI \
-	    --min 100 \
-	    --max 300 \
-	    --runs 5 \
-	    --enzymes-tsv config/enzymes.tsv \
-	    --out-runs results/tables/simrad_warm_runs.tsv \
-	    --out-summary results/tables/simrad_warm_summary.tsv \
-	    --version-log results/tables/simrad_warm_version.txt \
-	    > benchmark/logs/matched_tools/simrad_warm.stdout.log \
-	    2> benchmark/logs/matched_tools/simrad_warm.stderr.log
-	/usr/bin/time -v \
-	  -o benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  Rscript scripts/run_simrad_warm_benchmark.R \
-	    --reference data/reference/yeast.fa.gz \
-	    --enzyme1 EcoRI \
-	    --enzyme2 MseI \
-	    --min 100 \
-	    --max 300 \
-	    --runs 5 \
-	    --enzymes-tsv config/enzymes.tsv \
-	    --out-runs results/tables/simrad_reuse_reference_runs.tsv \
-	    --out-summary results/tables/simrad_reuse_reference_summary.tsv \
-	    --version-log results/tables/simrad_reuse_reference_version.txt \
-	    --reuse-reference \
-	    > benchmark/logs/matched_tools/simrad_reuse_reference.stdout.log \
-	    2> benchmark/logs/matched_tools/simrad_reuse_reference.stderr.log
+empirical-predictions: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_predictions_all $(SNAKEMAKE_CONFIG_ARGS)
 
-tool-timing-table:
-	python3 scripts/build_tool_timing_interpretation_table.py \
-	  --matched-summary results/tables/matched_tool_benchmark_summary.tsv \
-	  --simrad-warm-summary results/tables/simrad_warm_summary.tsv \
-	  --simrad-warm-time benchmark/memory/matched_tools/simrad_warm_package_reload_reference.time \
-	  --simrad-reuse-summary results/tables/simrad_reuse_reference_summary.tsv \
-	  --simrad-reuse-time benchmark/memory/matched_tools/simrad_reuse_reference.time \
-	  --dataset yeast_small \
-	  --condition B1 \
-	  --out results/tables/tool_timing_interpretation.tsv
+empirical-curves: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_curves_all $(SNAKEMAKE_CONFIG_ARGS)
 
-prepare-plain-reference:
-	$(call smk,prepare_plain_reference_all)
+empirical-model-grid: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_model_grid_all $(SNAKEMAKE_CONFIG_ARGS)
 
-input-format-table:
-	$(call smk,input_format_table_all)
+empirical-model-fit-ranking: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_model_fit_ranking_all $(SNAKEMAKE_CONFIG_ARGS)
 
-.PHONY: tool-comparison-figures input-format-figures compare-ddradseqtools check-ddradseqtools compare-cut-tools radigest-local radigest-local-version check-local validate-local empirical-recovery-dry-run empirical-recovery-local manuscript-tables audit audit-strict
+empirical-figures: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_figures_all $(SNAKEMAKE_CONFIG_ARGS)
 
-tool-comparison-figures:
-	python3 scripts/make_tool_comparison_figures.py \
-	  --timing-table results/tables/tool_timing_interpretation.tsv \
-	  --out-dir results/figures \
-	  --manuscript-dir manuscript_figures
+empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_depth_validation_all $(SNAKEMAKE_CONFIG_ARGS)
 
-input-format-figures:
-	python3 scripts/make_input_format_figures.py \
-	  --comparison results/tables/radigest_input_format_comparison.tsv \
-	  --out-dir results/figures \
-	  --manuscript-dir manuscript_figures
+empirical: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
-compare-ddradseqtools:
-	$(call smk,compare_ddradseqtools_all)
+empirical-sockeye: $(RADIGEST_BUILD_PREREQ)
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled sockeye_ecori_msei
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_SOCKEYE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-check-ddradseqtools:
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n compare_ddradseqtools_all $(SMK_CONFIG)
+empirical-trichoderma: $(RADIGEST_BUILD_PREREQ)
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled trichoderma_sphi_mspi
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_TRICHODERMA_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-compare-cut-tools:
-	$(call smk,compare_simrad_all compare_digital_rads_all compare_ddradseqtools_all)
+empirical-anopheles-reference:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_REFERENCE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-radigest-local:
-	scripts/ensure_radigest.sh \
-	  --source "$(RADIGEST_REPO)" \
-	  --ref "$(RADIGEST_REF)" \
-	  --out-dir .local/radigest \
-	  --bin-dir "$(LOCAL_BIN)"
+empirical-anopheles-fetch: empirical-anopheles-reference
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-radigest-local-version: radigest-local
-	$(LOCAL_RADIGEST) -version || true
-	@echo "RADIGEST=$(LOCAL_RADIGEST)"
-	@echo "RADIGEST_SCREEN_PAIRS=$(LOCAL_RADIGEST_SCREEN_PAIRS)"
-	@echo "RADIGEST_RANK_PAIRS=$(LOCAL_RADIGEST_RANK_PAIRS)"
+empirical-anopheles-align: empirical-anopheles-fetch
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_BAM_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-check-local: radigest-local
-	$(MAKE) check \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
-	  THREADS=1
+empirical-anopheles: $(RADIGEST_BUILD_PREREQ) empirical-anopheles-align
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
-validate-local: radigest-local
-	$(MAKE) validate-radigest \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_SCREEN_PAIRS="$(LOCAL_RADIGEST_SCREEN_PAIRS)" \
-	  RADIGEST_RANK_PAIRS="$(LOCAL_RADIGEST_RANK_PAIRS)" \
-	  THREADS=1
 
-empirical-recovery-dry-run:
-	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores 1 -n all \
-	  --config empirical_table="config/empirical_recovery.tsv" \
-	           datasets="$(EMPIRICAL_DATASETS)" \
-	           radigest="$(RADIGEST)" \
-	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
-	           threads=1
+reviewer-empirical: $(RADIGEST_BUILD_PREREQ)
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_empirical_all $(SNAKEMAKE_CONFIG_ARGS)
 
-empirical-recovery:
-	$(SNAKEMAKE) -s $(EMPIRICAL_SNAKEFILE) --cores $(THREADS) --rerun-incomplete --printshellcmds all \
-	  --config empirical_table="config/empirical_recovery.tsv" \
-	           datasets="$(EMPIRICAL_DATASETS)" \
-	           radigest="$(RADIGEST)" \
-	           radigest_fit_size_model="$(RADIGEST_FIT_SIZE_MODEL)" \
-	           threads=$(THREADS)
+reviewer-all: install-all
+	$(MAKE) check
+	$(MAKE) empirical-check-inputs
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) reviewer_all manuscript_figures_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
-empirical-recovery-local: radigest-local
-	$(MAKE) empirical-recovery \
-	  RADIGEST="$(LOCAL_RADIGEST)" \
-	  RADIGEST_FIT_SIZE_MODEL="$(LOCAL_RADIGEST_FIT_SIZE_MODEL)" \
-	  THREADS="$(THREADS)"
-
-manuscript-tables:
-	python3 scripts/make_manuscript_tables.py --out-dir manuscript_tables
+manuscript: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) manuscript_all $(SNAKEMAKE_CONFIG_ARGS) $(PERFORMANCE_BENCHMARK_RESOURCE_ARGS)
 
 audit:
-	python3 scripts/audit_reproducibility.py
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 $(SNAKEMAKE_CONDA_ARGS) audit_all $(SNAKEMAKE_CONFIG_ARGS)
 
-audit-strict:
-	python3 scripts/audit_reproducibility.py --fail-on-warn
+check-manifests:
+	python3 scripts/core/check_manifests.py
+	python3 scripts/core/check_noncoordinate_comparators.py
+	python3 scripts/core/check_performance_cases.py
+	python3 scripts/core/check_screening_speed_cases.py
+	python3 scripts/core/check_thread_scaling_cases.py
+	python3 scripts/core/check_pair_screen_scaling_cases.py
+	python3 scripts/core/check_large_genome_cases.py
+	python3 scripts/core/check_matched_tool_timing_cases.py
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --allow-missing-enabled-inputs
+	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+	python3 scripts/core/check_artifacts.py
+
+check: check-manifests
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)
