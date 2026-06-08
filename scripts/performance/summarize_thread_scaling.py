@@ -32,6 +32,7 @@ SUMMARY_COLUMNS = [
     "wall_seconds_max",
     "wall_seconds_stdev",
     "speedup_vs_1_thread_median",
+    "speedup_vs_1_thread_stdev",
     "parallel_efficiency_vs_1_thread",
     "status",
     "notes",
@@ -208,6 +209,7 @@ def summarize_case(
         "wall_seconds_max": fmt_float(wall_max),
         "wall_seconds_stdev": fmt_float(wall_stdev),
         "speedup_vs_1_thread_median": "NA",
+        "speedup_vs_1_thread_stdev": "NA",
         "parallel_efficiency_vs_1_thread": "NA",
         "status": status,
         "notes": case["notes"],
@@ -256,6 +258,10 @@ def add_group_consistency_and_speedups(rows: list[dict[str, str]]) -> None:
             median = float(row["wall_seconds_median"])
             speedup = baseline_median / median
             row["speedup_vs_1_thread_median"] = fmt_float(speedup)
+            if row.get("wall_seconds_stdev", "NA") != "NA" and median > 0:
+                row["speedup_vs_1_thread_stdev"] = fmt_float(
+                    speedup * float(row["wall_seconds_stdev"]) / median
+                )
             row["parallel_efficiency_vs_1_thread"] = fmt_float(speedup / threads)
 
 

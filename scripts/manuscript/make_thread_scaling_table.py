@@ -21,7 +21,9 @@ TABLE_COLUMNS = [
     "successful_runs",
     "retained_fragments",
     "median_wall_seconds",
+    "wall_seconds_stdev",
     "speedup_vs_1_thread_median",
+    "speedup_vs_1_thread_stdev",
     "parallel_efficiency_vs_1_thread",
     "status",
     "claim_boundary",
@@ -100,7 +102,9 @@ def build_table_rows(
                 "successful_runs": row["successful_runs"],
                 "retained_fragments": row["retained_fragments"],
                 "median_wall_seconds": row["wall_seconds_median"],
+                "wall_seconds_stdev": row.get("wall_seconds_stdev", "NA"),
                 "speedup_vs_1_thread_median": row["speedup_vs_1_thread_median"],
+                "speedup_vs_1_thread_stdev": row.get("speedup_vs_1_thread_stdev", "NA"),
                 "parallel_efficiency_vs_1_thread": row[
                     "parallel_efficiency_vs_1_thread"
                 ],

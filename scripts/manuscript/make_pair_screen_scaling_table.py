@@ -25,10 +25,15 @@ TABLE_COLUMNS = [
     "runs",
     "successful_runs",
     "median_timed_phase_seconds",
+    "timed_phase_seconds_stdev",
     "median_total_seconds",
+    "total_seconds_stdev",
     "candidate_pairs_per_second_median",
+    "candidate_pairs_per_second_stdev",
     "pairs_per_second_score_phase_median",
+    "pairs_per_second_score_phase_stdev",
     "speedup_vs_1_job_median",
+    "speedup_vs_1_job_stdev",
     "job_scaling_efficiency_vs_1_job",
     "reported_pair_coverage",
     "status",
@@ -114,14 +119,23 @@ def build_table_rows(
                 "runs": row["configured_runs"],
                 "successful_runs": row["successful_runs"],
                 "median_timed_phase_seconds": row["wall_seconds_median"],
+                "timed_phase_seconds_stdev": row.get("wall_seconds_stdev", "NA"),
                 "median_total_seconds": row["total_seconds_median"],
+                "total_seconds_stdev": row.get("total_seconds_stdev", "NA"),
                 "candidate_pairs_per_second_median": row[
                     "candidate_pairs_per_second_median"
                 ],
+                "candidate_pairs_per_second_stdev": row.get(
+                    "candidate_pairs_per_second_stdev", "NA"
+                ),
                 "pairs_per_second_score_phase_median": row[
                     "pairs_per_second_score_phase_median"
                 ],
+                "pairs_per_second_score_phase_stdev": row.get(
+                    "pairs_per_second_score_phase_stdev", "NA"
+                ),
                 "speedup_vs_1_job_median": row["speedup_vs_1_job_median"],
+                "speedup_vs_1_job_stdev": row.get("speedup_vs_1_job_stdev", "NA"),
                 "job_scaling_efficiency_vs_1_job": row[
                     "job_scaling_efficiency_vs_1_job"
                 ],

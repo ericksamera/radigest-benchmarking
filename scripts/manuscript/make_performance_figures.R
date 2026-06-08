@@ -162,6 +162,48 @@ base_theme <- function(base_size = 9) {
 
 safe_numeric <- function(x) suppressWarnings(as.numeric(x))
 
+SD_CAPTION <- "Error bars show ±1 SD across successful replicate runs."
+
+optional_numeric <- function(df, column, default = NA_real_) {
+  if (column %in% names(df)) {
+    return(safe_numeric(df[[column]]))
+  }
+  rep(default, nrow(df))
+}
+
+clean_stdev <- function(x, default = 0) {
+  out <- x
+  out[!is.finite(out) | out < 0] <- default
+  out
+}
+
+coalesce_stdev <- function(primary, fallback) {
+  out <- primary
+  use_fallback <- !is.finite(out) | out < 0
+  out[use_fallback] <- fallback[use_fallback]
+  clean_stdev(out)
+}
+
+relative_stdev_from_denominator <- function(metric, denominator, denominator_stdev) {
+  out <- rep(NA_real_, length(metric))
+  ok <- is.finite(metric) & is.finite(denominator) & denominator > 0 &
+    is.finite(denominator_stdev)
+  out[ok] <- abs(metric[ok]) * pmax(denominator_stdev[ok], 0) / denominator[ok]
+  out
+}
+
+lower_with_floor <- function(center, stdev, floor = 0) {
+  pmax(floor, center - clean_stdev(stdev))
+}
+
+upper_with_stdev <- function(center, stdev) {
+  center + clean_stdev(stdev)
+}
+
+positive_log_lower <- function(center, stdev) {
+  pmax(center - clean_stdev(stdev), center / 10, .Machine$double.eps)
+}
+
 lookup_labels <- function(x, label_map, fallback = NULL) {
   x_chr <- as.character(x)
   out <- unname(label_map[x_chr])
@@ -334,17 +376,26 @@ plot_input_format <- function(path) {
     format_seconds(df$median_wall_seconds), " s\n",
     format_xfold(df$relative_to_fastest_median), " fastest"
   )
+  df$wall_seconds_stdev <- clean_stdev(optional_numeric(df, "wall_seconds_stdev", 0))
+  df$wall_ymin <- lower_with_floor(df$median_wall_seconds, df$wall_seconds_stdev)
+  df$wall_ymax <- upper_with_stdev(df$median_wall_seconds, df$wall_seconds_stdev)
 
   p <- ggplot(df, aes(x = input_format_label, y = median_wall_seconds, fill = input_format_label)) +
     geom_col(width = 0.62) +
-    geom_text(aes(label = value_label), vjust = -0.25, size = 2.8, lineheight = 0.9) +
+    geom_errorbar(
+      aes(ymin = wall_ymin, ymax = wall_ymax),
+      width = 0.18,
+      linewidth = 0.35,
+      color = SEABORN[["dark_gray"]]
+    ) +
+    geom_text(aes(y = wall_ymax, label = value_label), vjust = -0.25, size = 2.8, lineheight = 0.9) +
     facet_wrap(vars(benchmark), nrow = 1) +
     scale_fill_manual(
       values = c("Plain FASTA" = SEABORN[["blue"]], "gzip FASTA" = SEABORN[["orange"]]),
       drop = FALSE
     ) +
-    scale_y_continuous(labels = format_seconds, expand = expansion(mult = c(0, 0.22))) +
-    labs(x = NULL, y = "Median wall time (s)") +
+    scale_y_continuous(labels = format_seconds, expand = expansion(mult = c(0, 0.30))) +
+    labs(x = NULL, y = "Median wall time (s)", caption = SD_CAPTION) +
     base_theme() +
     theme(legend.position = "none")
   write_plot(p, "figure_06_input_format", width = 5.2, height = 3.4)
@@ -355,21 +406,47 @@ plot_screening_speed <- function(path) {
   if (is.null(df) || nrow(df) == 0) return(invisible(FALSE))
   require_columns(
     df,
-    c("dataset_id", "condition_id", "candidate_pairs_per_second_median"),
+    c("dataset_id", "condition_id", "median_wall_seconds", "candidate_pairs_per_second_median"),
     "screening-speed figure"
   )
   df <- df |>
     require_pass_rows("screening-speed figure") |>
-    mutate(candidate_pairs_per_second_median = safe_numeric(candidate_pairs_per_second_median))
+    mutate(
+      median_wall_seconds = safe_numeric(median_wall_seconds),
+      candidate_pairs_per_second_median = safe_numeric(candidate_pairs_per_second_median)
+    )
+  df$wall_seconds_stdev <- clean_stdev(optional_numeric(df, "wall_seconds_stdev", 0))
+  df$candidate_pairs_per_second_stdev <- coalesce_stdev(
+    optional_numeric(df, "candidate_pairs_per_second_stdev", NA_real_),
+    relative_stdev_from_denominator(
+      df$candidate_pairs_per_second_median,
+      df$median_wall_seconds,
+      df$wall_seconds_stdev
+    )
+  )
+  df$rate_xmin <- lower_with_floor(
+    df$candidate_pairs_per_second_median,
+    df$candidate_pairs_per_second_stdev
+  )
+  df$rate_xmax <- upper_with_stdev(
+    df$candidate_pairs_per_second_median,
+    df$candidate_pairs_per_second_stdev
+  )
   df$benchmark <- benchmark_factor(df, reverse = TRUE)
   df$value_label <- paste0(format_rate(df$candidate_pairs_per_second_median), " pairs/s")
 
   p <- ggplot(df, aes(x = candidate_pairs_per_second_median, y = benchmark)) +
     geom_col(width = 0.55, fill = SEABORN[["blue"]]) +
-    geom_text(aes(label = value_label), hjust = -0.12, size = 3.0) +
-    scale_x_continuous(labels = format_rate, expand = expansion(mult = c(0, 0.22))) +
+    geom_errorbarh(
+      aes(xmin = rate_xmin, xmax = rate_xmax),
+      height = 0.16,
+      linewidth = 0.35,
+      color = SEABORN[["dark_gray"]]
+    ) +
+    geom_text(aes(x = rate_xmax, label = value_label), hjust = -0.12, size = 3.0) +
+    scale_x_continuous(labels = format_rate, expand = expansion(mult = c(0, 0.30))) +
     coord_cartesian(clip = "off") +
-    labs(x = "Median candidate pairs per second", y = NULL) +
+    labs(x = "Median candidate pairs per second", y = NULL, caption = SD_CAPTION) +
     base_theme() +
     theme(panel.grid.major.y = element_blank())
   write_plot(p, "figure_05_screening_speed", width = 6.2, height = 2.7)
@@ -380,23 +457,41 @@ plot_thread_scaling <- function(path) {
   if (is.null(df) || nrow(df) == 0) return(invisible(FALSE))
   require_columns(
     df,
-    c("dataset_id", "condition_id", "output_mode", "threads", "speedup_vs_1_thread_median"),
+    c("dataset_id", "condition_id", "output_mode", "threads", "median_wall_seconds", "speedup_vs_1_thread_median"),
     "thread-scaling figure"
   )
   df <- df |>
     require_pass_rows("thread-scaling figure") |>
     mutate(
       threads = safe_numeric(threads),
+      median_wall_seconds = safe_numeric(median_wall_seconds),
       speedup_vs_1_thread_median = safe_numeric(speedup_vs_1_thread_median)
     )
+  df$wall_seconds_stdev <- clean_stdev(optional_numeric(df, "wall_seconds_stdev", 0))
+  df$speedup_vs_1_thread_stdev <- coalesce_stdev(
+    optional_numeric(df, "speedup_vs_1_thread_stdev", NA_real_),
+    relative_stdev_from_denominator(
+      df$speedup_vs_1_thread_median,
+      df$median_wall_seconds,
+      df$wall_seconds_stdev
+    )
+  )
+  df$speedup_ymin <- lower_with_floor(
+    df$speedup_vs_1_thread_median,
+    df$speedup_vs_1_thread_stdev
+  )
+  df$speedup_ymax <- upper_with_stdev(
+    df$speedup_vs_1_thread_median,
+    df$speedup_vs_1_thread_stdev
+  )
   df$benchmark <- benchmark_factor(df)
   df$output_mode_label <- factor(
     label_output_mode(df$output_mode),
     levels = c("JSON summary", "Fragment TSV")
   )
 
-  y_min <- min(0.95, min(df$speedup_vs_1_thread_median, na.rm = TRUE) * 0.98)
-  y_max <- max(1.05, max(df$speedup_vs_1_thread_median, na.rm = TRUE) * 1.06)
+  y_min <- min(0.95, min(df$speedup_ymin, na.rm = TRUE) * 0.98)
+  y_max <- max(1.05, max(df$speedup_ymax, na.rm = TRUE) * 1.06)
 
   p <- ggplot(
     df,
@@ -409,6 +504,7 @@ plot_thread_scaling <- function(path) {
   ) +
     geom_hline(yintercept = 1, linetype = "dashed", color = SEABORN[["gray"]], linewidth = 0.35) +
     geom_line(linewidth = 0.7) +
+    geom_errorbar(aes(ymin = speedup_ymin, ymax = speedup_ymax), width = 0.08, linewidth = 0.35) +
     geom_point(size = 2.3) +
     facet_wrap(vars(benchmark), nrow = 1) +
     scale_color_manual(
@@ -418,7 +514,7 @@ plot_thread_scaling <- function(path) {
     scale_x_continuous(breaks = sort(unique(df$threads))) +
     scale_y_continuous(labels = label_number(accuracy = 0.01, suffix = "x")) +
     coord_cartesian(ylim = c(y_min, y_max)) +
-    labs(x = "Threads", y = "Median speedup vs. 1 thread") +
+    labs(x = "Threads", y = "Median speedup vs. 1 thread", caption = SD_CAPTION) +
     base_theme()
   write_plot(p, "figure_s02_thread_scaling", width = 7.0, height = 3.8)
 }
@@ -428,32 +524,58 @@ plot_pair_screen_scaling <- function(path) {
   if (is.null(df) || nrow(df) == 0) return(invisible(FALSE))
   require_columns(
     df,
-    c("dataset_id", "condition_id", "jobs", "timed_phase", "speedup_vs_1_job_median"),
+    c("dataset_id", "condition_id", "jobs", "timed_phase", "median_timed_phase_seconds", "speedup_vs_1_job_median"),
     "pair-screen scaling figure"
   )
   df <- df |>
     require_pass_rows("pair-screen scaling figure") |>
     mutate(
       jobs = safe_numeric(jobs),
+      median_timed_phase_seconds = safe_numeric(median_timed_phase_seconds),
       speedup_vs_1_job_median = safe_numeric(speedup_vs_1_job_median)
     )
+  df$timed_phase_seconds_stdev <- clean_stdev(optional_numeric(df, "timed_phase_seconds_stdev", 0))
+  df$speedup_vs_1_job_stdev <- coalesce_stdev(
+    optional_numeric(df, "speedup_vs_1_job_stdev", NA_real_),
+    relative_stdev_from_denominator(
+      df$speedup_vs_1_job_median,
+      df$median_timed_phase_seconds,
+      df$timed_phase_seconds_stdev
+    )
+  )
   df$benchmark <- benchmark_factor(df)
 
   observed <- df |>
-    transmute(benchmark, jobs, speedup = speedup_vs_1_job_median, series = "Observed")
+    transmute(
+      benchmark,
+      jobs,
+      speedup = speedup_vs_1_job_median,
+      speedup_stdev = speedup_vs_1_job_stdev,
+      speedup_ymin = lower_with_floor(speedup_vs_1_job_median, speedup_vs_1_job_stdev),
+      speedup_ymax = upper_with_stdev(speedup_vs_1_job_median, speedup_vs_1_job_stdev),
+      series = "Observed"
+    )
   ideal <- df |>
     distinct(benchmark, jobs) |>
     transmute(benchmark, jobs, speedup = jobs, series = "Ideal linear")
   plot_df <- bind_rows(observed, ideal) |>
     mutate(series = factor(series, levels = c("Observed", "Ideal linear")))
 
-  min_speedup <- min(plot_df$speedup, na.rm = TRUE)
-  max_speedup <- max(plot_df$speedup, na.rm = TRUE)
+  min_speedup <- min(c(plot_df$speedup, observed$speedup_ymin), na.rm = TRUE)
+  max_speedup <- max(c(plot_df$speedup, observed$speedup_ymax), na.rm = TRUE)
   y_min <- min(0.95, min_speedup * 0.98)
   y_max <- if (max_speedup <= 1) 1.05 else max_speedup * 1.03
 
   p <- ggplot(plot_df, aes(x = jobs, y = speedup, color = series, linetype = series, group = series)) +
     geom_line(linewidth = 0.75) +
+    geom_errorbar(
+      data = observed,
+      aes(x = jobs, ymin = speedup_ymin, ymax = speedup_ymax),
+      width = 0.10,
+      linewidth = 0.35,
+      inherit.aes = FALSE,
+      color = SEABORN[["blue"]]
+    ) +
     geom_point(data = observed, aes(x = jobs, y = speedup), size = 2.4, inherit.aes = FALSE, color = SEABORN[["blue"]]) +
     facet_wrap(vars(benchmark), nrow = 1) +
     scale_color_manual(values = c("Observed" = SEABORN[["blue"]], "Ideal linear" = SEABORN[["orange"]])) +
@@ -465,7 +587,7 @@ plot_pair_screen_scaling <- function(path) {
       limits = c(y_min, y_max),
       expand = expansion(mult = c(0.02, 0.05))
     ) +
-    labs(x = "Pair-scoring jobs", y = "Median score-pair speedup vs. 1 job") +
+    labs(x = "Pair-scoring jobs", y = "Median score-pair speedup vs. 1 job", caption = SD_CAPTION) +
     base_theme()
   write_plot(p, "figure_s03_pair_screen_job_scaling", width = 6.6, height = 3.8)
 }
@@ -481,6 +603,9 @@ plot_large_genome <- function(path) {
   df <- df |>
     require_pass_rows("large-genome figure") |>
     mutate(median_wall_seconds = safe_numeric(median_wall_seconds))
+  df$wall_seconds_stdev <- clean_stdev(optional_numeric(df, "wall_seconds_stdev", 0))
+  df$wall_xmin <- lower_with_floor(df$median_wall_seconds, df$wall_seconds_stdev)
+  df$wall_xmax <- upper_with_stdev(df$median_wall_seconds, df$wall_seconds_stdev)
   df$benchmark <- benchmark_factor(df, reverse = TRUE)
   df$output_mode_label <- factor(
     label_output_mode(df$output_mode),
@@ -490,14 +615,20 @@ plot_large_genome <- function(path) {
 
   p <- ggplot(df, aes(x = median_wall_seconds, y = benchmark, fill = output_mode_label)) +
     geom_col(width = 0.55) +
-    geom_text(aes(label = value_label), hjust = -0.12, size = 3.0) +
+    geom_errorbarh(
+      aes(xmin = wall_xmin, xmax = wall_xmax),
+      height = 0.16,
+      linewidth = 0.35,
+      color = SEABORN[["dark_gray"]]
+    ) +
+    geom_text(aes(x = wall_xmax, label = value_label), hjust = -0.12, size = 3.0) +
     scale_fill_manual(
       values = c("JSON summary" = SEABORN[["blue"]], "Fragment TSV" = SEABORN[["orange"]]),
       drop = FALSE
     ) +
-    scale_x_continuous(labels = format_seconds, expand = expansion(mult = c(0, 0.18))) +
+    scale_x_continuous(labels = format_seconds, expand = expansion(mult = c(0, 0.26))) +
     coord_cartesian(clip = "off") +
-    labs(x = "Median wall time (s)", y = NULL) +
+    labs(x = "Median wall time (s)", y = NULL, caption = SD_CAPTION) +
     base_theme() +
     theme(panel.grid.major.y = element_blank())
   if (n_distinct(df$output_mode_label) == 1) {
@@ -523,10 +654,17 @@ plot_matched_timing <- function(path) {
         if_else(tool_id == "radigest", "radigest", "Comparator"),
         levels = c("radigest", "Comparator")
       ),
-      relative_label = if_else(tool_id == "radigest", "1x", format_xfold(relative_to_radigest_median)),
-      label_x = median_wall_seconds * if_else(tool_id == "radigest", 1.22, 1.18)
+      relative_label = if_else(tool_id == "radigest", "1x", format_xfold(relative_to_radigest_median))
     ) |>
     require_positive("median_wall_seconds", "matched-tool timing figure")
+  df$wall_seconds_stdev <- clean_stdev(optional_numeric(df, "wall_seconds_stdev", 0))
+  df$wall_xmin <- positive_log_lower(df$median_wall_seconds, df$wall_seconds_stdev)
+  df$wall_xmax <- upper_with_stdev(df$median_wall_seconds, df$wall_seconds_stdev)
+  df$label_x <- pmax(df$wall_xmax, df$median_wall_seconds) * if_else(
+    df$tool_id == "radigest",
+    1.22,
+    1.18
+  )
   df$benchmark <- benchmark_factor(df)
   tool_levels <- df |>
     transmute(tool_label = label_tool(df), tool_rank = rank_with_fallback(tool_id, TOOL_ORDER)) |>
@@ -536,6 +674,7 @@ plot_matched_timing <- function(path) {
   df$tool_label <- factor(label_tool(df), levels = rev(tool_levels))
 
   p <- ggplot(df, aes(x = median_wall_seconds, y = tool_label, color = tool_group)) +
+    geom_errorbarh(aes(xmin = wall_xmin, xmax = wall_xmax), height = 0.16, linewidth = 0.35) +
     geom_point(size = 2.6) +
     geom_text(
       aes(x = label_x, label = relative_label),
@@ -552,10 +691,10 @@ plot_matched_timing <- function(path) {
     scale_x_log10(
       breaks = breaks_log(n = 6),
       labels = format_seconds,
-      expand = expansion(mult = c(0.02, 0.30))
+      expand = expansion(mult = c(0.02, 0.36))
     ) +
     coord_cartesian(clip = "off") +
-    labs(x = "Median wall time (s, log scale)", y = NULL) +
+    labs(x = "Median wall time (s, log scale)", y = NULL, caption = SD_CAPTION) +
     base_theme() +
     theme(panel.grid.major.y = element_blank())
   matched_height <- max(5.2, 2.35 * n_distinct(df$benchmark) + 0.65)

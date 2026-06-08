@@ -43,10 +43,15 @@ SUMMARY_COLUMNS = [
     "wall_seconds_max",
     "wall_seconds_stdev",
     "score_pairs_seconds_median",
+    "score_pairs_seconds_stdev",
     "total_seconds_median",
+    "total_seconds_stdev",
     "candidate_pairs_per_second_median",
+    "candidate_pairs_per_second_stdev",
     "pairs_per_second_score_phase_median",
+    "pairs_per_second_score_phase_stdev",
     "speedup_vs_1_job_median",
+    "speedup_vs_1_job_stdev",
     "job_scaling_efficiency_vs_1_job",
     "status",
     "notes",
@@ -168,6 +173,12 @@ def median_or_none(values: list[float]) -> float | None:
     if not values:
         return None
     return statistics.median(values)
+
+
+def stdev_or_none(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return statistics.stdev(values) if len(values) > 1 else 0.0
 
 
 def summarize_case(
@@ -294,6 +305,7 @@ def summarize_case(
     wall_max: float | None = None
     wall_stdev: float | None = None
     pairs_per_second: float | None = None
+    pairs_per_second_stdev: float | None = None
 
     if durations:
         wall_min = min(durations)
@@ -303,6 +315,10 @@ def summarize_case(
         wall_stdev = statistics.stdev(durations) if len(durations) > 1 else 0.0
         if evaluated_unique and len(evaluated_unique) == 1 and wall_median > 0:
             pairs_per_second = evaluated_unique[0] / wall_median
+            rate_values = [
+                evaluated_unique[0] / value for value in durations if value > 0
+            ]
+            pairs_per_second_stdev = stdev_or_none(rate_values)
 
     status = "PASS"
     if len(run_rows) != configured_runs:
@@ -360,12 +376,19 @@ def summarize_case(
         "wall_seconds_max": fmt_float(wall_max),
         "wall_seconds_stdev": fmt_float(wall_stdev),
         "score_pairs_seconds_median": fmt_float(median_or_none(score_pair_durations)),
+        "score_pairs_seconds_stdev": fmt_float(stdev_or_none(score_pair_durations)),
         "total_seconds_median": fmt_float(median_or_none(total_durations)),
+        "total_seconds_stdev": fmt_float(stdev_or_none(total_durations)),
         "candidate_pairs_per_second_median": fmt_float(pairs_per_second),
+        "candidate_pairs_per_second_stdev": fmt_float(pairs_per_second_stdev),
         "pairs_per_second_score_phase_median": fmt_float(
             median_or_none(score_phase_rates)
         ),
+        "pairs_per_second_score_phase_stdev": fmt_float(
+            stdev_or_none(score_phase_rates)
+        ),
         "speedup_vs_1_job_median": "NA",
+        "speedup_vs_1_job_stdev": "NA",
         "job_scaling_efficiency_vs_1_job": "NA",
         "status": status,
         "notes": case["notes"],
@@ -424,6 +447,10 @@ def add_group_consistency_and_speedups(rows: list[dict[str, str]]) -> None:
             median = float(row["wall_seconds_median"])
             speedup = baseline_median / median
             row["speedup_vs_1_job_median"] = fmt_float(speedup)
+            if row.get("wall_seconds_stdev", "NA") != "NA" and median > 0:
+                row["speedup_vs_1_job_stdev"] = fmt_float(
+                    speedup * float(row["wall_seconds_stdev"]) / median
+                )
             row["job_scaling_efficiency_vs_1_job"] = fmt_float(speedup / jobs)
 
 

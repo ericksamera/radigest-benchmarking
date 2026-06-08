@@ -24,6 +24,7 @@ TABLE_COLUMNS = [
     "retained_fragments",
     "median_wall_seconds",
     "mean_wall_seconds",
+    "wall_seconds_stdev",
     "status",
     "claim_boundary",
 ]
@@ -99,6 +100,7 @@ def table_row(
         "retained_fragments": row["retained_fragments"],
         "median_wall_seconds": row["wall_seconds_median"],
         "mean_wall_seconds": row["wall_seconds_mean"],
+        "wall_seconds_stdev": row.get("wall_seconds_stdev", "NA"),
         "status": row["status"],
         "claim_boundary": CLAIM_BOUNDARY,
     }

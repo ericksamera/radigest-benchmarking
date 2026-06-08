@@ -40,6 +40,7 @@ SUMMARY_COLUMNS = [
     "wall_seconds_max",
     "wall_seconds_stdev",
     "candidate_pairs_per_second_median",
+    "candidate_pairs_per_second_stdev",
     "status",
     "notes",
 ]
@@ -208,6 +209,7 @@ def summarize_case(
     wall_max: float | None = None
     wall_stdev: float | None = None
     pairs_per_second: float | None = None
+    pairs_per_second_stdev: float | None = None
     if durations:
         wall_min = min(durations)
         wall_median = statistics.median(durations)
@@ -215,6 +217,12 @@ def summarize_case(
         wall_max = max(durations)
         wall_stdev = statistics.stdev(durations) if len(durations) > 1 else 0.0
         pairs_per_second = evaluated_value / wall_median if wall_median > 0 else None
+        rate_values = [evaluated_value / value for value in durations if value > 0]
+        pairs_per_second_stdev = (
+            statistics.stdev(rate_values)
+            if len(rate_values) > 1
+            else 0.0 if rate_values else None
+        )
 
     status = "PASS"
     notes = case["notes"]
@@ -270,6 +278,7 @@ def summarize_case(
         "wall_seconds_max": fmt_float(wall_max),
         "wall_seconds_stdev": fmt_float(wall_stdev),
         "candidate_pairs_per_second_median": fmt_float(pairs_per_second),
+        "candidate_pairs_per_second_stdev": fmt_float(pairs_per_second_stdev),
         "status": status,
         "notes": notes,
     }

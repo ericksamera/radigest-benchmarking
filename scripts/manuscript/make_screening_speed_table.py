@@ -21,7 +21,9 @@ OUTPUT_COLUMNS = [
     "build_workers",
     "runs",
     "median_wall_seconds",
+    "wall_seconds_stdev",
     "candidate_pairs_per_second_median",
+    "candidate_pairs_per_second_stdev",
     "reported_pair_consistency",
     "reported_pair_coverage",
     "status",
@@ -92,9 +94,13 @@ def make_rows(summary_rows: list[dict[str, str]]) -> list[dict[str, str]]:
                 "build_workers": row["build_workers"],
                 "runs": row["configured_runs"],
                 "median_wall_seconds": row["wall_seconds_median"],
+                "wall_seconds_stdev": row.get("wall_seconds_stdev", "NA"),
                 "candidate_pairs_per_second_median": row[
                     "candidate_pairs_per_second_median"
                 ],
+                "candidate_pairs_per_second_stdev": row.get(
+                    "candidate_pairs_per_second_stdev", "NA"
+                ),
                 "reported_pair_consistency": row["reported_pair_consistency"],
                 "reported_pair_coverage": row["reported_pair_coverage"],
                 "status": row["status"],
