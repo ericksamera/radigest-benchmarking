@@ -18,48 +18,50 @@ AUDIT_OUTPUTS = [
 
 rule build_artifact_status:
     input:
-        artifacts="config/artifacts.tsv"
+        artifacts="config/artifacts.tsv",
     output:
-        status=AUDIT_ARTIFACT_STATUS
+        status=AUDIT_ARTIFACT_STATUS,
     log:
-        "benchmark/logs/audit/artifact_status.log"
+        "benchmark/logs/audit/artifact_status.log",
     conda:
         "../envs/benchmark.yml"
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/build_artifact_status.py \
-          --artifacts {input.artifacts:q} \
-          --out {output.status:q} \
-          --root . \
-          > {log:q} 2>&1
+            --artifacts {input.artifacts:q} \
+            --out {output.status:q} \
+            --root . \
+            >{log:q} 2>&1
         """
 
 
 rule build_claim_audit:
     input:
-        status=AUDIT_ARTIFACT_STATUS
+        status=AUDIT_ARTIFACT_STATUS,
     output:
-        audit=AUDIT_CLAIM_AUDIT
+        audit=AUDIT_CLAIM_AUDIT,
     log:
-        "benchmark/logs/audit/claim_audit.log"
+        "benchmark/logs/audit/claim_audit.log",
     conda:
         "../envs/benchmark.yml"
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/build_claim_audit.py \
-          --artifact-status {input.status:q} \
-          --out {output.audit:q} \
-          > {log:q} 2>&1
+            --artifact-status {input.status:q} \
+            --out {output.audit:q} \
+            >{log:q} 2>&1
         """
 
 
 rule build_environment_table:
     output:
-        table=AUDIT_ENVIRONMENT_TABLE
+        table=AUDIT_ENVIRONMENT_TABLE,
     log:
-        "benchmark/logs/audit/environment.log"
+        "benchmark/logs/audit/environment.log",
+    conda:
+        "../envs/benchmark.yml"
     params:
         radigest=lambda wildcards: config.get("radigest", "radigest"),
         screen_pairs_cached=lambda wildcards: config.get(
@@ -68,20 +70,20 @@ rule build_environment_table:
         bench_screen_cached=lambda wildcards: config.get(
             "radigest_bench_screen_cached", "auto"
         ),
-        radigest_design=lambda wildcards: config.get("radigest_design", "radigest-design")
-    conda:
-        "../envs/benchmark.yml"
+        radigest_design=lambda wildcards: config.get(
+            "radigest_design", "radigest-design"
+        ),
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/build_environment_table.py \
-          --out {output.table:q} \
-          --root . \
-          --radigest {params.radigest:q} \
-          --radigest-screen-pairs-cached {params.screen_pairs_cached:q} \
-          --radigest-bench-screen-cached {params.bench_screen_cached:q} \
-          --radigest-design {params.radigest_design:q} \
-          > {log:q} 2>&1
+            --out {output.table:q} \
+            --root . \
+            --radigest {params.radigest:q} \
+            --radigest-screen-pairs-cached {params.screen_pairs_cached:q} \
+            --radigest-bench-screen-cached {params.bench_screen_cached:q} \
+            --radigest-design {params.radigest_design:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -89,23 +91,23 @@ rule build_output_index:
     input:
         status=AUDIT_ARTIFACT_STATUS,
         audit=AUDIT_CLAIM_AUDIT,
-        environment=AUDIT_ENVIRONMENT_TABLE
+        environment=AUDIT_ENVIRONMENT_TABLE,
     output:
-        index=AUDIT_OUTPUT_INDEX
+        index=AUDIT_OUTPUT_INDEX,
     log:
-        "benchmark/logs/audit/output_index.log"
+        "benchmark/logs/audit/output_index.log",
     conda:
         "../envs/benchmark.yml"
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/build_output_index.py \
-          --artifact-status {input.status:q} \
-          --claim-audit {input.audit:q} \
-          --environment {input.environment:q} \
-          --out {output.index:q} \
-          --root . \
-          > {log:q} 2>&1
+            --artifact-status {input.status:q} \
+            --claim-audit {input.audit:q} \
+            --environment {input.environment:q} \
+            --out {output.index:q} \
+            --root . \
+            >{log:q} 2>&1
         """
 
 
@@ -114,23 +116,23 @@ rule build_release_checklist:
         audit=AUDIT_CLAIM_AUDIT,
         status=AUDIT_ARTIFACT_STATUS,
         environment=AUDIT_ENVIRONMENT_TABLE,
-        output_index=AUDIT_OUTPUT_INDEX
+        output_index=AUDIT_OUTPUT_INDEX,
     output:
-        checklist=AUDIT_RELEASE_CHECKLIST
+        checklist=AUDIT_RELEASE_CHECKLIST,
     log:
-        "benchmark/logs/audit/release_checklist.log"
+        "benchmark/logs/audit/release_checklist.log",
     conda:
         "../envs/benchmark.yml"
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/build_release_checklist.py \
-          --claim-audit {input.audit:q} \
-          --artifact-status {input.status:q} \
-          --environment {input.environment:q} \
-          --output-index {input.output_index:q} \
-          --out {output.checklist:q} \
-          > {log:q} 2>&1
+            --claim-audit {input.audit:q} \
+            --artifact-status {input.status:q} \
+            --environment {input.environment:q} \
+            --output-index {input.output_index:q} \
+            --out {output.checklist:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -140,19 +142,19 @@ rule audit_release_gate:
         status=AUDIT_ARTIFACT_STATUS,
         environment=AUDIT_ENVIRONMENT_TABLE,
         output_index=AUDIT_OUTPUT_INDEX,
-        checklist=AUDIT_RELEASE_CHECKLIST
+        checklist=AUDIT_RELEASE_CHECKLIST,
     output:
-        gate=AUDIT_RELEASE_GATE
+        gate=AUDIT_RELEASE_GATE,
     log:
-        "benchmark/logs/audit/release_gate.log"
+        "benchmark/logs/audit/release_gate.log",
     conda:
         "../envs/benchmark.yml"
     shell:
         r"""
         mkdir -p results/manuscript/tables benchmark/logs/audit
         python3 scripts/audit/check_audit_release.py \
-          --claim-audit {input.audit:q} \
-          --release-checklist {input.checklist:q} \
-          --out {output.gate:q} \
-          > {log:q} 2>&1
+            --claim-audit {input.audit:q} \
+            --release-checklist {input.checklist:q} \
+            --out {output.gate:q} \
+            >{log:q} 2>&1
         """

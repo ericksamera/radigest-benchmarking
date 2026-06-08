@@ -9,12 +9,21 @@ import csv
 import re
 from pathlib import Path
 
-EMPIRICAL_LIBRARY_MANIFEST = config.get("empirical_libraries", "config/empirical_libraries.tsv")
+EMPIRICAL_LIBRARY_MANIFEST = config.get(
+    "empirical_libraries", "config/empirical_libraries.tsv"
+)
 EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
-EMPIRICAL_DEPTH_VALIDATION_CASES = config.get("empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv")
-EMPIRICAL_DEPTH_VALIDATION_TABLE = "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
-EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE = "results/manuscript/figures/figure_07_empirical_depth_validation.pdf"
+EMPIRICAL_DEPTH_VALIDATION_CASES = config.get(
+    "empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv"
+)
+EMPIRICAL_DEPTH_VALIDATION_TABLE = (
+    "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
+)
+EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE = (
+    "results/manuscript/figures/figure_07_empirical_depth_validation.pdf"
+)
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
+
 
 # Keep pooled library outputs from matching nested per-BAM paths such as
 # results/empirical/<library_id>/bams/<bam_id>/tlens.txt.
@@ -22,7 +31,7 @@ wildcard_constraints:
     library_id=r"[^/]+",
     bam_id=r"[^/]+",
     run_accession=r"SRR[0-9]+",
-    prediction_mode=r"raw|hard"
+    prediction_mode=r"raw|hard",
 
 
 def _read_tsv_rows(path):
@@ -57,7 +66,9 @@ EMPIRICAL_ENABLED_ROWS = [
 EMPIRICAL_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_LIBRARY_ROWS]
 EMPIRICAL_ENABLED_LIBRARY_IDS = [row["library_id"] for row in EMPIRICAL_ENABLED_ROWS]
 EMPIRICAL_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_LIBRARY_ROWS}
-EMPIRICAL_ENABLED_ROWS_BY_ID = {row["library_id"]: row for row in EMPIRICAL_ENABLED_ROWS}
+EMPIRICAL_ENABLED_ROWS_BY_ID = {
+    row["library_id"]: row for row in EMPIRICAL_ENABLED_ROWS
+}
 
 EMPIRICAL_DEPTH_VALIDATION_ROWS = [
     row
@@ -68,16 +79,15 @@ EMPIRICAL_DEPTH_VALIDATION_ROWS = [
     row
     for row in EMPIRICAL_DEPTH_VALIDATION_ROWS
     if row["library_id"] in EMPIRICAL_ROWS_BY_ID
-    and EMPIRICAL_ROWS_BY_ID[row["library_id"]].get("enabled", "false").strip().lower() == "true"
+    and EMPIRICAL_ROWS_BY_ID[row["library_id"]].get("enabled", "false").strip().lower()
+    == "true"
 ]
 EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY = {
     row["library_id"]: row for row in EMPIRICAL_DEPTH_VALIDATION_ROWS
 }
 EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS = sorted(EMPIRICAL_DEPTH_VALIDATION_BY_LIBRARY)
 EMPIRICAL_DEPTH_VALIDATION_TABLES = (
-    [EMPIRICAL_DEPTH_VALIDATION_TABLE]
-    if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
-    else []
+    [EMPIRICAL_DEPTH_VALIDATION_TABLE] if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS else []
 )
 
 EMPIRICAL_SRA_RUN_ROWS = []
@@ -176,6 +186,7 @@ def _empirical_bam_sample_rows():
                 sample_row["sra_run_accession"] = sra_row["run_accession"]
                 rows.append(sample_row)
     return rows
+
 
 EMPIRICAL_BAM_SAMPLE_ROWS = _empirical_bam_sample_rows()
 EMPIRICAL_BAM_SAMPLE_BY_KEY = {
@@ -354,7 +365,9 @@ def _empirical_depth_read_budget(wildcards):
         return ["--flowcell-read-pairs", row["flowcell_read_pairs"]]
     if row.get("lane_read_pairs", "NA") not in {"", "NA"}:
         return ["--lane-read-pairs", row["lane_read_pairs"], "--lanes", row["lanes"]]
-    raise ValueError(f"depth-validation case {wildcards.library_id!r} has no read budget")
+    raise ValueError(
+        f"depth-validation case {wildcards.library_id!r} has no read budget"
+    )
 
 
 def _empirical_reference_path(wildcards):
@@ -371,6 +384,7 @@ def _empirical_bam_paths(wildcards):
     if row.get("source_type") == "local_bam_dir":
         return [str(path) for path in _matching_bam_paths(row)]
     return []
+
 
 def _empirical_bam_sample_row(wildcards):
     key = (wildcards.library_id, wildcards.bam_id)
@@ -489,37 +503,37 @@ def _empirical_prediction_max(wildcards):
 
 rule empirical_manifest_all:
     input:
-        EMPIRICAL_LIBRARY_MANIFEST
+        EMPIRICAL_LIBRARY_MANIFEST,
 
 
 rule empirical_references_all:
     input:
-        EMPIRICAL_REFERENCE_OUTPUTS
+        EMPIRICAL_REFERENCE_OUTPUTS,
 
 
 rule empirical_bam_manifests_all:
     input:
-        EMPIRICAL_BAM_MANIFESTS
+        EMPIRICAL_BAM_MANIFESTS,
 
 
 rule empirical_tlens_all:
     input:
-        EMPIRICAL_BAM_MANIFESTS + EMPIRICAL_TLEN_OUTPUTS
+        EMPIRICAL_BAM_MANIFESTS + EMPIRICAL_TLEN_OUTPUTS,
 
 
 rule empirical_sra_fastqs_all:
     input:
-        EMPIRICAL_SRA_FASTQ_OUTPUTS
+        EMPIRICAL_SRA_FASTQ_OUTPUTS,
 
 
 rule empirical_sra_bams_all:
     input:
-        EMPIRICAL_SRA_BAM_OUTPUTS
+        EMPIRICAL_SRA_BAM_OUTPUTS,
 
 
 rule empirical_predictions_all:
     input:
-        EMPIRICAL_PREDICTION_OUTPUTS
+        EMPIRICAL_PREDICTION_OUTPUTS,
 
 
 rule empirical_depth_validation_all:
@@ -527,98 +541,98 @@ rule empirical_depth_validation_all:
         EMPIRICAL_DEPTH_VALIDATION_OUTPUTS
         + EMPIRICAL_DEPTH_VALIDATION_TABLES
         + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
-        + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS
+        + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS,
 
 
 rule empirical_curves_all:
     input:
-        EMPIRICAL_CURVE_OUTPUTS
+        EMPIRICAL_CURVE_OUTPUTS,
 
 
 rule empirical_figures_all:
     input:
-        EMPIRICAL_FIGURE_OUTPUTS
+        EMPIRICAL_FIGURE_OUTPUTS,
 
 
 rule empirical_model_grid_all:
     input:
-        EMPIRICAL_MODEL_GRID_OUTPUTS
+        EMPIRICAL_MODEL_GRID_OUTPUTS,
 
 
 rule empirical_model_fit_ranking_all:
     input:
-        EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
+        EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS,
 
 
 rule empirical_all:
     input:
-        EMPIRICAL_ALL_OUTPUTS
+        EMPIRICAL_ALL_OUTPUTS,
 
 
 rule empirical_sra_fastq:
     output:
         r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
-        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
-    params:
-        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
-    threads: 4
+        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz",
     log:
-        "benchmark/logs/empirical/{library_id}.{run_accession}.fasterq_dump.log"
+        "benchmark/logs/empirical/{library_id}.{run_accession}.fasterq_dump.log",
     conda:
         "../envs/sra-align.yml"
+    threads: 4
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"],
     shell:
         r"""
         mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/fastq
         tmpdir="$(mktemp -d)"
         trap 'rm -rf "$tmpdir"' EXIT
-        fasterq-dump {params.sra_run:q}           --split-files           --threads {threads}           --outdir "$tmpdir"           > {log:q} 2>&1
+        fasterq-dump {params.sra_run:q} --split-files --threads {threads} --outdir "$tmpdir" >{log:q} 2>&1
         test -s "$tmpdir/{params.sra_run}_1.fastq"
         test -s "$tmpdir/{params.sra_run}_2.fastq"
-        gzip -c "$tmpdir/{params.sra_run}_1.fastq" > {output.r1:q}
-        gzip -c "$tmpdir/{params.sra_run}_2.fastq" > {output.r2:q}
+        gzip -c "$tmpdir/{params.sra_run}_1.fastq" >{output.r1:q}
+        gzip -c "$tmpdir/{params.sra_run}_2.fastq" >{output.r2:q}
         """
 
 
 rule empirical_fastp_trim:
     input:
         r1="data/empirical/{library_id}/fastq/{run_accession}_1.fastq.gz",
-        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz"
-    params:
-        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
+        r2="data/empirical/{library_id}/fastq/{run_accession}_2.fastq.gz",
     output:
         r1="data/empirical/{library_id}/trimmed/{run_accession}_1.trimmed.fastq.gz",
         r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
         html="results/empirical/{library_id}/fastp/{run_accession}.html",
-        json="results/empirical/{library_id}/fastp/{run_accession}.json"
-    threads: 4
+        json="results/empirical/{library_id}/fastp/{run_accession}.json",
     log:
-        "benchmark/logs/empirical/{library_id}.{run_accession}.fastp.log"
+        "benchmark/logs/empirical/{library_id}.{run_accession}.fastp.log",
     conda:
         "../envs/sra-align.yml"
+    threads: 4
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"],
     shell:
         r"""
-        mkdir -p benchmark/logs/empirical           data/empirical/{wildcards.library_id}/trimmed           results/empirical/{wildcards.library_id}/fastp
-        fastp           --in1 {input.r1:q}           --in2 {input.r2:q}           --out1 {output.r1:q}           --out2 {output.r2:q}           --html {output.html:q}           --json {output.json:q}           --thread {threads}           > {log:q} 2>&1
+        mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/trimmed results/empirical/{wildcards.library_id}/fastp
+        fastp --in1 {input.r1:q} --in2 {input.r2:q} --out1 {output.r1:q} --out2 {output.r2:q} --html {output.html:q} --json {output.json:q} --thread {threads} >{log:q} 2>&1
         """
 
 
 rule empirical_bwa_index:
     input:
-        reference="data/reference/{reference_id}.fa"
+        reference="data/reference/{reference_id}.fa",
     output:
         amb="data/reference/{reference_id}.fa.amb",
         ann="data/reference/{reference_id}.fa.ann",
         bwt="data/reference/{reference_id}.fa.bwt",
         pac="data/reference/{reference_id}.fa.pac",
-        sa="data/reference/{reference_id}.fa.sa"
+        sa="data/reference/{reference_id}.fa.sa",
     log:
-        "benchmark/logs/empirical/{reference_id}.bwa_index.log"
+        "benchmark/logs/empirical/{reference_id}.bwa_index.log",
     conda:
         "../envs/sra-align.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical
-        bwa index {input.reference:q} > {log:q} 2>&1
+        bwa index {input.reference:q} >{log:q} 2>&1
         """
 
 
@@ -626,22 +640,24 @@ rule empirical_align_sra_bam:
     input:
         r1="data/empirical/{library_id}/trimmed/{run_accession}_1.trimmed.fastq.gz",
         r2="data/empirical/{library_id}/trimmed/{run_accession}_2.trimmed.fastq.gz",
-        reference=lambda wildcards: EMPIRICAL_ROWS_BY_ID[wildcards.library_id]["reference_path"],
-        index=_empirical_bwa_index_files
-    params:
-        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"]
+        reference=lambda wildcards: EMPIRICAL_ROWS_BY_ID[wildcards.library_id][
+            "reference_path"
+        ],
+        index=_empirical_bwa_index_files,
     output:
         bam="data/empirical/{library_id}/bam/{run_accession}.bam",
-        bai="data/empirical/{library_id}/bam/{run_accession}.bam.bai"
-    threads: 4
+        bai="data/empirical/{library_id}/bam/{run_accession}.bam.bai",
     log:
-        "benchmark/logs/empirical/{library_id}.{run_accession}.bwa_mem.log"
+        "benchmark/logs/empirical/{library_id}.{run_accession}.bwa_mem.log",
     conda:
         "../envs/sra-align.yml"
+    threads: 4
+    params:
+        sra_run=lambda wildcards: _empirical_sra_run_row(wildcards)["run_accession"],
     shell:
         r"""
         mkdir -p benchmark/logs/empirical data/empirical/{wildcards.library_id}/bam
-        bwa mem -t {threads} {input.reference:q} {input.r1:q} {input.r2:q} 2> {log:q}           | samtools sort -@ {threads} -o {output.bam:q} -
+        bwa mem -t {threads} {input.reference:q} {input.r1:q} {input.r2:q} 2>{log:q} | samtools sort -@ {threads} -o {output.bam:q} -
         samtools index -@ {threads} {output.bam:q} {output.bai:q}
         """
 
@@ -650,36 +666,40 @@ rule empirical_bam_manifest:
     input:
         manifest=EMPIRICAL_LIBRARY_MANIFEST,
         reference=_empirical_reference_path,
-        bams=_empirical_bam_paths
+        bams=_empirical_bam_paths,
     output:
-        manifest="results/empirical/{library_id}/bam_manifest.tsv"
+        manifest="results/empirical/{library_id}/bam_manifest.tsv",
     log:
-        "benchmark/logs/empirical/{library_id}.bam_manifest.log"
+        "benchmark/logs/empirical/{library_id}.bam_manifest.log",
     conda:
         "../envs/empirical.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
         python3 scripts/empirical/write_bam_manifest.py \
-          --manifest {input.manifest:q} \
-          --sra-runs {EMPIRICAL_SRA_RUN_MANIFEST:q} \
-          --library-id {wildcards.library_id:q} \
-          --out {output.manifest:q} \
-          > {log:q} 2>&1
+            --manifest {input.manifest:q} \
+            --sra-runs {EMPIRICAL_SRA_RUN_MANIFEST:q} \
+            --library-id {wildcards.library_id:q} \
+            --out {output.manifest:q} \
+            >{log:q} 2>&1
         """
 
 
 rule empirical_extract_tlens:
     input:
         bam_manifest="results/empirical/{library_id}/bam_manifest.tsv",
-        bam=_empirical_bam_path
+        bam=_empirical_bam_path,
     output:
         tlens="results/empirical/{library_id}/bams/{bam_id}/tlens.txt",
         histogram="results/empirical/{library_id}/bams/{bam_id}/tlen_histogram.tsv",
         unique_fragment_histogram="results/empirical/{library_id}/bams/{bam_id}/unique_fragment_tlen_histogram.tsv",
         capped_fragment_histogram="results/empirical/{library_id}/bams/{bam_id}/capped_fragment_tlen_histogram.tsv",
         qc="results/empirical/{library_id}/bams/{bam_id}/tlen_qc.tsv",
-        fragment_depth_qc="results/empirical/{library_id}/bams/{bam_id}/fragment_depth_qc.tsv"
+        fragment_depth_qc="results/empirical/{library_id}/bams/{bam_id}/fragment_depth_qc.tsv",
+    log:
+        "benchmark/logs/empirical/{library_id}.{bam_id}.extract_tlens.log",
+    conda:
+        "../envs/empirical.yml"
     params:
         reference_id=lambda wildcards: _empirical_param(wildcards, "reference_id"),
         reference_path=lambda wildcards: _empirical_param(wildcards, "reference_path"),
@@ -696,40 +716,36 @@ rule empirical_extract_tlens:
             wildcards, "exclude_duplicates"
         ),
         max_tlen=lambda wildcards: _empirical_param(wildcards, "max_tlen"),
-        capped_fragment_depth="5"
-    log:
-        "benchmark/logs/empirical/{library_id}.{bam_id}.extract_tlens.log"
-    conda:
-        "../envs/empirical.yml"
+        capped_fragment_depth="5",
     shell:
         r"""
         mkdir -p benchmark/logs/empirical \
-          results/empirical/{wildcards.library_id}/bams/{wildcards.bam_id}
+            results/empirical/{wildcards.library_id}/bams/{wildcards.bam_id}
         python3 scripts/empirical/extract_tlens.py \
-          --bam {input.bam:q} \
-          --library-id {wildcards.library_id:q} \
-          --bam-id {wildcards.bam_id:q} \
-          --reference-id {params.reference_id:q} \
-          --reference-path {params.reference_path:q} \
-          --enzyme-1 {params.enzyme_1:q} \
-          --enzyme-2 {params.enzyme_2:q} \
-          --min-size {params.min_size:q} \
-          --max-size {params.max_size:q} \
-          --score-min {params.score_min:q} \
-          --score-max {params.score_max:q} \
-          --size-model {params.size_model:q} \
-          --size-edge-sd {params.size_edge_sd:q} \
-          --min-mapq {params.min_mapq:q} \
-          --exclude-duplicates {params.exclude_duplicates:q} \
-          --max-tlen {params.max_tlen:q} \
-          --capped-fragment-depth {params.capped_fragment_depth:q} \
-          --tlens-out {output.tlens:q} \
-          --hist-out {output.histogram:q} \
-          --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
-          --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
-          --qc-out {output.qc:q} \
-          --fragment-depth-qc-out {output.fragment_depth_qc:q} \
-          > {log:q} 2>&1
+            --bam {input.bam:q} \
+            --library-id {wildcards.library_id:q} \
+            --bam-id {wildcards.bam_id:q} \
+            --reference-id {params.reference_id:q} \
+            --reference-path {params.reference_path:q} \
+            --enzyme-1 {params.enzyme_1:q} \
+            --enzyme-2 {params.enzyme_2:q} \
+            --min-size {params.min_size:q} \
+            --max-size {params.max_size:q} \
+            --score-min {params.score_min:q} \
+            --score-max {params.score_max:q} \
+            --size-model {params.size_model:q} \
+            --size-edge-sd {params.size_edge_sd:q} \
+            --min-mapq {params.min_mapq:q} \
+            --exclude-duplicates {params.exclude_duplicates:q} \
+            --max-tlen {params.max_tlen:q} \
+            --capped-fragment-depth {params.capped_fragment_depth:q} \
+            --tlens-out {output.tlens:q} \
+            --hist-out {output.histogram:q} \
+            --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
+            --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
+            --qc-out {output.qc:q} \
+            --fragment-depth-qc-out {output.fragment_depth_qc:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -740,82 +756,92 @@ rule empirical_combine_tlens:
         unique_fragment_histograms=_empirical_library_unique_fragment_histogram_files,
         capped_fragment_histograms=_empirical_library_capped_fragment_histogram_files,
         qc_tables=_empirical_library_qc_files,
-        fragment_depth_qc_tables=_empirical_library_fragment_depth_qc_files
+        fragment_depth_qc_tables=_empirical_library_fragment_depth_qc_files,
     output:
         tlens="results/empirical/{library_id}/tlens.txt",
         histogram="results/empirical/{library_id}/tlen_histogram.tsv",
         unique_fragment_histogram="results/empirical/{library_id}/unique_fragment_tlen_histogram.tsv",
         capped_fragment_histogram="results/empirical/{library_id}/capped_fragment_tlen_histogram.tsv",
         qc="results/empirical/{library_id}/tlen_qc.tsv",
-        fragment_depth_qc="results/empirical/{library_id}/fragment_depth_qc.tsv"
+        fragment_depth_qc="results/empirical/{library_id}/fragment_depth_qc.tsv",
     log:
-        "benchmark/logs/empirical/{library_id}.combine_tlens.log"
+        "benchmark/logs/empirical/{library_id}.combine_tlens.log",
     conda:
         "../envs/empirical.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
         python3 scripts/empirical/combine_tlens.py \
-          --library-id {wildcards.library_id:q} \
-          --tlens {input.tlens:q} \
-          --histograms {input.histograms:q} \
-          --unique-fragment-histograms {input.unique_fragment_histograms:q} \
-          --capped-fragment-histograms {input.capped_fragment_histograms:q} \
-          --qc-tables {input.qc_tables:q} \
-          --fragment-depth-qc-tables {input.fragment_depth_qc_tables:q} \
-          --tlens-out {output.tlens:q} \
-          --hist-out {output.histogram:q} \
-          --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
-          --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
-          --qc-out {output.qc:q} \
-          --fragment-depth-qc-out {output.fragment_depth_qc:q} \
-          > {log:q} 2>&1
+            --library-id {wildcards.library_id:q} \
+            --tlens {input.tlens:q} \
+            --histograms {input.histograms:q} \
+            --unique-fragment-histograms {input.unique_fragment_histograms:q} \
+            --capped-fragment-histograms {input.capped_fragment_histograms:q} \
+            --qc-tables {input.qc_tables:q} \
+            --fragment-depth-qc-tables {input.fragment_depth_qc_tables:q} \
+            --tlens-out {output.tlens:q} \
+            --hist-out {output.histogram:q} \
+            --unique-fragment-hist-out {output.unique_fragment_histogram:q} \
+            --capped-fragment-hist-out {output.capped_fragment_histogram:q} \
+            --qc-out {output.qc:q} \
+            --fragment-depth-qc-out {output.fragment_depth_qc:q} \
+            >{log:q} 2>&1
         """
 
 
 rule empirical_radigest_prediction:
     input:
-        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+        reference=lambda wildcards: _empirical_library_param(
+            wildcards, "reference_path"
+        ),
     output:
         fragments="results/empirical/{library_id}/predictions/{prediction_mode}.fragments.tsv",
-        json="results/empirical/{library_id}/predictions/{prediction_mode}.json"
+        json="results/empirical/{library_id}/predictions/{prediction_mode}.json",
+    log:
+        "benchmark/logs/empirical/{library_id}.{prediction_mode}.radigest_prediction.log",
+    threads: 4
     params:
         radigest=lambda wildcards: config.get("radigest", "radigest"),
         enzyme_1=lambda wildcards: _empirical_library_param(wildcards, "enzyme_1"),
         enzyme_2=lambda wildcards: _empirical_library_param(wildcards, "enzyme_2"),
         min_size=_empirical_prediction_min,
-        max_size=_empirical_prediction_max
-    threads: 4
-    log:
-        "benchmark/logs/empirical/{library_id}.{prediction_mode}.radigest_prediction.log"
+        max_size=_empirical_prediction_max,
     shell:
         r"""
         mkdir -p benchmark/logs/empirical \
-          results/empirical/{wildcards.library_id}/predictions
+            results/empirical/{wildcards.library_id}/predictions
         {params.radigest:q} \
-          -fasta {input.reference:q} \
-          -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
-          -min {params.min_size:q} \
-          -max {params.max_size:q} \
-          -score-min {params.min_size:q} \
-          -score-max {params.max_size:q} \
-          -size-model hard \
-          -threads {threads} \
-          -fragments-tsv {output.fragments:q} \
-          -json {output.json:q} \
-          > {log:q} 2>&1
+            -fasta {input.reference:q} \
+            -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+            -min {params.min_size:q} \
+            -max {params.max_size:q} \
+            -score-min {params.min_size:q} \
+            -score-max {params.max_size:q} \
+            -size-model hard \
+            -threads {threads} \
+            -fragments-tsv {output.fragments:q} \
+            -json {output.json:q} \
+            >{log:q} 2>&1
         """
 
 
 rule empirical_summarize_radigest_prediction:
     input:
-        fragments="results/empirical/{library_id}/predictions/{prediction_mode}.fragments.tsv"
+        fragments="results/empirical/{library_id}/predictions/{prediction_mode}.fragments.tsv",
     output:
         histogram="results/empirical/{library_id}/predictions/{prediction_mode}.length_histogram.tsv",
-        summary="results/empirical/{library_id}/predictions/{prediction_mode}.summary.tsv"
+        summary="results/empirical/{library_id}/predictions/{prediction_mode}.summary.tsv",
+    log:
+        "benchmark/logs/empirical/{library_id}.{prediction_mode}.summarize_prediction.log",
+    conda:
+        "../envs/empirical.yml"
     params:
-        reference_id=lambda wildcards: _empirical_library_param(wildcards, "reference_id"),
-        reference_path=lambda wildcards: _empirical_library_param(wildcards, "reference_path"),
+        reference_id=lambda wildcards: _empirical_library_param(
+            wildcards, "reference_id"
+        ),
+        reference_path=lambda wildcards: _empirical_library_param(
+            wildcards, "reference_path"
+        ),
         enzyme_1=lambda wildcards: _empirical_library_param(wildcards, "enzyme_1"),
         enzyme_2=lambda wildcards: _empirical_library_param(wildcards, "enzyme_2"),
         min_size=lambda wildcards: _empirical_library_param(wildcards, "min_size"),
@@ -823,54 +849,66 @@ rule empirical_summarize_radigest_prediction:
         score_min=lambda wildcards: _empirical_library_param(wildcards, "score_min"),
         score_max=lambda wildcards: _empirical_library_param(wildcards, "score_max"),
         size_model=lambda wildcards: _empirical_library_param(wildcards, "size_model"),
-        size_edge_sd=lambda wildcards: _empirical_library_param(wildcards, "size_edge_sd")
-    log:
-        "benchmark/logs/empirical/{library_id}.{prediction_mode}.summarize_prediction.log"
-    conda:
-        "../envs/empirical.yml"
+        size_edge_sd=lambda wildcards: _empirical_library_param(
+            wildcards, "size_edge_sd"
+        ),
     shell:
         r"""
         mkdir -p benchmark/logs/empirical \
-          results/empirical/{wildcards.library_id}/predictions
+            results/empirical/{wildcards.library_id}/predictions
         python3 scripts/empirical/summarize_radigest_prediction.py \
-          --fragments {input.fragments:q} \
-          --library-id {wildcards.library_id:q} \
-          --prediction-mode {wildcards.prediction_mode:q} \
-          --reference-id {params.reference_id:q} \
-          --reference-path {params.reference_path:q} \
-          --enzyme-1 {params.enzyme_1:q} \
-          --enzyme-2 {params.enzyme_2:q} \
-          --min-size {params.min_size:q} \
-          --max-size {params.max_size:q} \
-          --score-min {params.score_min:q} \
-          --score-max {params.score_max:q} \
-          --size-model {params.size_model:q} \
-          --size-edge-sd {params.size_edge_sd:q} \
-          --hist-out {output.histogram:q} \
-          --summary-out {output.summary:q} \
-          > {log:q} 2>&1
+            --fragments {input.fragments:q} \
+            --library-id {wildcards.library_id:q} \
+            --prediction-mode {wildcards.prediction_mode:q} \
+            --reference-id {params.reference_id:q} \
+            --reference-path {params.reference_path:q} \
+            --enzyme-1 {params.enzyme_1:q} \
+            --enzyme-2 {params.enzyme_2:q} \
+            --min-size {params.min_size:q} \
+            --max-size {params.max_size:q} \
+            --score-min {params.score_min:q} \
+            --score-max {params.score_max:q} \
+            --size-model {params.size_model:q} \
+            --size-edge-sd {params.size_edge_sd:q} \
+            --hist-out {output.histogram:q} \
+            --summary-out {output.summary:q} \
+            >{log:q} 2>&1
         """
-
 
 
 rule empirical_depth_design:
     input:
-        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+        reference=lambda wildcards: _empirical_library_param(
+            wildcards, "reference_path"
+        ),
     output:
         summary_tsv="results/empirical/{library_id}/depth_validation/design.summary.tsv",
         tsv="results/empirical/{library_id}/depth_validation/design.tsv",
-        json="results/empirical/{library_id}/depth_validation/design.json"
+        json="results/empirical/{library_id}/depth_validation/design.json",
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.design.log",
+    threads: 4
     params:
-        radigest_design=lambda wildcards: config.get("radigest_design", "radigest-design"),
+        radigest_design=lambda wildcards: config.get(
+            "radigest_design", "radigest-design"
+        ),
         enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
         enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2"),
-        target_genome_pct=lambda wildcards: _empirical_depth_param(wildcards, "target_genome_pct"),
-        coverage_tolerance_pct=lambda wildcards: _empirical_depth_param(wildcards, "coverage_tolerance_pct"),
-        desired_depth=lambda wildcards: _empirical_depth_param(wildcards, "desired_depth"),
+        target_genome_pct=lambda wildcards: _empirical_depth_param(
+            wildcards, "target_genome_pct"
+        ),
+        coverage_tolerance_pct=lambda wildcards: _empirical_depth_param(
+            wildcards, "coverage_tolerance_pct"
+        ),
+        desired_depth=lambda wildcards: _empirical_depth_param(
+            wildcards, "desired_depth"
+        ),
         samples=lambda wildcards: _empirical_depth_param(wildcards, "samples"),
         read_layout=lambda wildcards: _empirical_depth_param(wildcards, "read_layout"),
         read_length=lambda wildcards: _empirical_depth_param(wildcards, "read_length"),
-        usable_read_fraction=lambda wildcards: _empirical_depth_param(wildcards, "usable_read_fraction"),
+        usable_read_fraction=lambda wildcards: _empirical_depth_param(
+            wildcards, "usable_read_fraction"
+        ),
         min_size=lambda wildcards: _empirical_depth_param(wildcards, "min_size"),
         max_size=lambda wildcards: _empirical_depth_param(wildcards, "max_size"),
         score_min=lambda wildcards: _empirical_depth_param(wildcards, "score_min"),
@@ -879,38 +917,35 @@ rule empirical_depth_design:
         size_mean=lambda wildcards: _empirical_depth_param(wildcards, "size_mean"),
         size_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_sd"),
         size_edge_sd=lambda wildcards: _empirical_depth_param(wildcards, "size_edge_sd"),
-        read_budget=_empirical_depth_read_budget
-    threads: 4
-    log:
-        "benchmark/logs/empirical/{library_id}.depth_validation.design.log"
+        read_budget=_empirical_depth_read_budget,
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
         {params.radigest_design:q} \
-          --fasta {input.reference:q} \
-          --enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
-          --target-genome-pct {params.target_genome_pct:q} \
-          --coverage-tolerance-pct {params.coverage_tolerance_pct:q} \
-          --desired-depth {params.desired_depth:q} \
-          --samples {params.samples:q} \
-          --read-layout {params.read_layout:q} \
-          --read-length {params.read_length:q} \
-          --threads {threads} \
-          --jobs 1 \
-          --build-workers {threads} \
-          {params.read_budget:q} \
-          --usable-read-fraction {params.usable_read_fraction:q} \
-          --min {params.min_size:q} \
-          --max {params.max_size:q} \
-          --score-min {params.score_min:q} \
-          --score-max {params.score_max:q} \
-          --size-model {params.size_model:q} \
-          --size-mean {params.size_mean:q} \
-          --size-sd {params.size_sd:q} \
-          --size-edge-sd {params.size_edge_sd:q} \
-          --out-dir results/empirical/{wildcards.library_id}/depth_validation \
-          --force \
-          > {log:q} 2>&1
+            --fasta {input.reference:q} \
+            --enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+            --target-genome-pct {params.target_genome_pct:q} \
+            --coverage-tolerance-pct {params.coverage_tolerance_pct:q} \
+            --desired-depth {params.desired_depth:q} \
+            --samples {params.samples:q} \
+            --read-layout {params.read_layout:q} \
+            --read-length {params.read_length:q} \
+            --threads {threads} \
+            --jobs 1 \
+            --build-workers {threads} \
+            {params.read_budget:q} \
+            --usable-read-fraction {params.usable_read_fraction:q} \
+            --min {params.min_size:q} \
+            --max {params.max_size:q} \
+            --score-min {params.score_min:q} \
+            --score-max {params.score_max:q} \
+            --size-model {params.size_model:q} \
+            --size-mean {params.size_mean:q} \
+            --size-sd {params.size_sd:q} \
+            --size-edge-sd {params.size_edge_sd:q} \
+            --out-dir results/empirical/{wildcards.library_id}/depth_validation \
+            --force \
+            >{log:q} 2>&1
         test -s {output.summary_tsv:q}
         test -s {output.tsv:q}
         test -s {output.json:q}
@@ -919,34 +954,36 @@ rule empirical_depth_design:
 
 rule empirical_depth_loci:
     input:
-        reference=lambda wildcards: _empirical_library_param(wildcards, "reference_path")
+        reference=lambda wildcards: _empirical_library_param(
+            wildcards, "reference_path"
+        ),
     output:
         bed="results/empirical/{library_id}/depth_validation/loci.bed",
-        json="results/empirical/{library_id}/depth_validation/loci.json"
+        json="results/empirical/{library_id}/depth_validation/loci.json",
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.loci.log",
+    threads: 4
     params:
         radigest=lambda wildcards: config.get("radigest", "radigest"),
         enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
         enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2"),
         min_size=lambda wildcards: _empirical_depth_param(wildcards, "min_size"),
-        max_size=lambda wildcards: _empirical_depth_param(wildcards, "max_size")
-    threads: 4
-    log:
-        "benchmark/logs/empirical/{library_id}.depth_validation.loci.log"
+        max_size=lambda wildcards: _empirical_depth_param(wildcards, "max_size"),
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
         {params.radigest:q} \
-          -fasta {input.reference:q} \
-          -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
-          -min {params.min_size:q} \
-          -max {params.max_size:q} \
-          -score-min {params.min_size:q} \
-          -score-max {params.max_size:q} \
-          -size-model hard \
-          -threads {threads} \
-          -bed {output.bed:q} \
-          -json {output.json:q} \
-          > {log:q} 2>&1
+            -fasta {input.reference:q} \
+            -enzymes {params.enzyme_1:q},{params.enzyme_2:q} \
+            -min {params.min_size:q} \
+            -max {params.max_size:q} \
+            -score-min {params.min_size:q} \
+            -score-max {params.max_size:q} \
+            -size-model hard \
+            -threads {threads} \
+            -bed {output.bed:q} \
+            -json {output.json:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -954,56 +991,58 @@ rule empirical_depth_per_sample:
     input:
         bam_manifest="results/empirical/{library_id}/bam_manifest.tsv",
         bams=_empirical_bam_paths,
-        loci="results/empirical/{library_id}/depth_validation/loci.bed"
+        loci="results/empirical/{library_id}/depth_validation/loci.bed",
     output:
-        depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv"
-    params:
-        min_mapq=lambda wildcards: _empirical_depth_param(wildcards, "min_mapq"),
-        exclude_duplicates=lambda wildcards: _empirical_depth_param(wildcards, "exclude_duplicates")
+        depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
     log:
-        "benchmark/logs/empirical/{library_id}.depth_validation.per_sample_depth.log"
+        "benchmark/logs/empirical/{library_id}.depth_validation.per_sample_depth.log",
     conda:
         "../envs/empirical.yml"
+    params:
+        min_mapq=lambda wildcards: _empirical_depth_param(wildcards, "min_mapq"),
+        exclude_duplicates=lambda wildcards: _empirical_depth_param(
+            wildcards, "exclude_duplicates"
+        ),
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
         python3 scripts/empirical/calculate_locus_depth.py \
-          --bam-manifest {input.bam_manifest:q} \
-          --loci-bed {input.loci:q} \
-          --library-id {wildcards.library_id:q} \
-          --min-mapq {params.min_mapq:q} \
-          --exclude-duplicates {params.exclude_duplicates:q} \
-          --out {output.depth:q} \
-          > {log:q} 2>&1
+            --bam-manifest {input.bam_manifest:q} \
+            --loci-bed {input.loci:q} \
+            --library-id {wildcards.library_id:q} \
+            --min-mapq {params.min_mapq:q} \
+            --exclude-duplicates {params.exclude_duplicates:q} \
+            --out {output.depth:q} \
+            >{log:q} 2>&1
         """
 
 
 rule empirical_depth_validation_summary:
     input:
         design="results/empirical/{library_id}/depth_validation/design.tsv",
-        per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv"
+        per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
     output:
-        summary="results/empirical/{library_id}/depth_validation/summary.tsv"
+        summary="results/empirical/{library_id}/depth_validation/summary.tsv",
+    log:
+        "benchmark/logs/empirical/{library_id}.depth_validation.summary.log",
+    conda:
+        "../envs/empirical.yml"
     params:
         display_name=lambda wildcards: _empirical_depth_param(wildcards, "display_name"),
         enzyme_1=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_1"),
-        enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2")
-    log:
-        "benchmark/logs/empirical/{library_id}.depth_validation.summary.log"
-    conda:
-        "../envs/empirical.yml"
+        enzyme_2=lambda wildcards: _empirical_depth_param(wildcards, "enzyme_2"),
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation results/manuscript/tables
         python3 scripts/empirical/summarize_depth_validation.py \
-          --library-id {wildcards.library_id:q} \
-          --display-name {params.display_name:q} \
-          --enzyme-1 {params.enzyme_1:q} \
-          --enzyme-2 {params.enzyme_2:q} \
-          --design-tsv {input.design:q} \
-          --per-sample-depth {input.per_sample_depth:q} \
-          --out {output.summary:q} \
-          > {log:q} 2>&1
+            --library-id {wildcards.library_id:q} \
+            --display-name {params.display_name:q} \
+            --enzyme-1 {params.enzyme_1:q} \
+            --enzyme-2 {params.enzyme_2:q} \
+            --design-tsv {input.design:q} \
+            --per-sample-depth {input.per_sample_depth:q} \
+            --out {output.summary:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -1012,20 +1051,20 @@ rule empirical_depth_validation_manuscript_table:
         summaries=[
             f"results/empirical/{library_id}/depth_validation/summary.tsv"
             for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
-        ]
+        ],
     output:
-        table=EMPIRICAL_DEPTH_VALIDATION_TABLE
+        table=EMPIRICAL_DEPTH_VALIDATION_TABLE,
     log:
-        "benchmark/logs/empirical/depth_validation.manuscript_table.log"
+        "benchmark/logs/empirical/depth_validation.manuscript_table.log",
     conda:
         "../envs/empirical.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/manuscript/tables
         python3 scripts/manuscript/make_empirical_depth_validation_table.py \
-          --summaries {input.summaries:q} \
-          --out {output.table:q} \
-          > {log:q} 2>&1
+            --summaries {input.summaries:q} \
+            --out {output.table:q} \
+            >{log:q} 2>&1
         """
 
 
@@ -1033,61 +1072,64 @@ rule empirical_depth_validation_figure:
     input:
         per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
         summary="results/empirical/{library_id}/depth_validation/summary.tsv",
-        script="scripts/empirical/plot_depth_validation.R"
+        script="scripts/empirical/plot_depth_validation.R",
     output:
-        figure="results/empirical/{library_id}/depth_validation/depth_validation.pdf"
+        figure="results/empirical/{library_id}/depth_validation/depth_validation.pdf",
     log:
-        "benchmark/logs/empirical/{library_id}.depth_validation.figure.log"
+        "benchmark/logs/empirical/{library_id}.depth_validation.figure.log",
     conda:
         "../envs/figures.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
         Rscript scripts/empirical/plot_depth_validation.R \
-          --per-sample-depth {input.per_sample_depth:q} \
-          --summary {input.summary:q} \
-          --out {output.figure:q} \
-          --formats pdf \
-          > {log:q} 2>&1
+            --per-sample-depth {input.per_sample_depth:q} \
+            --summary {input.summary:q} \
+            --out {output.figure:q} \
+            --formats pdf \
+            >{log:q} 2>&1
         """
+
 
 rule empirical_depth_validation_manuscript_figure:
     input:
-        figure=lambda wildcards: f"results/empirical/{EMPIRICAL_PRIMARY_DEPTH_VALIDATION_LIBRARY_ID}/depth_validation/depth_validation.pdf"
+        figure=lambda wildcards: f"results/empirical/{EMPIRICAL_PRIMARY_DEPTH_VALIDATION_LIBRARY_ID}/depth_validation/depth_validation.pdf",
     output:
-        figure=EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE
+        figure=EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE,
     log:
-        "benchmark/logs/empirical/depth_validation.manuscript_figure.log"
+        "benchmark/logs/empirical/depth_validation.manuscript_figure.log",
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/manuscript/figures
         cp {input.figure:q} {output.figure:q}
         """
 
+
 rule empirical_fit_size_model_grid:
     input:
         manifest=EMPIRICAL_LIBRARY_MANIFEST,
         empirical_histogram="results/empirical/{library_id}/tlen_histogram.tsv",
-        raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv"
+        raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv",
     output:
         grid="results/empirical/{library_id}/size_model_grid.tsv",
-        best="results/empirical/{library_id}/best_size_model.tsv"
+        best="results/empirical/{library_id}/best_size_model.tsv",
     log:
-        "benchmark/logs/empirical/{library_id}.size_model_grid.log"
+        "benchmark/logs/empirical/{library_id}.size_model_grid.log",
     conda:
         "../envs/empirical.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
         python3 scripts/empirical/fit_size_model_grid.py \
-          --manifest {input.manifest:q} \
-          --library-id {wildcards.library_id:q} \
-          --empirical-hist {input.empirical_histogram:q} \
-          --raw-hist {input.raw_histogram:q} \
-          --out {output.grid:q} \
-          --best-out {output.best:q} \
-          > {log:q} 2>&1
+            --manifest {input.manifest:q} \
+            --library-id {wildcards.library_id:q} \
+            --empirical-hist {input.empirical_histogram:q} \
+            --raw-hist {input.raw_histogram:q} \
+            --out {output.grid:q} \
+            --best-out {output.best:q} \
+            >{log:q} 2>&1
         """
+
 
 rule empirical_size_model_curves:
     input:
@@ -1096,67 +1138,68 @@ rule empirical_size_model_curves:
         empirical_unique_fragment_histogram="results/empirical/{library_id}/unique_fragment_tlen_histogram.tsv",
         empirical_capped_fragment_histogram="results/empirical/{library_id}/capped_fragment_tlen_histogram.tsv",
         raw_histogram="results/empirical/{library_id}/predictions/raw.length_histogram.tsv",
-        hard_histogram="results/empirical/{library_id}/predictions/hard.length_histogram.tsv"
+        hard_histogram="results/empirical/{library_id}/predictions/hard.length_histogram.tsv",
     output:
         curves="results/empirical/{library_id}/size_model_curves.tsv",
-        bias_grid="results/empirical/{library_id}/size_model_short_bias_grid.tsv"
+        bias_grid="results/empirical/{library_id}/size_model_short_bias_grid.tsv",
     log:
-        "benchmark/logs/empirical/{library_id}.size_model_curves.log"
+        "benchmark/logs/empirical/{library_id}.size_model_curves.log",
     conda:
         "../envs/empirical.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}
         python3 scripts/empirical/make_size_model_curves.py \
-          --manifest {input.manifest:q} \
-          --library-id {wildcards.library_id:q} \
-          --empirical-hist {input.empirical_histogram:q} \
-          --empirical-unique-fragment-hist {input.empirical_unique_fragment_histogram:q} \
-          --empirical-capped-fragment-hist {input.empirical_capped_fragment_histogram:q} \
-          --raw-hist {input.raw_histogram:q} \
-          --hard-hist {input.hard_histogram:q} \
-          --out {output.curves:q} \
-          --bias-grid-out {output.bias_grid:q} \
-          > {log:q} 2>&1
+            --manifest {input.manifest:q} \
+            --library-id {wildcards.library_id:q} \
+            --empirical-hist {input.empirical_histogram:q} \
+            --empirical-unique-fragment-hist {input.empirical_unique_fragment_histogram:q} \
+            --empirical-capped-fragment-hist {input.empirical_capped_fragment_histogram:q} \
+            --raw-hist {input.raw_histogram:q} \
+            --hard-hist {input.hard_histogram:q} \
+            --out {output.curves:q} \
+            --bias-grid-out {output.bias_grid:q} \
+            >{log:q} 2>&1
         """
 
 
 rule empirical_size_model_overlay_figure:
     input:
-        curves="results/empirical/{library_id}/size_model_curves.tsv"
+        curves="results/empirical/{library_id}/size_model_curves.tsv",
     output:
-        figure="results/empirical/{library_id}/figures/size_model_overlay.pdf"
+        figure="results/empirical/{library_id}/figures/size_model_overlay.pdf",
     log:
-        "benchmark/logs/empirical/{library_id}.size_model_overlay.log"
+        "benchmark/logs/empirical/{library_id}.size_model_overlay.log",
     conda:
         "../envs/figures.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/figures
         Rscript scripts/empirical/plot_size_model_overlay.R \
-          --curves {input.curves:q} \
-          --out {output.figure:q} \
-          --formats pdf \
-          > {log:q} 2>&1
+            --curves {input.curves:q} \
+            --out {output.figure:q} \
+            --formats pdf \
+            >{log:q} 2>&1
         """
+
 
 rule empirical_size_model_fit_ranking_figure:
     input:
-        curves=_empirical_curve_files
+        curves=_empirical_curve_files,
     output:
         table="results/empirical/size_model_fit_ranking.tsv",
-        figure="results/empirical/figures/size_model_fit_ranking.pdf"
+        figure="results/empirical/figures/size_model_fit_ranking.pdf",
     log:
-        "benchmark/logs/empirical/size_model_fit_ranking.log"
+        "benchmark/logs/empirical/size_model_fit_ranking.log",
     conda:
         "../envs/figures.yml"
     shell:
         r"""
         mkdir -p benchmark/logs/empirical results/empirical/figures
         Rscript scripts/empirical/plot_size_model_fit_ranking.R \
-          --curves {input.curves:q} \
-          --out-table {output.table:q} \
-          --out-figure {output.figure:q} \
-          --formats pdf \
-          > {log:q} 2>&1
+            --curves {input.curves:q} \
+            --out-table {output.table:q} \
+            --out-figure {output.figure:q} \
+            --formats pdf \
+            >{log:q} 2>&1
         """

@@ -1,6 +1,4 @@
-# radigest benchmark v2 scaffold
-
-This branch is a clean rebuild of the radigest benchmark and manuscript-support repository.
+# radigest benchmark
 
 The repository is organized around reviewer execution, manuscript claims, scenario manifests, and artifact contracts. Porting proceeds in staged commits:
 

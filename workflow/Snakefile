@@ -1,6 +1,7 @@
 # Clean v2 scaffold Snakefile.
 # Stage 0 contains only target names and file contracts. Analysis rules are ported in later commits.
 
+
 include: "rules/radigest.smk"
 include: "rules/validation.smk"
 include: "rules/references.smk"
@@ -9,6 +10,7 @@ include: "rules/performance.smk"
 include: "rules/empirical.smk"
 include: "rules/manuscript.smk"
 include: "rules/audit.smk"
+
 
 MANIFESTS = [
     "config/datasets.tsv",
@@ -57,31 +59,37 @@ SCAFFOLD_PLACEHOLDERS = [
     "data/synthetic/comparator_ecori_msei_smoke.fa",
 ]
 
+
 rule all:
     input:
         MANIFESTS,
-        SCAFFOLD_PLACEHOLDERS
+        SCAFFOLD_PLACEHOLDERS,
+
 
 rule scaffold_all:
     input:
         MANIFESTS,
-        SCAFFOLD_PLACEHOLDERS
+        SCAFFOLD_PLACEHOLDERS,
+
 
 rule radigest_build_all:
     input:
-        RADIGEST_BUILD_OUTPUTS
+        RADIGEST_BUILD_OUTPUTS,
+
 
 rule smoke_all:
     input:
         MANIFESTS,
         "config/scenarios/smoke.yml",
-        SYNTHETIC_VALIDATION_OUTPUTS
+        SYNTHETIC_VALIDATION_OUTPUTS,
+
 
 rule references_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_nonempirical.yml",
-        REFERENCE_ALL_OUTPUTS
+        REFERENCE_ALL_OUTPUTS,
+
 
 rule reviewer_nonempirical_all:
     input:
@@ -90,13 +98,15 @@ rule reviewer_nonempirical_all:
         SYNTHETIC_VALIDATION_OUTPUTS,
         REFERENCE_ALL_OUTPUTS,
         COMPARATOR_ALL_OUTPUTS,
-        PERFORMANCE_ALL_OUTPUTS
+        PERFORMANCE_ALL_OUTPUTS,
+
 
 rule reviewer_empirical_all:
     input:
         MANIFESTS,
         "config/scenarios/reviewer_empirical.yml",
-        EMPIRICAL_ALL_OUTPUTS
+        EMPIRICAL_ALL_OUTPUTS,
+
 
 rule reviewer_all:
     input:
@@ -106,7 +116,8 @@ rule reviewer_all:
         REFERENCE_ALL_OUTPUTS,
         COMPARATOR_ALL_OUTPUTS,
         PERFORMANCE_ALL_OUTPUTS,
-        EMPIRICAL_ALL_OUTPUTS
+        EMPIRICAL_ALL_OUTPUTS,
+
 
 rule manuscript_all:
     input:
@@ -123,9 +134,10 @@ rule manuscript_all:
         EMPIRICAL_DEPTH_VALIDATION_TABLES,
         EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS,
         PERFORMANCE_FIGURE_OUTPUTS,
-        "results/manuscript/figures/.gitkeep"
+        "results/manuscript/figures/.gitkeep",
+
 
 rule audit_all:
     input:
         MANIFESTS,
-        AUDIT_OUTPUTS
+        AUDIT_OUTPUTS,
