@@ -179,19 +179,22 @@ col_best <- "#4C72B0"
 col_segment <- "#BFC5CF"
 
 js_upper <- max(0.85, max(panel_a_df$js_read, na.rm = TRUE))
+js_mid <- min(0.45, js_upper / 2)
 
 p_js <- ggplot(panel_a_df, aes(x = model_family, y = dataset, fill = js_read)) +
   geom_tile(color = "white", linewidth = 1.0) +
-  geom_text(aes(label = js_label, color = js_read >= 0.62), size = 3.05) +
+  geom_text(aes(label = js_label, color = js_read <= 0.14 | js_read >= 0.68), size = 3.05) +
   scale_color_manual(values = c(`FALSE` = "#202020", `TRUE` = "white"), guide = "none") +
-  scale_fill_gradient(
-    low = "#F3F5F8",
-    high = "#5B677A",
+  scale_fill_gradient2(
+    low = "#4C72B0",
+    mid = "#F7F7F7",
+    high = "#DD8452",
+    midpoint = js_mid,
     limits = c(0, js_upper),
     oob = squish,
     breaks = seq(0, 0.8, by = 0.2),
     labels = label_number(accuracy = 0.01),
-    name = "JS distance\n(lower better)"
+    name = "JS distance\nblue = better\norange = worse"
   ) +
   labs(x = NULL, y = NULL) +
   theme_radigest(base_size = 9) +
