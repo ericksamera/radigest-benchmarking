@@ -256,6 +256,7 @@ EXTRA_REQUIRED_FILES = [
     "scripts/empirical/plot_depth_validation.R",
     "scripts/empirical/make_size_model_curves.py",
     "scripts/manuscript/make_empirical_depth_validation_table.py",
+    "scripts/manuscript/make_empirical_size_selection_summary_figure.R",
     "scripts/empirical/plot_size_model_overlay.R",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",

@@ -60,6 +60,8 @@ distribution against empirical TLENs. `make empirical-depth-validation` uses
 per-sample BAM depth across the configured predicted loci, and write the
 validation summary/manuscript table.
 
+Public SRA-backed empirical examples are used for external insert-size recovery checks. The Anopheles EcoRI-MseI row is the public EcoRI-MseI example. The Rhododendron DpnII-MspI row is a public non-EcoRI-MseI example based on `SRR32570991` and `SRR32570992`, with the reported 300-500 bp insert-selection window retained as the nominal size-selection interval. Local testing found deposited read lengths of 140 bp for R1 and 148 bp for R2, so read-length metadata should be recorded from FASTQ inspection rather than from the paper's reported 2 x 500 bp sequencing description. See `docs/public_empirical_examples.md`.
+
 Stage 5b screening-speed runs use the public small yeast reference and the tracked candidate-enzyme list:
 
 ```text

@@ -45,7 +45,7 @@ results/manuscript/figures/figure_04_matched_tool_timing.pdf
 
 The table and R/ggplot2 figure are generated from `config/matched_tool_timing_cases.tsv`. They are intentionally semantics-aware: radigest is the native anchor, Digital_RADs.py and DDRADSEQTOOLS are normalized-interval comparator tools, SimRAD is count-only, and ddgRADer is binned-screening only. The required matched-tool set includes complete small-yeast and moderate-cannabis groups plus a large-wheat subset that excludes SimRAD because SimRAD cannot process the full wheat FASTA under R string-size limits.
 
-## Stage 6 empirical depth validation
+## Stage 6 empirical validation
 
 Sockeye empirical depth validation is artifact `C11` and is part of the publication
 `reviewer-all` release scope. The workflow declares the local/private BAM input
@@ -58,6 +58,20 @@ broad raw and hard-window radigest prediction summaries, a configured
 `radigest-design` run, predicted-locus BED depth calculation across BAMs,
 `results/empirical/{library_id}/depth_validation/summary.tsv`, and the manuscript
 table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
+
+Public SRA-backed empirical rows, including Anopheles EcoRI-MseI and Rhododendron
+DpnII-MspI when enabled, produce the same TLEN/QC, raw/hard prediction, model-grid,
+best-model, and size-model overlay outputs for external insert-size recovery checks.
+Per-library overlays use dataset-prefixed filenames, for example
+`size_model_overlay__anopheles_ecori_msei.pdf` and
+`size_model_overlay__rhododendron_dpnII_mspI.pdf`, with legacy
+`size_model_overlay.pdf` aliases retained for compatibility. The manuscript-level
+empirical size-selection claim is summarized in
+`results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf`.
+These rows support empirical size-selection weighting claims and should be surfaced
+in the manuscript or supplement through an empirical dataset table and size-model
+summary/overlay artifacts. They are not depth-validation artifacts unless a matching
+entry is added to `config/empirical_depth_validation_cases.tsv`.
 
 ## Stage 7a/7b audit contract
 

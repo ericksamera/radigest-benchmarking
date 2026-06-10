@@ -13,7 +13,9 @@ ddgRADer backend     binned fragment-screening behavior only
 
 SimRAD and ddgRADer outputs must not be described as same-fragment or coordinate-equivalence validation outputs unless a future workflow normalizes them to the same interval model.
 
-A claim is release-required only when `required_for_release` is `true`. Sockeye empirical depth validation is release-required for the publication reviewer path; the BAM/BAI inputs remain private and must be supplied locally before `make reviewer-all`.
+A claim is release-required only when `required_for_release` is `true`. Sockeye empirical depth validation is release-required for the publication reviewer path; the BAM/BAI inputs remain private and must be supplied locally before `make reviewer-all`, unless the Sockeye SRA/archived alignment workflow replaces the local drop-off contract.
+
+Public empirical SRA rows support external size-selection recovery claims, not depth-validation claims, unless a matching depth-validation case is explicitly declared. The Anopheles EcoRI-MseI and Rhododendron DpnII-MspI examples may support qualitative and quantitative insert-size recovery claims such as observed TLEN distributions, Jensen-Shannon divergence, median insert-size agreement, and observed versus predicted in-window fraction. The manuscript Figure 3 summary (`figure_03_empirical_size_selection_summary.pdf`) may claim that weighted size-selection models reduce distributional mismatch relative to strict hard-window predictions across enabled empirical examples, but it must not be described as proving exact depth prediction or wet-lab optimal enzyme choice.
 
 Stage 5b screening-speed outputs are cached `radigest-screen-pairs-cached` performance measurements. They support a throughput claim for candidate-pair screening only; they do not support cross-tool coordinate equivalence or biological recovery claims. Cut-index build workers are pinned to `radigest_threads` so screening-speed and job-scaling cases do not accidentally vary cache-build parallelism when `jobs` changes.
 

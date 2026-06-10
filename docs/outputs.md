@@ -170,14 +170,23 @@ results/empirical/{library_id}/depth_validation/loci.json
 results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
 results/empirical/{library_id}/depth_validation/summary.tsv
 results/manuscript/tables/table_08_empirical_depth_validation.tsv
+results/empirical/{library_id}/size_model_grid.tsv
+results/empirical/{library_id}/best_size_model.tsv
+results/empirical/{library_id}/size_model_curves.tsv
+results/empirical/{library_id}/figures/size_model_overlay__{library_id}.pdf
+results/empirical/{library_id}/figures/size_model_overlay.pdf
+results/empirical/size_model_fit_ranking.tsv
+results/empirical/figures/size_model_fit_ranking.pdf
+results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf
 results/empirical/.gitkeep
 ```
 
 The depth-validation summary records the configured `radigest-design` run, the
 BED predicted-locus set, per-sample empirical mean read-pair depth per locus,
-and read-budget-normalized predicted depths. Later empirical stages will add
-model-fit summaries and manuscript plots from these TLEN and radigest-prediction
-outputs.
+and read-budget-normalized predicted depths. Size-selection outputs record
+per-library model grids, curves, dataset-prefixed overlay figures, the cross-library
+model-fit ranking table, and the manuscript Figure 3 empirical size-selection
+summary.
 
 Stage 7 audit outputs are:
 

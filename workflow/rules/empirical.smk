@@ -22,6 +22,9 @@ EMPIRICAL_DEPTH_VALIDATION_TABLE = (
 EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE = (
     "results/manuscript/figures/figure_07_empirical_depth_validation.pdf"
 )
+EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE = (
+    "results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf"
+)
 EMPIRICAL_PLACEHOLDER_OUTPUTS = ["results/empirical/.gitkeep"]
 
 
@@ -312,9 +315,13 @@ for row in EMPIRICAL_ENABLED_ROWS:
         ]
     )
 EMPIRICAL_OVERLAY_FIGURE_OUTPUTS = [
-    f"results/empirical/{row['library_id']}/figures/size_model_overlay.pdf"
+    f"results/empirical/{row['library_id']}/figures/"
+    f"size_model_overlay__{row['library_id']}.pdf"
     for row in EMPIRICAL_ENABLED_ROWS
 ]
+EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE_OUTPUTS = (
+    [EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE] if EMPIRICAL_ENABLED_ROWS else []
+)
 EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS = (
     [
         "results/empirical/size_model_fit_ranking.tsv",
@@ -326,6 +333,7 @@ EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS = (
 EMPIRICAL_FIGURE_OUTPUTS = (
     EMPIRICAL_OVERLAY_FIGURE_OUTPUTS
     + EMPIRICAL_MODEL_FIT_RANKING_OUTPUTS
+    + EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS
 )
@@ -1167,7 +1175,8 @@ rule empirical_size_model_overlay_figure:
     input:
         curves="results/empirical/{library_id}/size_model_curves.tsv",
     output:
-        figure="results/empirical/{library_id}/figures/size_model_overlay.pdf",
+        figure="results/empirical/{library_id}/figures/size_model_overlay__{library_id}.pdf",
+        legacy_figure="results/empirical/{library_id}/figures/size_model_overlay.pdf",
     log:
         "benchmark/logs/empirical/{library_id}.size_model_overlay.log",
     conda:
@@ -1180,6 +1189,7 @@ rule empirical_size_model_overlay_figure:
             --out {output.figure:q} \
             --formats pdf \
             >{log:q} 2>&1
+        cp {output.figure:q} {output.legacy_figure:q}
         """
 
 
@@ -1200,6 +1210,27 @@ rule empirical_size_model_fit_ranking_figure:
             --curves {input.curves:q} \
             --out-table {output.table:q} \
             --out-figure {output.figure:q} \
+            --formats pdf \
+            >{log:q} 2>&1
+        """
+
+
+rule empirical_size_selection_summary_figure:
+    input:
+        ranking="results/empirical/size_model_fit_ranking.tsv",
+        script="scripts/manuscript/make_empirical_size_selection_summary_figure.R",
+    output:
+        figure=EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE,
+    log:
+        "benchmark/logs/empirical/size_selection_summary_figure.log",
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/manuscript/figures
+        Rscript {input.script:q} \
+            --ranking {input.ranking:q} \
+            --out {output.figure:q} \
             --formats pdf \
             >{log:q} 2>&1
         """
