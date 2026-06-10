@@ -40,8 +40,10 @@ EMPIRICAL_RHODODENDRON_REFERENCE_OUTPUTS ?= data/reference/rhododendron_molle_gc
 EMPIRICAL_RHODODENDRON_FASTQ_OUTPUTS ?= data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570991_1.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570991_2.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570992_1.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570992_2.fastq.gz
 EMPIRICAL_RHODODENDRON_BAM_OUTPUTS ?= data/empirical/rhododendron_dpnII_mspI/bam/SRR32570991.bam data/empirical/rhododendron_dpnII_mspI/bam/SRR32570991.bam.bai data/empirical/rhododendron_dpnII_mspI/bam/SRR32570992.bam data/empirical/rhododendron_dpnII_mspI/bam/SRR32570992.bam.bai
 EMPIRICAL_RHODODENDRON_OUTPUTS ?= results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay__rhododendron_dpnII_mspI.pdf results/empirical/rhododendron_dpnII_mspI/size_model_grid.tsv results/empirical/rhododendron_dpnII_mspI/best_size_model.tsv
+EMPIRICAL_FIGURE3_OUTPUT ?= results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf
+EMPIRICAL_SIZE_OVERLAY_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay__sockeye_ecori_msei.pdf results/empirical/anopheles_ecori_msei/figures/size_model_overlay__anopheles_ecori_msei.pdf results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay__rhododendron_dpnII_mspI.pdf
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -272,6 +274,12 @@ empirical-model-fit-ranking: $(RADIGEST_BUILD_PREREQ)
 empirical-figures: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_figures_all $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-figure3-only:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 $(SNAKEMAKE_CONDA_ARGS) --rerun-triggers mtime -R empirical_size_selection_summary_figure $(EMPIRICAL_FIGURE3_OUTPUT) $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-size-overlays-only:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) --rerun-triggers mtime -R empirical_size_model_overlay_figure $(EMPIRICAL_SIZE_OVERLAY_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs

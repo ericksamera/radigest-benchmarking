@@ -27,7 +27,7 @@ model_family_label <- function(model) {
     model == "none" ~ "Raw digest",
     model == "hard" ~ "Hard window",
     model == "soft-window" ~ "Soft window",
-    model == "soft-window-short-bias" ~ "Soft + short-bias",
+    model %in% c("soft-window-short-bias", "protocol-prior") ~ "Protocol prior",
     model == "normal" ~ "Normal",
     model == "triangular" ~ "Triangular",
     TRUE ~ model
@@ -41,6 +41,20 @@ dataset_label <- function(library_id, display_name) {
     library_id == "rhododendron_dpnII_mspI" ~ "Rhododendron\nDpnII-MspI",
     TRUE ~ str_wrap(display_name, width = 16)
   )
+}
+
+theme_radigest <- function(base_size = 9) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "#D8DCE3", linewidth = 0.35),
+      axis.title = element_text(color = "#2F2F2F"),
+      axis.text = element_text(color = "#3A3A3A"),
+      legend.title = element_text(color = "#2F2F2F"),
+      legend.text = element_text(color = "#3A3A3A"),
+      plot.tag = element_text(face = "bold", size = rel(1.45), color = "#1F1F1F"),
+      plot.margin = margin(t = 5, r = 8, b = 5, l = 6)
+    )
 }
 
 ranking_path <- arg_value("--ranking")
@@ -72,16 +86,14 @@ if (length(missing_columns) > 0) {
   )
 }
 
-if (!("model_family" %in% names(ranking))) {
-  ranking <- ranking |>
-    mutate(model_family = model_family_label(model))
-}
-
 model_order <- c(
-  "Raw digest", "Hard window", "Soft window", "Soft + short-bias",
+  "Raw digest", "Hard window", "Soft window", "Protocol prior",
   "Normal", "Triangular"
 )
 
+# Keep the most interpretable empirical examples in a stable visual order. ggplot
+# renders factor levels from bottom to top on a discrete y-axis, so this order
+# places Rhododendron at the top and Sockeye at the bottom.
 dataset_order <- c(
   "sockeye_ecori_msei",
   "anopheles_ecori_msei",
@@ -120,16 +132,14 @@ panel_a_df <- plot_df |>
   ) |>
   filter(!is.na(model_family))
 
-# Panel B: how much the predicted in-window fraction differs from observed reads.
+# Panel B: dumbbell plot of in-window prediction error. Values closer to zero
+# indicate that the predicted in-window fraction better matches empirical reads.
 hard_df <- plot_df |>
   filter(model == "hard") |>
   transmute(
     library_id,
     dataset,
-    source = "Hard window",
-    predicted = pred_in_window_fraction,
-    observed = obs_in_window_fraction,
-    model_family = as.character(model_family)
+    hard_error_pp = 100 * (pred_in_window_fraction - obs_in_window_fraction)
   )
 
 best_weighted_df <- plot_df |>
@@ -140,71 +150,92 @@ best_weighted_df <- plot_df |>
   transmute(
     library_id,
     dataset,
-    source = "Best weighted",
-    predicted = pred_in_window_fraction,
-    observed = obs_in_window_fraction,
-    model_family = as.character(model_family)
+    best_weighted_error_pp = 100 * (pred_in_window_fraction - obs_in_window_fraction),
+    best_weighted_model = as.character(model_family)
   )
 
-panel_b_df <- bind_rows(hard_df, best_weighted_df) |>
-  filter(is.finite(predicted), is.finite(observed)) |>
-  mutate(
-    error_pp = 100 * (predicted - observed),
-    source = factor(source, levels = c("Hard window", "Best weighted"))
-  )
+panel_b_segments <- hard_df |>
+  inner_join(best_weighted_df, by = c("library_id", "dataset")) |>
+  filter(is.finite(hard_error_pp), is.finite(best_weighted_error_pp))
 
-if (nrow(panel_b_df) == 0) {
+if (nrow(panel_b_segments) == 0) {
   stop("No in-window prediction rows available for Panel B", call. = FALSE)
 }
 
+panel_b_points <- bind_rows(
+  panel_b_segments |>
+    transmute(dataset, source = "Hard window", error_pp = hard_error_pp),
+  panel_b_segments |>
+    transmute(dataset, source = "Best weighted", error_pp = best_weighted_error_pp)
+) |>
+  mutate(source = factor(source, levels = c("Hard window", "Best weighted")))
+
+x_min <- min(0, panel_b_points$error_pp, na.rm = TRUE)
+x_max <- max(0, panel_b_points$error_pp, na.rm = TRUE)
+x_pad <- max(4, 0.08 * (x_max - x_min))
+
+col_hard <- "#DD8452"
+col_best <- "#4C72B0"
+col_segment <- "#BFC5CF"
+
+js_upper <- max(0.85, max(panel_a_df$js_read, na.rm = TRUE))
+
 p_js <- ggplot(panel_a_df, aes(x = model_family, y = dataset, fill = js_read)) +
-  geom_tile(color = "white", linewidth = 0.6) +
-  geom_text(aes(label = js_label, color = js_read > 0.72), size = 2.7) +
-  scale_color_manual(values = c(`FALSE` = "black", `TRUE` = "white"), guide = "none") +
+  geom_tile(color = "white", linewidth = 1.0) +
+  geom_text(aes(label = js_label, color = js_read >= 0.62), size = 3.05) +
+  scale_color_manual(values = c(`FALSE` = "#202020", `TRUE` = "white"), guide = "none") +
   scale_fill_gradient(
-    low = "grey96",
-    high = "grey35",
+    low = "#F3F5F8",
+    high = "#5B677A",
+    limits = c(0, js_upper),
+    oob = squish,
+    breaks = seq(0, 0.8, by = 0.2),
     labels = label_number(accuracy = 0.01),
     name = "JS distance\n(lower better)"
   ) +
   labs(x = NULL, y = NULL) +
-  theme_minimal(base_size = 9) +
+  theme_radigest(base_size = 9) +
   theme(
     panel.grid = element_blank(),
     axis.text.x = element_text(angle = 28, hjust = 1),
     legend.position = "right",
-    plot.margin = margin(t = 4, r = 8, b = 4, l = 4)
+    legend.key.height = unit(0.55, "cm")
   )
 
-point_position <- position_dodge(width = 0.45)
-y_min <- min(0, panel_b_df$error_pp, na.rm = TRUE)
-y_max <- max(0, panel_b_df$error_pp, na.rm = TRUE)
-y_pad <- max(5, 0.08 * (y_max - y_min))
-
-p_window <- ggplot(panel_b_df, aes(x = dataset, y = error_pp, shape = source)) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.35, color = "grey45") +
-  geom_point(position = point_position, size = 2.4) +
-  scale_shape_manual(values = c("Hard window" = 16, "Best weighted" = 17)) +
-  scale_y_continuous(
-    labels = label_number(accuracy = 1, suffix = " pp"),
-    limits = c(y_min - y_pad, y_max + y_pad),
+p_window <- ggplot(panel_b_segments, aes(y = dataset)) +
+  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.45, color = "#7A7A7A") +
+  geom_segment(
+    aes(x = best_weighted_error_pp, xend = hard_error_pp, yend = dataset),
+    color = col_segment,
+    linewidth = 1.25,
+    lineend = "round"
+  ) +
+  geom_point(
+    data = panel_b_points,
+    aes(x = error_pp, shape = source, color = source),
+    size = 3.0,
+    stroke = 0.25
+  ) +
+  scale_shape_manual(values = c("Hard window" = 16, "Best weighted" = 17), name = NULL) +
+  scale_color_manual(values = c("Hard window" = col_hard, "Best weighted" = col_best), name = NULL) +
+  scale_x_continuous(
+    labels = function(x) paste0(round(x), " pp"),
+    limits = c(x_min - x_pad, x_max + x_pad),
     expand = expansion(mult = c(0, 0.02))
   ) +
   labs(
-    x = NULL,
-    y = "Predicted - observed\nin-window fraction",
-    shape = NULL
+    x = "Prediction error in in-window fraction\n(predicted - observed, percentage points)",
+    y = NULL
   ) +
-  theme_minimal(base_size = 9) +
+  theme_radigest(base_size = 9) +
   theme(
-    panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_blank(),
-    legend.position = "bottom",
-    plot.margin = margin(t = 4, r = 8, b = 4, l = 4)
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom"
   )
 
 p <- p_js / p_window +
-  plot_annotation(tag_levels = "A") &
+  plot_annotation(tag_levels = "A") +
+  plot_layout(heights = c(1.0, 0.9)) &
   theme(plot.tag = element_text(face = "bold"))
 
 base_stem <- tools::file_path_sans_ext(out_path)
