@@ -4,7 +4,7 @@ SYNTHETIC_FASTA = "data/synthetic/synthetic_validation.fa"
 SYNTHETIC_EXPECTED = "config/synthetic_expected.tsv"
 SYNTHETIC_VALIDATION_SUMMARY = "results/validation/synthetic_validation_results.tsv"
 SYNTHETIC_VALIDATION_TABLE = (
-    "results/manuscript/tables/table_02_synthetic_validation.tsv"
+    "results/manuscript/tables/table_s01_synthetic_validation.tsv"
 )
 SYNTHETIC_VALIDATION_OUTPUTS = [
     SYNTHETIC_VALIDATION_SUMMARY,

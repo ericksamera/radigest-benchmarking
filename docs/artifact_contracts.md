@@ -5,6 +5,7 @@
 Comparator claims now include both interval-equivalence outputs and lower-resolution comparator-semantics outputs:
 
 ```text
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```

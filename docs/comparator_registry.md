@@ -66,6 +66,7 @@ SimRAD is an R package, not an external checkout. `make install-simrad` now runs
 The manuscript-facing comparator tables are:
 
 ```text
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```

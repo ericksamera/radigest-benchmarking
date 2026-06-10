@@ -8,7 +8,7 @@ Stage 2 smoke outputs are:
 
 ```text
 results/validation/synthetic_validation_results.tsv
-results/manuscript/tables/table_02_synthetic_validation.tsv
+results/manuscript/tables/table_s01_synthetic_validation.tsv
 benchmark/logs/validation/synthetic_validation.log
 results/validation/raw/synthetic/*.fragments.tsv
 results/validation/raw/synthetic/*.json
@@ -43,6 +43,7 @@ results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
 results/comparators/ddgrader/ddgrader_binned_screening_detail.tsv
 results/comparators/comparator_case_matrix.tsv
 results/comparators/cut_equivalence_summary.tsv
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 benchmark/logs/comparators/**/*.log

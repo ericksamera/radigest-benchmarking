@@ -221,6 +221,7 @@ EXTRA_REQUIRED_FILES = [
     "data/synthetic/comparator_ecori_msei_smoke.fa",
     "scripts/validation/validate_synthetic.py",
     "scripts/manuscript/make_synthetic_validation_table.py",
+    "scripts/manuscript/make_comparator_exact_counts_table.py",
     "scripts/reference/fetch_ncbi_reference.py",
     "scripts/reference/prepare_plain_reference.py",
     "scripts/reference/write_reference_checksums.py",

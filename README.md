@@ -41,7 +41,7 @@ Expected smoke outputs:
 
 ```text
 results/validation/synthetic_validation_results.tsv
-results/manuscript/tables/table_02_synthetic_validation.tsv
+results/manuscript/tables/table_s01_synthetic_validation.tsv
 ```
 
 Expected reference outputs:
@@ -69,6 +69,7 @@ results/comparators/ddgrader/ddgrader_binned_smoke_summary.tsv
 results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
 results/comparators/comparator_case_matrix.tsv
 results/comparators/cut_equivalence_summary.tsv
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```

@@ -14,7 +14,7 @@ The smoke run writes:
 
 ```text
 results/validation/synthetic_validation_results.tsv
-results/manuscript/tables/table_02_synthetic_validation.tsv
+results/manuscript/tables/table_s01_synthetic_validation.tsv
 ```
 
 After `make install-radigest`, the explicit `RADIGEST=` assignment can be omitted. Manual `RADIGEST=/path/to/radigest` overrides still work.
@@ -48,6 +48,7 @@ make comparators THREADS=8 RADIGEST=/path/to/radigest
 The comparator target writes exact normalized interval comparison summaries for Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py`, a SimRAD count-level sanity comparison, a ddgRADer binned-screening comparison, and two manuscript-facing tables:
 
 ```text
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```

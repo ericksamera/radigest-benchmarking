@@ -12,6 +12,9 @@ COMPARATOR_CUT_EQUIVALENCE_SUMMARY = "results/comparators/cut_equivalence_summar
 COMPARATOR_INTERVAL_TABLE = (
     "results/manuscript/tables/table_03_interval_comparisons.tsv"
 )
+COMPARATOR_EXACT_COUNTS_TABLE = (
+    "results/manuscript/tables/table_02_comparator_exact_counts.tsv"
+)
 COMPARATOR_SEMANTICS_TABLE = (
     "results/manuscript/tables/table_03_comparator_semantics.tsv"
 )
@@ -168,6 +171,7 @@ COMPARATOR_ALL_OUTPUTS = (
     + [
         COMPARATOR_CUT_EQUIVALENCE_SUMMARY,
         COMPARATOR_INTERVAL_TABLE,
+        COMPARATOR_EXACT_COUNTS_TABLE,
         COMPARATOR_SEMANTICS_TABLE,
         COMPARATOR_CASE_MATRIX,
     ]
@@ -920,6 +924,33 @@ rule compare_ddgrader_binned:
             --second-name ddgRADer_backend \
             --out-detail {output.detail:q} \
             --out-summary {output.summary:q} \
+            >{log:q} 2>&1
+        """
+
+
+rule build_comparator_exact_counts_table:
+    input:
+        interval_summaries=COMPARATOR_INTERVAL_OUTPUTS,
+        noncoordinate_summaries=SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES,
+        cases=COMPARATOR_CASE_MANIFEST,
+        noncoordinate_cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
+        registry=COMPARATOR_REGISTRY,
+        conditions="config/conditions.tsv",
+    output:
+        table=COMPARATOR_EXACT_COUNTS_TABLE,
+    log:
+        "benchmark/logs/comparators/comparator_exact_counts_table.log",
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/comparators
+        python3 scripts/manuscript/make_comparator_exact_counts_table.py \
+            --comparator-cases {input.cases:q} \
+            --noncoordinate-cases {input.noncoordinate_cases:q} \
+            --comparators {input.registry:q} \
+            --conditions {input.conditions:q} \
+            --out {output.table:q} \
+            --require-present \
+            --require-claim-pass \
             >{log:q} 2>&1
         """
 

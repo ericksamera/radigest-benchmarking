@@ -1,5 +1,5 @@
 library_id	bioproject_accession	biosample_accession	experiment_accession	run_accession	platform	layout	read_length	enabled	include	notes
 anopheles_ecori_msei	PRJNA298241	SAMN04202422	SRX1428226	SRR3173372	ILLUMINA	PAIRED	150	true	true	A11G105; Anopheles darlingi EcoRI/MseI reduced representation paired-end subset for initial SRA validation.
 anopheles_ecori_msei	PRJNA298241	SAMN04202420	SRX1428228	SRR3173376	ILLUMINA	PAIRED	150	true	true	A11G102; Anopheles darlingi EcoRI/MseI reduced representation paired-end subset for initial SRA validation.
-rhododendron_dpnII_mspI	TO_VERIFY	TO_VERIFY	TO_VERIFY	SRR32570991	ILLUMINA	PAIRED	150	true	true	Rhododendron molle DpnII-MspI ddRAD public run; first FASTQ records inspected locally were 140 bp and 148 bp for read 1 and read 2, respectively, so metadata use nominal PE150 rather than the paper-reported 2x500.
-rhododendron_dpnII_mspI	TO_VERIFY	TO_VERIFY	TO_VERIFY	SRR32570992	ILLUMINA	PAIRED	150	true	true	Rhododendron molle DpnII-MspI ddRAD public run; verify full read-length distribution after FASTQ download, but do not use 500 bp for this SRA-backed workflow unless the deposited reads support it.
+rhododendron_dpnII_mspI	PRJNA1231201	SAMN47216454	SRX27879860	SRR32570991	ILLUMINA	PAIRED	150	true	true	Rhododendron molle DpnII-MspI ddRAD public run.
+rhododendron_dpnII_mspI	PRJNA1231201	SAMN47216453	SRX27879859	SRR32570992	ILLUMINA	PAIRED	150	true	true	Rhododendron molle DpnII-MspI ddRAD public run.
