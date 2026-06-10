@@ -36,8 +36,12 @@ EMPIRICAL_ANOPHELES_REFERENCE_OUTPUTS ?= data/reference/anopheles_darlingi_gcf94
 EMPIRICAL_ANOPHELES_FASTQ_OUTPUTS ?= data/empirical/anopheles_ecori_msei/fastq/SRR3173372_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173372_2.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_1.fastq.gz data/empirical/anopheles_ecori_msei/fastq/SRR3173376_2.fastq.gz
 EMPIRICAL_ANOPHELES_BAM_OUTPUTS ?= data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam data/empirical/anopheles_ecori_msei/bam/SRR3173372.bam.bai data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam data/empirical/anopheles_ecori_msei/bam/SRR3173376.bam.bai
 EMPIRICAL_ANOPHELES_OUTPUTS ?= results/empirical/anopheles_ecori_msei/figures/size_model_overlay.pdf results/empirical/anopheles_ecori_msei/size_model_grid.tsv results/empirical/anopheles_ecori_msei/best_size_model.tsv
+EMPIRICAL_RHODODENDRON_REFERENCE_OUTPUTS ?= data/reference/rhododendron_molle_gca025413875.fa.gz data/reference/rhododendron_molle_gca025413875.fa
+EMPIRICAL_RHODODENDRON_FASTQ_OUTPUTS ?= data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570991_1.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570991_2.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570992_1.fastq.gz data/empirical/rhododendron_dpnII_mspI/fastq/SRR32570992_2.fastq.gz
+EMPIRICAL_RHODODENDRON_BAM_OUTPUTS ?= data/empirical/rhododendron_dpnII_mspI/bam/SRR32570991.bam data/empirical/rhododendron_dpnII_mspI/bam/SRR32570991.bam.bai data/empirical/rhododendron_dpnII_mspI/bam/SRR32570992.bam data/empirical/rhododendron_dpnII_mspI/bam/SRR32570992.bam.bai
+EMPIRICAL_RHODODENDRON_OUTPUTS ?= results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay.pdf results/empirical/rhododendron_dpnII_mspI/size_model_grid.tsv results/empirical/rhododendron_dpnII_mspI/best_size_model.tsv
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -103,6 +107,8 @@ help:
 	  '  make empirical-model-grid THREADS=8' \
 	  '  make empirical-model-fit-ranking THREADS=8' \
 	  '  make empirical-figures THREADS=8' \
+	  '  make empirical-anopheles THREADS=8' \
+	  '  make empirical-rhododendron THREADS=8' \
 	  '' \
 	  'Use `make help-all` for the complete flat target list.'
 
@@ -139,6 +145,7 @@ help-all:
 	  '  make empirical-anopheles-fetch THREADS=8' \
 	  '  make empirical-anopheles-align THREADS=8' \
 	  '  make empirical-anopheles THREADS=8' \
+	  '  make empirical-rhododendron THREADS=8' \
 	  '  make empirical-references THREADS=8' \
 	  '  make empirical-tlens THREADS=8' \
 	  '  make empirical-predictions THREADS=8' \
@@ -298,6 +305,21 @@ empirical-anopheles-align: empirical-anopheles-fetch
 empirical-anopheles: $(RADIGEST_BUILD_PREREQ) empirical-anopheles-align
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled anopheles_ecori_msei
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_ANOPHELES_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-rhododendron-reference:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_RHODODENDRON_REFERENCE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-rhododendron-fetch: empirical-rhododendron-reference
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled rhododendron_dpnII_mspI
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_RHODODENDRON_FASTQ_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-rhododendron-align: empirical-rhododendron-fetch
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled rhododendron_dpnII_mspI
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_RHODODENDRON_BAM_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+empirical-rhododendron: $(RADIGEST_BUILD_PREREQ) empirical-rhododendron-align
+	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --require-enabled rhododendron_dpnII_mspI
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(EMPIRICAL_RHODODENDRON_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
 
 
 reviewer-empirical: $(RADIGEST_BUILD_PREREQ)
