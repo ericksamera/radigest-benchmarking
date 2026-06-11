@@ -57,6 +57,7 @@ log_depth_labels <- function(values) {
 }
 
 per_sample_path <- arg_value("--per-sample-depth")
+per_locus_path <- arg_value("--per-locus-depth")
 summary_path <- arg_value("--summary")
 out_path <- arg_value("--out")
 formats <- str_split(arg_value("--formats", "pdf"), ",", simplify = TRUE) |>
@@ -67,6 +68,9 @@ formats <- formats[formats != ""]
 if (is.null(per_sample_path)) {
   stop("--per-sample-depth is required", call. = FALSE)
 }
+if (is.null(per_locus_path)) {
+  stop("--per-locus-depth is required", call. = FALSE)
+}
 if (is.null(summary_path)) {
   stop("--summary is required", call. = FALSE)
 }
@@ -75,12 +79,18 @@ if (is.null(out_path)) {
 }
 
 per_sample <- read_tsv(per_sample_path, show_col_types = FALSE, progress = FALSE)
+per_locus <- read_tsv(per_locus_path, show_col_types = FALSE, progress = FALSE)
 summary <- read_tsv(summary_path, show_col_types = FALSE, progress = FALSE)
 
 require_columns(
   per_sample,
   c("sample", "loci", "observed_read_pairs_at_loci", "mean_pairs_per_locus", "assigned_read_pair_fraction"),
   "per-sample depth table"
+)
+require_columns(
+  per_locus,
+  c("locus_index", "mean_pairs_per_sample"),
+  "per-locus depth table"
 )
 require_columns(
   summary,
@@ -137,6 +147,38 @@ if (nrow(plot_df) == 0) {
   stop("No finite positive per-sample depth rows to plot", call. = FALSE)
 }
 
+locus_df <- per_locus |>
+  mutate(mean_pairs_per_sample = as.numeric(mean_pairs_per_sample)) |>
+  filter(is.finite(mean_pairs_per_sample), mean_pairs_per_sample >= 0)
+
+if (nrow(locus_df) == 0) {
+  stop("No finite per-locus depth rows to plot", call. = FALSE)
+}
+
+positive_locus_df <- locus_df |>
+  filter(mean_pairs_per_sample > 0)
+
+if (nrow(positive_locus_df) == 0) {
+  stop("No positive per-locus depth values to plot on a log scale", call. = FALSE)
+}
+
+total_loci <- nrow(locus_df)
+ccdf_df <- positive_locus_df |>
+  count(mean_pairs_per_sample, name = "n") |>
+  arrange(desc(mean_pairs_per_sample)) |>
+  mutate(fraction_at_or_above = cumsum(n) / total_loci) |>
+  arrange(mean_pairs_per_sample)
+
+threshold_df <- tibble(threshold = c(1, 3, 5, 10)) |>
+  mutate(
+    fraction_at_or_above = vapply(
+      threshold,
+      function(x) mean(locus_df$mean_pairs_per_sample >= x),
+      numeric(1)
+    ),
+    label = paste0(threshold, "x")
+  )
+
 line_df <- tibble(
   label = c(
     sprintf("Predicted at modeled budget (%.1fx)", predicted_budget_depth),
@@ -151,6 +193,8 @@ line_df$label <- factor(line_df$label, levels = line_df$label)
 depth_breaks <- log_breaks_from_range(c(
   plot_df$mean_pairs_per_locus,
   plot_df$read_normalized_predicted_depth,
+  locus_df$mean_pairs_per_sample,
+  threshold_df$threshold,
   predicted_budget_depth,
   observed_median_depth,
   read_normalized_prediction
@@ -188,25 +232,30 @@ p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
     plot.margin = margin(5.5, 8, 5.5, 12)
   )
 
-p_calibration <- ggplot(
-  plot_df,
-  aes(x = read_normalized_predicted_depth, y = mean_pairs_per_locus)
-) +
-  geom_point(color = "#2B5CAD", size = 1.25, alpha = 0.82) +
-  geom_abline(intercept = 0, slope = 1, linetype = "longdash", color = "grey15", linewidth = 0.45) +
+p_locus_distribution <- ggplot(ccdf_df, aes(x = mean_pairs_per_sample, y = fraction_at_or_above)) +
+  geom_step(color = "#2B5CAD", linewidth = 0.55, direction = "hv") +
+  geom_vline(xintercept = threshold_df$threshold, linetype = "dotted", color = "grey40", linewidth = 0.35) +
+  geom_point(data = threshold_df, aes(x = threshold, y = fraction_at_or_above), color = "grey20", size = 1.3) +
+  geom_text(
+    data = threshold_df,
+    aes(x = threshold, y = pmin(fraction_at_or_above + 0.035, 1), label = label),
+    size = 2.2,
+    vjust = 0
+  ) +
   scale_x_log10(
     breaks = depth_breaks,
     labels = log_depth_labels,
     limits = depth_limits
   ) +
-  scale_y_log10(
-    breaks = depth_breaks,
-    labels = log_depth_labels,
-    limits = depth_limits
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, 1),
+    breaks = pretty_breaks(n = 5),
+    expand = expansion(mult = c(0.01, 0.05))
   ) +
   labs(
-    x = "Read-normalized predicted depth",
-    y = "Observed mean locus depth"
+    x = "Observed mean depth per locus",
+    y = "Predicted loci at or above depth"
   ) +
   theme_minimal(base_size = 8) +
   theme(
@@ -216,7 +265,7 @@ p_calibration <- ggplot(
     plot.margin = margin(5.5, 8, 5.5, 12)
   )
 
-combined <- (p_sorted | p_calibration) +
+combined <- (p_sorted | p_locus_distribution) +
   plot_layout(widths = c(1.55, 1.25), guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(

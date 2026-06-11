@@ -57,6 +57,7 @@ contract in `config/empirical_libraries.tsv`; private BAMs remain ignored under
 per-BAM `tlens.txt`/`tlen_histogram.tsv`/`tlen_qc.tsv`, pooled TLEN/QC outputs,
 broad raw and hard-window radigest prediction summaries, a configured
 `radigest-design` run, predicted-locus BED depth calculation across BAMs,
+`results/empirical/{library_id}/depth_validation/per_locus_depth.tsv`,
 `results/empirical/{library_id}/depth_validation/summary.tsv`, and the manuscript
 table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 

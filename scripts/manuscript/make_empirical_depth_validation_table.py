@@ -22,16 +22,29 @@ TABLE_COLUMNS = [
     "median_observed_read_pairs_at_loci",
     "mean_observed_depth",
     "median_observed_depth",
+    "mean_on_target_read_pair_fraction",
+    "median_on_target_read_pair_fraction",
     "read_normalized_prediction_mean_budget",
     "read_normalized_prediction_median_budget",
     "mean_observed_over_normalized_prediction",
+    "per_locus_median_depth",
+    "per_locus_p25_depth",
+    "per_locus_p75_depth",
+    "fraction_predicted_loci_ge_1x",
+    "fraction_predicted_loci_ge_3x",
+    "fraction_predicted_loci_ge_5x",
+    "fraction_predicted_loci_ge_10x",
+    "mean_sample_fraction_loci_ge_1x",
+    "mean_sample_fraction_loci_ge_3x",
+    "mean_sample_fraction_loci_ge_5x",
+    "mean_sample_fraction_loci_ge_10x",
     "interpretation",
 ]
 
 
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle, delimiter="	")
+        reader = csv.DictReader(handle, delimiter="\t")
         if reader.fieldnames is None:
             raise ValueError(f"{path}: missing header")
         return [
@@ -39,6 +52,10 @@ def read_tsv(path: Path) -> list[dict[str, str]]:
             for row in reader
             if any((value or "").strip() for value in row.values())
         ]
+
+
+def value(row: dict[str, str], key: str) -> str:
+    return row.get(key, "NA")
 
 
 def to_table_row(row: dict[str, str]) -> dict[str, str]:
@@ -58,6 +75,12 @@ def to_table_row(row: dict[str, str]) -> dict[str, str]:
         "median_observed_read_pairs_at_loci": row["median_observed_read_pairs_at_loci"],
         "mean_observed_depth": row["mean_observed_pairs_per_locus"],
         "median_observed_depth": row["median_observed_pairs_per_locus"],
+        "mean_on_target_read_pair_fraction": value(
+            row, "mean_assigned_read_pair_fraction"
+        ),
+        "median_on_target_read_pair_fraction": value(
+            row, "median_assigned_read_pair_fraction"
+        ),
         "read_normalized_prediction_mean_budget": row[
             "read_normalized_predicted_depth_mean_budget"
         ],
@@ -67,6 +90,25 @@ def to_table_row(row: dict[str, str]) -> dict[str, str]:
         "mean_observed_over_normalized_prediction": row[
             "observed_mean_over_normalized_prediction"
         ],
+        "per_locus_median_depth": value(row, "per_locus_mean_depth_median"),
+        "per_locus_p25_depth": value(row, "per_locus_mean_depth_p25"),
+        "per_locus_p75_depth": value(row, "per_locus_mean_depth_p75"),
+        "fraction_predicted_loci_ge_1x": value(row, "per_locus_fraction_ge_1x"),
+        "fraction_predicted_loci_ge_3x": value(row, "per_locus_fraction_ge_3x"),
+        "fraction_predicted_loci_ge_5x": value(row, "per_locus_fraction_ge_5x"),
+        "fraction_predicted_loci_ge_10x": value(row, "per_locus_fraction_ge_10x"),
+        "mean_sample_fraction_loci_ge_1x": value(
+            row, "mean_sample_fraction_loci_ge_1x"
+        ),
+        "mean_sample_fraction_loci_ge_3x": value(
+            row, "mean_sample_fraction_loci_ge_3x"
+        ),
+        "mean_sample_fraction_loci_ge_5x": value(
+            row, "mean_sample_fraction_loci_ge_5x"
+        ),
+        "mean_sample_fraction_loci_ge_10x": value(
+            row, "mean_sample_fraction_loci_ge_10x"
+        ),
         "interpretation": row["depth_model_interpretation"],
     }
 

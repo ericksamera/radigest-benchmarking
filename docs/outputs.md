@@ -169,6 +169,7 @@ results/empirical/{library_id}/depth_validation/design.json
 results/empirical/{library_id}/depth_validation/loci.bed
 results/empirical/{library_id}/depth_validation/loci.json
 results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
+results/empirical/{library_id}/depth_validation/per_locus_depth.tsv
 results/empirical/{library_id}/depth_validation/summary.tsv
 results/manuscript/tables/table_08_empirical_depth_validation.tsv
 results/empirical/{library_id}/size_model_grid.tsv
@@ -184,7 +185,9 @@ results/empirical/.gitkeep
 
 The depth-validation summary records the configured `radigest-design` run, the
 BED predicted-locus set, per-sample empirical mean read-pair depth per locus,
-and read-budget-normalized predicted depths. Size-selection outputs record
+on-target read-pair fractions, per-locus depth distribution summaries,
+coverage-threshold recovery fractions, and read-budget-normalized predicted
+depths. Size-selection outputs record
 per-library model grids, curves, dataset-prefixed overlay figures, the cross-library
 model-fit ranking table, and the manuscript Figure 3 empirical size-selection
 summary.

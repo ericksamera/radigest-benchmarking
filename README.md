@@ -162,9 +162,12 @@ distribution. The default Sockeye row uses a 200-400 bp nominal window with
 Depth-validation settings live in `config/empirical_depth_validation_cases.tsv`.
 When the matching empirical library is enabled, `make empirical-depth-validation`
 runs the configured `radigest-design` prediction, regenerates the hard-selected locus
-set for the validation size window as BED, calculates per-sample mean read-pair depth
-across those predicted loci from the BAMs, and writes
-`results/empirical/{library_id}/depth_validation/summary.tsv` plus the
+set for the validation size window as BED, calculates per-sample mean read-pair
+depth and on-target read-pair fractions across those predicted loci from the
+BAMs, aggregates per-locus depth distributions
+and coverage-threshold recovery, and writes
+`results/empirical/{library_id}/depth_validation/per_locus_depth.tsv`,
+`results/empirical/{library_id}/depth_validation/summary.tsv`, plus the
 manuscript table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 The default Sockeye depth-validation case mirrors the EcoRI-MseI
 200-400 bp run: target 1.5% weighted genome recovery, 20x target

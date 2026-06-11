@@ -279,6 +279,7 @@ for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS:
             f"{prefix}/loci.bed",
             f"{prefix}/loci.json",
             f"{prefix}/per_sample_depth.tsv",
+            f"{prefix}/per_locus_depth.tsv",
             f"{prefix}/summary.tsv",
         ]
     )
@@ -1002,6 +1003,7 @@ rule empirical_depth_per_sample:
         loci="results/empirical/{library_id}/depth_validation/loci.bed",
     output:
         depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
+        per_locus_depth="results/empirical/{library_id}/depth_validation/per_locus_depth.tsv",
     log:
         "benchmark/logs/empirical/{library_id}.depth_validation.per_sample_depth.log",
     conda:
@@ -1021,6 +1023,7 @@ rule empirical_depth_per_sample:
             --min-mapq {params.min_mapq:q} \
             --exclude-duplicates {params.exclude_duplicates:q} \
             --out {output.depth:q} \
+            --per-locus-out {output.per_locus_depth:q} \
             >{log:q} 2>&1
         """
 
@@ -1029,6 +1032,7 @@ rule empirical_depth_validation_summary:
     input:
         design="results/empirical/{library_id}/depth_validation/design.tsv",
         per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
+        per_locus_depth="results/empirical/{library_id}/depth_validation/per_locus_depth.tsv",
     output:
         summary="results/empirical/{library_id}/depth_validation/summary.tsv",
     log:
@@ -1049,6 +1053,7 @@ rule empirical_depth_validation_summary:
             --enzyme-2 {params.enzyme_2:q} \
             --design-tsv {input.design:q} \
             --per-sample-depth {input.per_sample_depth:q} \
+            --per-locus-depth {input.per_locus_depth:q} \
             --out {output.summary:q} \
             >{log:q} 2>&1
         """
@@ -1079,6 +1084,7 @@ rule empirical_depth_validation_manuscript_table:
 rule empirical_depth_validation_figure:
     input:
         per_sample_depth="results/empirical/{library_id}/depth_validation/per_sample_depth.tsv",
+        per_locus_depth="results/empirical/{library_id}/depth_validation/per_locus_depth.tsv",
         summary="results/empirical/{library_id}/depth_validation/summary.tsv",
         script="scripts/empirical/plot_depth_validation.R",
     output:
@@ -1092,6 +1098,7 @@ rule empirical_depth_validation_figure:
         mkdir -p benchmark/logs/empirical results/empirical/{wildcards.library_id}/depth_validation
         Rscript scripts/empirical/plot_depth_validation.R \
             --per-sample-depth {input.per_sample_depth:q} \
+            --per-locus-depth {input.per_locus_depth:q} \
             --summary {input.summary:q} \
             --out {output.figure:q} \
             --formats pdf \
