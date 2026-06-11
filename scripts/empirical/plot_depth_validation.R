@@ -282,7 +282,7 @@ p_locus_distribution <- ggplot(ccdf_df, aes(x = mean_pairs_per_sample, y = fract
   ) +
   labs(
     x = "Observed mean depth per locus",
-    y = "Predicted loci at or above depth"
+    y = "Fraction of predicted loci at or above depth."
   ) +
   theme_minimal(base_size = 8) +
   theme(
