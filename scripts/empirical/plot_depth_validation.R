@@ -29,14 +29,27 @@ require_columns <- function(data, columns, label) {
   }
 }
 
-log_breaks_from_range <- function(values) {
+clean_log_axis <- function(values, lower_floor = 0.01, upper_ceiling = 100, lower_pad = 0.85) {
   values <- values[is.finite(values) & values > 0]
   if (length(values) == 0) {
-    return(c(0.1, 1, 10, 100))
+    return(list(limits = c(lower_floor, upper_ceiling), breaks = c(lower_floor, 0.1, 1, 10, upper_ceiling)))
   }
-  lower_exp <- floor(log10(min(values)))
-  upper_exp <- ceiling(log10(max(values)))
-  10^(seq(lower_exp, upper_exp))
+
+  observed_min <- min(values)
+  lower_limit <- if (observed_min < lower_floor) observed_min * lower_pad else lower_floor
+  lower_limit <- max(lower_limit, .Machine$double.eps)
+  upper_limit <- upper_ceiling
+  if (!is.finite(upper_limit) || upper_limit <= lower_limit) {
+    upper_limit <- max(values) * 1.10
+  }
+
+  candidate_breaks <- 10^(seq(floor(log10(lower_limit)), ceiling(log10(upper_limit))))
+  breaks <- candidate_breaks[candidate_breaks >= lower_limit & candidate_breaks <= upper_limit]
+  if (length(breaks) == 0) {
+    breaks <- c(lower_limit, upper_limit)
+  }
+
+  list(limits = c(lower_limit, upper_limit), breaks = breaks)
 }
 
 log_depth_labels <- function(values) {
@@ -176,7 +189,12 @@ threshold_df <- tibble(threshold = c(1, 3, 5, 10)) |>
       function(x) mean(locus_df$mean_pairs_per_sample >= x),
       numeric(1)
     ),
-    label = paste0(threshold, "x")
+    label = paste0(threshold, "x"),
+    label_x = threshold * 1.06,
+    label_y = case_when(
+      threshold == 1 ~ 0.985,
+      TRUE ~ pmin(fraction_at_or_above + 0.04, 0.94)
+    )
   )
 
 line_df <- tibble(
@@ -190,26 +208,34 @@ line_df <- tibble(
 )
 line_df$label <- factor(line_df$label, levels = line_df$label)
 
-depth_breaks <- log_breaks_from_range(c(
-  plot_df$mean_pairs_per_locus,
-  plot_df$read_normalized_predicted_depth,
-  locus_df$mean_pairs_per_sample,
-  threshold_df$threshold,
-  predicted_budget_depth,
-  observed_median_depth,
-  read_normalized_prediction
-))
-depth_limits <- range(depth_breaks, na.rm = TRUE)
+sample_depth_axis <- clean_log_axis(
+  c(
+    plot_df$mean_pairs_per_locus,
+    predicted_budget_depth,
+    observed_median_depth,
+    read_normalized_prediction
+  ),
+  lower_floor = 0.01,
+  upper_ceiling = 100
+)
+locus_depth_axis <- clean_log_axis(
+  c(
+    positive_locus_df$mean_pairs_per_sample,
+    threshold_df$threshold
+  ),
+  lower_floor = 0.01,
+  upper_ceiling = 100
+)
 
 p_sorted <- ggplot(plot_df, aes(x = sample_order, y = mean_pairs_per_locus)) +
   geom_point(color = "#2B5CAD", size = 1.25, alpha = 0.82) +
   geom_hline(data = line_df, aes(yintercept = depth, linetype = label), color = "grey15", linewidth = 0.45) +
   scale_linetype_manual(values = setNames(line_df$line_type, line_df$label)) +
   scale_y_log10(
-    breaks = depth_breaks,
-    labels = log_depth_labels,
-    limits = depth_limits
+    breaks = sample_depth_axis$breaks,
+    labels = log_depth_labels
   ) +
+  coord_cartesian(ylim = sample_depth_axis$limits) +
   scale_x_continuous(
     breaks = pretty_breaks(n = 8),
     expand = expansion(mult = c(0.01, 0.02))
@@ -238,15 +264,16 @@ p_locus_distribution <- ggplot(ccdf_df, aes(x = mean_pairs_per_sample, y = fract
   geom_point(data = threshold_df, aes(x = threshold, y = fraction_at_or_above), color = "grey20", size = 1.3) +
   geom_text(
     data = threshold_df,
-    aes(x = threshold, y = pmin(fraction_at_or_above + 0.035, 1), label = label),
+    aes(x = label_x, y = label_y, label = label),
     size = 2.2,
-    vjust = 0
+    hjust = 0,
+    vjust = 0.5
   ) +
   scale_x_log10(
-    breaks = depth_breaks,
-    labels = log_depth_labels,
-    limits = depth_limits
+    breaks = locus_depth_axis$breaks,
+    labels = log_depth_labels
   ) +
+  coord_cartesian(xlim = locus_depth_axis$limits) +
   scale_y_continuous(
     labels = percent_format(accuracy = 1),
     limits = c(0, 1),
