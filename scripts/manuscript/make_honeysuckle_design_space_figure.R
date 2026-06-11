@@ -203,33 +203,98 @@ if (nrow(plot_df) == 0) {
   stop("No usable design rows after parsing input design tables.", call. = FALSE)
 }
 
-region_df <- plot_df |>
+target_meta <- plot_df |>
   distinct(target_label, target_pct, tolerance_pct, depth_target) |>
-  mutate(
-    xmin = target_pct - tolerance_pct,
-    xmax = target_pct + tolerance_pct,
-    ymin = depth_target,
-    ymax = Inf
-  )
+  mutate(target_label_chr = as.character(target_label))
 
-x_min <- min(plot_df$recovered_genome_pct, na.rm = TRUE)
-x_max <- max(plot_df$recovered_genome_pct, na.rm = TRUE)
-y_max <- max(plot_df$expected_mean_depth, region_df$depth_target * 1.7, na.rm = TRUE)
+x_global_max <- max(plot_df$recovered_genome_pct, na.rm = TRUE)
+y_global_max <- max(plot_df$expected_mean_depth, na.rm = TRUE)
+depth_target_max <- max(target_meta$depth_target, na.rm = TRUE)
+
+full_x_limits <- c(0, x_global_max * 1.02)
+full_y_limits <- c(0, max(y_global_max, depth_target_max * 1.7) * 1.08)
+zoom_x_limits <- c(
+  max(0, min(target_meta$target_pct - target_meta$tolerance_pct, na.rm = TRUE) - 0.35),
+  max(target_meta$target_pct + target_meta$tolerance_pct, na.rm = TRUE) + 0.70
+)
+zoom_y_limits <- c(0, depth_target_max * 2.5)
 
 depth_breaks <- c(0, 10, 30, 60, 100, 300, 1000, 3000, 10000, 30000, 100000)
-depth_breaks <- depth_breaks[depth_breaks <= (y_max * 1.1)]
+depth_breaks <- depth_breaks[depth_breaks <= (full_y_limits[[2]] * 1.1)]
 if (!60 %in% depth_breaks) {
   depth_breaks <- sort(unique(c(depth_breaks, 60)))
 }
 
+panel_specs <- tibble(
+  target_label_chr = c("2.0% target", "1.5% target", "2.0% target", "1.5% target"),
+  panel_label = c(
+    "A. 2.0% target\nfull design space",
+    "B. 1.5% target\nfull design space",
+    "C. 2.0% target\nzoomed feasibility window",
+    "D. 1.5% target\nzoomed feasibility window"
+  ),
+  view = c("full", "full", "zoom", "zoom"),
+  xmin = c(full_x_limits[[1]], full_x_limits[[1]], zoom_x_limits[[1]], zoom_x_limits[[1]]),
+  xmax = c(full_x_limits[[2]], full_x_limits[[2]], zoom_x_limits[[2]], zoom_x_limits[[2]]),
+  ymin = c(full_y_limits[[1]], full_y_limits[[1]], zoom_y_limits[[1]], zoom_y_limits[[1]]),
+  ymax = c(full_y_limits[[2]], full_y_limits[[2]], zoom_y_limits[[2]], zoom_y_limits[[2]])
+)
+
+panel_levels <- panel_specs$panel_label
+
+panel_df <- bind_rows(lapply(seq_len(nrow(panel_specs)), function(i) {
+  spec <- panel_specs[i, ]
+  df <- plot_df[as.character(plot_df$target_label) == spec$target_label_chr[[1]], , drop = FALSE]
+
+  if (spec$view[[1]] == "zoom") {
+    df <- df |>
+      filter(
+        recovered_genome_pct >= spec$xmin[[1]],
+        recovered_genome_pct <= spec$xmax[[1]],
+        expected_mean_depth >= spec$ymin[[1]],
+        expected_mean_depth <= spec$ymax[[1]]
+      )
+  }
+
+  df |>
+    mutate(
+      panel_label = factor(spec$panel_label[[1]], levels = panel_levels),
+      view = spec$view[[1]]
+    )
+}))
+
+region_df <- bind_rows(lapply(seq_len(nrow(panel_specs)), function(i) {
+  spec <- panel_specs[i, ]
+  meta <- target_meta[target_meta$target_label_chr == spec$target_label_chr[[1]], , drop = FALSE]
+  meta <- meta[1, , drop = FALSE]
+
+  tibble(
+    panel_label = factor(spec$panel_label[[1]], levels = panel_levels),
+    view = spec$view[[1]],
+    target_pct = meta$target_pct,
+    tolerance_pct = meta$tolerance_pct,
+    depth_target = meta$depth_target,
+    xmin = meta$target_pct - meta$tolerance_pct,
+    xmax = meta$target_pct + meta$tolerance_pct,
+    ymin = meta$depth_target,
+    ymax = spec$ymax[[1]]
+  )
+}))
+
+range_df <- bind_rows(lapply(seq_len(nrow(panel_specs)), function(i) {
+  spec <- panel_specs[i, ]
+  tibble(
+    panel_label = factor(spec$panel_label[[1]], levels = panel_levels),
+    x = c(spec$xmin[[1]], spec$xmax[[1]]),
+    y = c(spec$ymin[[1]], spec$ymax[[1]])
+  )
+}))
+
 annotation_df <- region_df |>
+  filter(view == "zoom") |>
   mutate(
-    feasible_x = target_pct,
-    feasible_y = pmax(depth_target * 3.0, 140),
-    too_narrow_x = pmax(x_min + 0.45, xmin - tolerance_pct * 0.8),
-    too_narrow_y = pmax(depth_target / 1.8, 18),
-    too_broad_x = pmin(x_max - 1.0, xmax + tolerance_pct * 6),
-    too_broad_y = pmax(depth_target / 1.8, 18)
+    label_x = target_pct,
+    label_y = pmin(ymax * 0.82, depth_target * 1.7)
   )
 
 base_theme <- function(base_size = 9.5) {
@@ -240,7 +305,7 @@ base_theme <- function(base_size = 9.5) {
       panel.grid.major = element_line(color = "white", linewidth = 0.35),
       panel.grid.minor = element_blank(),
       strip.background = element_rect(fill = "#D8D8E4", color = NA),
-      strip.text = element_text(face = "bold", size = base_size + 0.8, color = "#2F2F2F"),
+      strip.text = element_text(face = "bold", size = base_size, color = "#2F2F2F"),
       axis.title = element_text(size = base_size + 1, color = "#2F2F2F"),
       axis.text = element_text(size = base_size, color = "#2F2F2F"),
       legend.position = "top",
@@ -251,7 +316,12 @@ base_theme <- function(base_size = 9.5) {
     )
 }
 
-p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
+p <- ggplot(panel_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
+  geom_blank(
+    data = range_df,
+    aes(x = x, y = y),
+    inherit.aes = FALSE
+  ) +
   geom_rect(
     data = region_df,
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -274,13 +344,13 @@ p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
     color = SEABORN[["dark_gray"]]
   ) +
   geom_point(
-    data = filter(plot_df, !feasible),
+    data = filter(panel_df, !feasible),
     color = SEABORN[["gray"]],
     alpha = 0.58,
     size = 1.45
   ) +
   geom_point(
-    data = filter(plot_df, feasible),
+    data = filter(panel_df, feasible),
     aes(fill = feasibility),
     shape = 21,
     color = "white",
@@ -289,40 +359,25 @@ p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
   ) +
   geom_text(
     data = annotation_df,
-    aes(x = feasible_x, y = feasible_y, label = "feasible\nregion"),
+    aes(x = label_x, y = label_y, label = "feasible\nregion"),
     inherit.aes = FALSE,
     size = 2.8,
     lineheight = 0.92,
     color = SEABORN[["green"]],
     fontface = "bold"
   ) +
-  geom_text(
-    data = annotation_df,
-    aes(x = too_narrow_x, y = too_narrow_y, label = "too narrow"),
-    inherit.aes = FALSE,
-    size = 2.6,
-    color = SEABORN[["dark_gray"]]
-  ) +
-  geom_text(
-    data = annotation_df,
-    aes(x = too_broad_x, y = too_broad_y, label = "too broad"),
-    inherit.aes = FALSE,
-    size = 2.6,
-    color = SEABORN[["dark_gray"]]
-  ) +
-  facet_wrap(~target_label, nrow = 1) +
+  facet_wrap(~panel_label, ncol = 2, scales = "free") +
   scale_fill_manual(values = c(Feasible = SEABORN[["blue"]])) +
   scale_x_continuous(
     name = "Predicted weighted genome recovery (%)",
     labels = label_number(accuracy = 0.1),
-    expand = expansion(mult = c(0.04, 0.08))
+    expand = expansion(mult = c(0.02, 0.05))
   ) +
   scale_y_continuous(
     name = "Expected mean read-pair depth per locus (×; pseudo-log scale)",
     trans = pseudo_log_trans(base = 10, sigma = 1),
     breaks = depth_breaks,
     labels = label_comma(accuracy = 1),
-    limits = c(0, y_max * 1.08),
     minor_breaks = NULL,
     expand = expansion(mult = c(0.02, 0.08))
   ) +
@@ -334,7 +389,7 @@ if (identical(tolower(tools::file_ext(out_path)), "pdf") && isTRUE(capabilities(
     out_path,
     plot = p,
     width = 7.8,
-    height = 4.6,
+    height = 7.4,
     units = "in",
     device = grDevices::cairo_pdf,
     limitsize = FALSE
@@ -344,7 +399,7 @@ if (identical(tolower(tools::file_ext(out_path)), "pdf") && isTRUE(capabilities(
     out_path,
     plot = p,
     width = 7.8,
-    height = 4.6,
+    height = 7.4,
     units = "in",
     dpi = 300,
     limitsize = FALSE
