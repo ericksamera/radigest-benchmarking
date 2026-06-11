@@ -212,20 +212,27 @@ region_df <- plot_df |>
     ymax = Inf
   )
 
+x_min <- min(plot_df$recovered_genome_pct, na.rm = TRUE)
+x_max <- max(plot_df$recovered_genome_pct, na.rm = TRUE)
+y_max <- max(plot_df$expected_mean_depth, region_df$depth_target * 1.7, na.rm = TRUE)
+
+depth_breaks <- c(0, 10, 30, 60, 100, 300, 1000, 3000, 10000, 30000, 100000)
+depth_breaks <- depth_breaks[depth_breaks <= (y_max * 1.1)]
+if (!60 %in% depth_breaks) {
+  depth_breaks <- sort(unique(c(depth_breaks, 60)))
+}
+
 annotation_df <- region_df |>
   mutate(
     feasible_x = target_pct,
-    feasible_y = depth_target * 1.18,
-    too_narrow_x = pmax(min(plot_df$recovered_genome_pct, na.rm = TRUE), xmin - tolerance_pct * 1.7),
-    too_narrow_y = depth_target * 1.28,
-    too_broad_x = xmax + tolerance_pct * 1.9,
-    too_broad_y = depth_target * 0.72
+    feasible_y = pmax(depth_target * 3.0, 140),
+    too_narrow_x = pmax(x_min + 0.45, xmin - tolerance_pct * 0.8),
+    too_narrow_y = pmax(depth_target / 1.8, 18),
+    too_broad_x = pmin(x_max - 1.0, xmax + tolerance_pct * 6),
+    too_broad_y = pmax(depth_target / 1.8, 18)
   )
 
-y_max <- max(plot_df$expected_mean_depth, region_df$depth_target * 1.35, na.rm = TRUE)
-y_min <- min(0, min(plot_df$expected_mean_depth, na.rm = TRUE))
-
-base_theme <- function(base_size = 9) {
+base_theme <- function(base_size = 9.5) {
   theme_minimal(base_size = base_size, base_family = "Helvetica") +
     theme(
       panel.background = element_rect(fill = "#EAEAF2", color = NA),
@@ -233,15 +240,14 @@ base_theme <- function(base_size = 9) {
       panel.grid.major = element_line(color = "white", linewidth = 0.35),
       panel.grid.minor = element_blank(),
       strip.background = element_rect(fill = "#D8D8E4", color = NA),
-      strip.text = element_text(face = "bold", size = base_size, color = "#2F2F2F"),
+      strip.text = element_text(face = "bold", size = base_size + 0.8, color = "#2F2F2F"),
       axis.title = element_text(size = base_size + 1, color = "#2F2F2F"),
       axis.text = element_text(size = base_size, color = "#2F2F2F"),
       legend.position = "top",
       legend.title = element_blank(),
       legend.key.height = grid::unit(0.35, "lines"),
       plot.title = element_blank(),
-      plot.caption = element_text(hjust = 0, size = base_size - 1, color = "#4D4D4D"),
-      plot.margin = margin(6, 10, 6, 6)
+      plot.margin = margin(6, 12, 6, 6)
     )
 }
 
@@ -251,7 +257,7 @@ p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     inherit.aes = FALSE,
     fill = SEABORN[["green"]],
-    alpha = 0.16
+    alpha = 0.14
   ) +
   geom_hline(
     data = region_df,
@@ -270,40 +276,38 @@ p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
   geom_point(
     data = filter(plot_df, !feasible),
     color = SEABORN[["gray"]],
-    alpha = 0.62,
-    size = 1.35
+    alpha = 0.58,
+    size = 1.45
   ) +
   geom_point(
     data = filter(plot_df, feasible),
     aes(fill = feasibility),
     shape = 21,
     color = "white",
-    stroke = 0.25,
-    size = 2.5
+    stroke = 0.3,
+    size = 2.7
   ) +
   geom_text(
     data = annotation_df,
-    aes(x = feasible_x, y = feasible_y, label = "feasible\ndesign region"),
+    aes(x = feasible_x, y = feasible_y, label = "feasible\nregion"),
     inherit.aes = FALSE,
-    size = 2.7,
-    lineheight = 0.9,
+    size = 2.8,
+    lineheight = 0.92,
     color = SEABORN[["green"]],
     fontface = "bold"
   ) +
   geom_text(
     data = annotation_df,
-    aes(x = too_narrow_x, y = too_narrow_y, label = "too narrow:\ninsufficient\ngenome recovery"),
+    aes(x = too_narrow_x, y = too_narrow_y, label = "too narrow"),
     inherit.aes = FALSE,
-    size = 2.5,
-    lineheight = 0.9,
+    size = 2.6,
     color = SEABORN[["dark_gray"]]
   ) +
   geom_text(
     data = annotation_df,
-    aes(x = too_broad_x, y = too_broad_y, label = "too broad:\ninsufficient\ndepth"),
+    aes(x = too_broad_x, y = too_broad_y, label = "too broad"),
     inherit.aes = FALSE,
-    size = 2.5,
-    lineheight = 0.9,
+    size = 2.6,
     color = SEABORN[["dark_gray"]]
   ) +
   facet_wrap(~target_label, nrow = 1) +
@@ -314,22 +318,23 @@ p <- ggplot(plot_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
     expand = expansion(mult = c(0.04, 0.08))
   ) +
   scale_y_continuous(
-    name = "Expected mean read-pair depth per locus (×)",
-    labels = label_number(accuracy = 1),
-    limits = c(y_min, y_max * 1.04),
-    expand = expansion(mult = c(0.01, 0.05))
+    name = "Expected mean read-pair depth per locus (×; pseudo-log scale)",
+    trans = pseudo_log_trans(base = 10, sigma = 1),
+    breaks = depth_breaks,
+    labels = label_comma(accuracy = 1),
+    limits = c(0, y_max * 1.08),
+    minor_breaks = NULL,
+    expand = expansion(mult = c(0.02, 0.08))
   ) +
-  labs(
-    caption = "Each point is one enzyme pair from the 30-enzyme honeysuckle screen. Shaded boxes mark the recovery-tolerance window above the 60× depth target."
-  ) +
+  coord_cartesian(clip = "off") +
   base_theme()
 
 if (identical(tolower(tools::file_ext(out_path)), "pdf") && isTRUE(capabilities("cairo"))) {
   ggsave(
     out_path,
     plot = p,
-    width = 7.2,
-    height = 3.9,
+    width = 7.8,
+    height = 4.6,
     units = "in",
     device = grDevices::cairo_pdf,
     limitsize = FALSE
@@ -338,8 +343,8 @@ if (identical(tolower(tools::file_ext(out_path)), "pdf") && isTRUE(capabilities(
   ggsave(
     out_path,
     plot = p,
-    width = 7.2,
-    height = 3.9,
+    width = 7.8,
+    height = 4.6,
     units = "in",
     dpi = 300,
     limitsize = FALSE
