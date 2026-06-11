@@ -21,6 +21,7 @@ COMPARATOR_SEMANTICS_TABLE = (
 COMPARATOR_CASE_MATRIX = "results/comparators/comparator_case_matrix.tsv"
 COMPARATOR_SMOKE_DATASET = "comparator_smoke_single"
 COMPARATOR_SMALL_YEAST_DATASET = "small_yeast_s288c_plain"
+COMPARATOR_MEDIUM_REFERENCE_DATASET = "moderate_cannabis_pink-pepper_plain"
 DIGITAL_RADS_TOOL = "external/Digital_RADs/Digital_RADs.py"
 DDRADSEQTOOLS_TOOL = "external/ddRADseqTools/Package/rsitesearch.py"
 DDRADSEQTOOLS_RESTRICTIONSITES = "external/ddRADseqTools/Package/restrictionsites.txt"
@@ -164,6 +165,9 @@ COMPARATOR_NONCOORDINATE_OUTPUTS = (
 COMPARATOR_SMOKE_OUTPUTS = _case_outputs_for_dataset(COMPARATOR_SMOKE_DATASET)
 COMPARATOR_SMALL_YEAST_OUTPUTS = _case_outputs_for_dataset(
     COMPARATOR_SMALL_YEAST_DATASET
+)
+COMPARATOR_MEDIUM_REFERENCE_OUTPUTS = _case_outputs_for_dataset(
+    COMPARATOR_MEDIUM_REFERENCE_DATASET
 )
 COMPARATOR_ALL_OUTPUTS = (
     COMPARATOR_INTERVAL_OUTPUTS
@@ -398,6 +402,11 @@ rule comparator_smoke_all:
 rule comparator_small_yeast_all:
     input:
         COMPARATOR_SMALL_YEAST_OUTPUTS,
+
+
+rule comparator_medium_reference_all:
+    input:
+        COMPARATOR_MEDIUM_REFERENCE_OUTPUTS,
 
 
 rule radigest_for_digital_rads:

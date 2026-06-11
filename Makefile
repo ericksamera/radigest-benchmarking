@@ -43,7 +43,7 @@ EMPIRICAL_RHODODENDRON_OUTPUTS ?= results/empirical/rhododendron_dpnII_mspI/figu
 EMPIRICAL_FIGURE3_OUTPUT ?= results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf
 EMPIRICAL_SIZE_OVERLAY_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay__sockeye_ecori_msei.pdf results/empirical/anopheles_ecori_msei/figures/size_model_overlay__anopheles_ecori_msei.pdf results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay__rhododendron_dpnII_mspI.pdf
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader
 
 help:
 	@printf '%s\n' \
@@ -98,6 +98,7 @@ help:
 	  'Focused comparator/setup targets:' \
 	  '  make comparator-smoke THREADS=8' \
 	  '  make comparator-small-yeast THREADS=8' \
+	  '  make comparator-medium-reference THREADS=8' \
 	  '  make install-comparators' \
 	  '  make install-digital-rads | install-ddradseqtools | install-simrad | install-ddgrader' \
 	  '' \
@@ -131,6 +132,7 @@ help-all:
 	  '  make install-ddgrader' \
 	  '  make comparator-smoke' \
 	  '  make comparator-small-yeast' \
+	  '  make comparator-medium-reference' \
 	  '  make comparators' \
 	  '  make performance-input-format' \
 	  '  make performance-screening-speed' \
@@ -195,6 +197,9 @@ comparator-smoke: $(RADIGEST_BUILD_PREREQ)
 
 comparator-small-yeast: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_small_yeast_all $(SNAKEMAKE_CONFIG_ARGS)
+
+comparator-medium-reference: $(RADIGEST_BUILD_PREREQ)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparator_medium_reference_all $(SNAKEMAKE_CONFIG_ARGS)
 
 comparators: $(RADIGEST_BUILD_PREREQ)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) comparators_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -360,3 +365,74 @@ check-manifests:
 
 check: check-manifests
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores 1 -n smoke_all $(SNAKEMAKE_CONFIG_ARGS)
+
+# ----------------------------------------------------------------------
+# Optional worked-design example: honeysuckle GCA_021464415.1
+# ----------------------------------------------------------------------
+
+.PHONY: experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle
+
+HONEYSUCKLE_REF_ID ?= honeysuckle_gca021464415
+HONEYSUCKLE_REF ?= data/reference/$(HONEYSUCKLE_REF_ID).fa
+HONEYSUCKLE_SCREEN_CASE ?= screening_speed_honeysuckle_gca021464415_B2_30enz
+HONEYSUCKLE_SCREEN_RUNS ?= results/performance/screening_speed/raw/$(HONEYSUCKLE_SCREEN_CASE).runs.tsv
+HONEYSUCKLE_CANDIDATE_ENZYMES ?= config/candidate_enzymes_30.txt
+HONEYSUCKLE_OUTDIR ?= results/experimental_design/honeysuckle_gca021464415_2pct_60x_20samples
+HONEYSUCKLE_THREADS ?= 8
+HONEYSUCKLE_JOBS ?= 8
+HONEYSUCKLE_TARGET_GENOME_PCT ?= 2
+HONEYSUCKLE_DESIRED_DEPTH ?= 60
+HONEYSUCKLE_SAMPLES ?= 20
+HONEYSUCKLE_READ_LENGTH ?= 300
+HONEYSUCKLE_FLOWCELL_READ_PAIRS ?= 50M
+HONEYSUCKLE_MIN_SIZE ?= 200
+HONEYSUCKLE_MAX_SIZE ?= 500
+HONEYSUCKLE_SCORE_MIN ?= 1
+HONEYSUCKLE_SCORE_MAX ?= 1200
+HONEYSUCKLE_SIZE_MODEL ?= soft-window
+HONEYSUCKLE_SIZE_EDGE_SD ?= 50
+HONEYSUCKLE_USABLE_READ_FRACTION ?= 1.0
+HONEYSUCKLE_COVERAGE_TOLERANCE_PCT ?= 0.25
+HONEYSUCKLE_ENZYMES_CSV = $(shell awk 'NF && $$1 !~ /^#/ {printf "%s%s", sep, $$1; sep=","}' $(HONEYSUCKLE_CANDIDATE_ENZYMES))
+
+experimental-honeysuckle-reference:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(HONEYSUCKLE_REF) $(SNAKEMAKE_CONFIG_ARGS)
+
+experimental-honeysuckle-screening: $(RADIGEST_BUILD_PREREQ) experimental-honeysuckle-reference
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(HONEYSUCKLE_SCREEN_RUNS) $(SNAKEMAKE_CONFIG_ARGS) $(PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS)
+
+experimental-honeysuckle-design: $(RADIGEST_BUILD_PREREQ) experimental-honeysuckle-reference
+	mkdir -p $(HONEYSUCKLE_OUTDIR) benchmark/logs/experimental_design
+	$(RADIGEST_DESIGN) \
+	  --fasta $(HONEYSUCKLE_REF) \
+	  --enzymes "$(HONEYSUCKLE_ENZYMES_CSV)" \
+	  --target-genome-pct $(HONEYSUCKLE_TARGET_GENOME_PCT) \
+	  --coverage-tolerance-pct $(HONEYSUCKLE_COVERAGE_TOLERANCE_PCT) \
+	  --desired-depth $(HONEYSUCKLE_DESIRED_DEPTH) \
+	  --samples $(HONEYSUCKLE_SAMPLES) \
+	  --read-layout pe \
+	  --read-length $(HONEYSUCKLE_READ_LENGTH) \
+	  --threads $(HONEYSUCKLE_THREADS) \
+	  --jobs $(HONEYSUCKLE_JOBS) \
+	  --build-workers $(HONEYSUCKLE_THREADS) \
+	  --flowcell-read-pairs $(HONEYSUCKLE_FLOWCELL_READ_PAIRS) \
+	  --usable-read-fraction $(HONEYSUCKLE_USABLE_READ_FRACTION) \
+	  --min $(HONEYSUCKLE_MIN_SIZE) \
+	  --max $(HONEYSUCKLE_MAX_SIZE) \
+	  --score-min $(HONEYSUCKLE_SCORE_MIN) \
+	  --score-max $(HONEYSUCKLE_SCORE_MAX) \
+	  --size-model $(HONEYSUCKLE_SIZE_MODEL) \
+	  --size-mean 0 \
+	  --size-sd 0 \
+	  --size-edge-sd $(HONEYSUCKLE_SIZE_EDGE_SD) \
+	  --out-dir $(HONEYSUCKLE_OUTDIR) \
+	  --force \
+	  > benchmark/logs/experimental_design/honeysuckle_gca021464415_2pct_60x_20samples.design.log 2>&1
+	test -s $(HONEYSUCKLE_OUTDIR)/design.tsv
+	test -s $(HONEYSUCKLE_OUTDIR)/design.json
+
+experimental-honeysuckle: experimental-honeysuckle-screening experimental-honeysuckle-design
+	@printf 'Honeysuckle cached screening: %s\n' "$(HONEYSUCKLE_SCREEN_RUNS)"
+	@printf 'Honeysuckle design table:     %s\n' "$(HONEYSUCKLE_OUTDIR)/design.tsv"
+	@printf 'Honeysuckle design summary:   %s\n' "$(HONEYSUCKLE_OUTDIR)/design.summary.tsv"
+	@printf 'Honeysuckle design JSON:      %s\n' "$(HONEYSUCKLE_OUTDIR)/design.json"

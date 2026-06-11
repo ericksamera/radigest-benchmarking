@@ -114,9 +114,16 @@ comparators:
     target: comparator_small_yeast_all
     dataset: small_yeast_s288c_plain
     reference: data/reference/small_yeast_s288c.fa
-    condition: B1
+    conditions: [B1, B3, B4, B5]
     tools: [digital_rads, ddradseqtools, simrad, ddgrader]
-    claim_note: Public yeast checks use radigest as the anchor. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+    claim_note: Public yeast checks use radigest as the anchor across baseline, rare-frequent, rarer-frequent, and frequent-frequent enzyme-pair conditions. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+  medium_reference_matrix:
+    target: comparator_medium_reference_all
+    dataset: moderate_cannabis_pink-pepper_plain
+    reference: data/reference/moderate_cannabis_pink-pepper.fa
+    condition: B2
+    tools: [digital_rads, ddradseqtools]
+    claim_note: Medium-reference Cannabis checks are restricted to coordinate-capable comparators and support exact normalized interval-equivalence claims beyond yeast.
   digital_rads:
     smoke_case: digital_rads_smoke_single__D1
     small_yeast_case: digital_rads_small_yeast_s288c_B1
