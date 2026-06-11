@@ -290,13 +290,6 @@ range_df <- bind_rows(lapply(seq_len(nrow(panel_specs)), function(i) {
   )
 }))
 
-annotation_df <- region_df |>
-  filter(view == "zoom") |>
-  mutate(
-    label_x = target_pct,
-    label_y = pmin(ymax * 0.82, depth_target * 1.7)
-  )
-
 base_theme <- function(base_size = 9.5) {
   theme_minimal(base_size = base_size, base_family = "Helvetica") +
     theme(
@@ -308,9 +301,7 @@ base_theme <- function(base_size = 9.5) {
       strip.text = element_text(face = "bold", size = base_size, color = "#2F2F2F"),
       axis.title = element_text(size = base_size + 1, color = "#2F2F2F"),
       axis.text = element_text(size = base_size, color = "#2F2F2F"),
-      legend.position = "top",
-      legend.title = element_blank(),
-      legend.key.height = grid::unit(0.35, "lines"),
+      legend.position = "none",
       plot.title = element_blank(),
       plot.margin = margin(6, 12, 6, 6)
     )
@@ -351,30 +342,20 @@ p <- ggplot(panel_df, aes(x = recovered_genome_pct, y = expected_mean_depth)) +
   ) +
   geom_point(
     data = filter(panel_df, feasible),
-    aes(fill = feasibility),
+    fill = SEABORN[["blue"]],
     shape = 21,
     color = "white",
     stroke = 0.3,
     size = 2.7
   ) +
-  geom_text(
-    data = annotation_df,
-    aes(x = label_x, y = label_y, label = "feasible\nregion"),
-    inherit.aes = FALSE,
-    size = 2.8,
-    lineheight = 0.92,
-    color = SEABORN[["green"]],
-    fontface = "bold"
-  ) +
   facet_wrap(~panel_label, ncol = 2, scales = "free") +
-  scale_fill_manual(values = c(Feasible = SEABORN[["blue"]])) +
   scale_x_continuous(
     name = "Predicted weighted genome recovery (%)",
     labels = label_number(accuracy = 0.1),
     expand = expansion(mult = c(0.02, 0.05))
   ) +
   scale_y_continuous(
-    name = "Expected mean read-pair depth per locus (×; pseudo-log scale)",
+    name = "Expected mean read-pair depth per locus (×)",
     trans = pseudo_log_trans(base = 10, sigma = 1),
     breaks = depth_breaks,
     labels = label_comma(accuracy = 1),
