@@ -6,6 +6,7 @@ RADIGEST_REPO ?= https://github.com/ericksamera/radigest.git
 RADIGEST_REF ?= main
 EMPIRICAL_LIBRARIES ?= config/empirical_libraries.tsv
 EMPIRICAL_DEPTH_VALIDATION_CASES ?= config/empirical_depth_validation_cases.tsv
+SNP_PANEL_CASES ?= config/snp_panel_cases.tsv
 ifeq ($(dir $(RADIGEST)),./)
 RADIGEST_SCREEN_PAIRS_CACHED ?= radigest-screen-pairs-cached
 RADIGEST_BENCH_SCREEN_CACHED ?= radigest-bench-screen-cached
@@ -25,7 +26,7 @@ SNAKEMAKE ?= snakemake
 SNAKEFILE ?= workflow/Snakefile
 SNAKEMAKE_CONDA_PREFIX ?= .snakemake/conda
 SNAKEMAKE_CONDA_ARGS ?= --use-conda --conda-prefix $(SNAKEMAKE_CONDA_PREFIX)
-SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_bench_screen_cached="$(RADIGEST_BENCH_SCREEN_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+SNAKEMAKE_CONFIG_ARGS ?= --config radigest="$(RADIGEST)" radigest_screen_pairs_cached="$(RADIGEST_SCREEN_PAIRS_CACHED)" radigest_bench_screen_cached="$(RADIGEST_BENCH_SCREEN_CACHED)" radigest_design="$(RADIGEST_DESIGN)" ddgrader_repo="$(DDGRADER_REPO)" radigest_repo="$(RADIGEST_REPO)" radigest_ref="$(RADIGEST_REF)" radigest_source_dir="$(RADIGEST_SRC)" local_bin_dir="$(LOCAL_BIN)" empirical_libraries="$(EMPIRICAL_LIBRARIES)" empirical_depth_validation_cases="$(EMPIRICAL_DEPTH_VALIDATION_CASES)" snp_panel_cases="$(SNP_PANEL_CASES)"
 PAIR_SCREEN_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1
 MATCHED_TOOL_BENCHMARK_RESOURCE_ARGS ?= --resources matched_tool_benchmark=1
 PERFORMANCE_BENCHMARK_RESOURCE_ARGS ?= --resources pair_screen_benchmark=1 matched_tool_benchmark=1
@@ -42,8 +43,11 @@ EMPIRICAL_RHODODENDRON_BAM_OUTPUTS ?= data/empirical/rhododendron_dpnII_mspI/bam
 EMPIRICAL_RHODODENDRON_OUTPUTS ?= results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay__rhododendron_dpnII_mspI.pdf results/empirical/rhododendron_dpnII_mspI/size_model_grid.tsv results/empirical/rhododendron_dpnII_mspI/best_size_model.tsv
 EMPIRICAL_FIGURE3_OUTPUT ?= results/manuscript/figures/figure_03_empirical_size_selection_summary.pdf
 EMPIRICAL_SIZE_OVERLAY_OUTPUTS ?= results/empirical/sockeye_ecori_msei/figures/size_model_overlay__sockeye_ecori_msei.pdf results/empirical/anopheles_ecori_msei/figures/size_model_overlay__anopheles_ecori_msei.pdf results/empirical/rhododendron_dpnII_mspI/figures/size_model_overlay__rhododendron_dpnII_mspI.pdf
+SOCKEYE_SNP_PANEL_CASE_ID ?= sockeye_snp_panel
+SOCKEYE_SNP_PANEL_LIBRARY_ID ?= sockeye_ecori_msei
+SOCKEYE_SNP_PANEL_OUTPUTS ?= results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/design.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/pair_overlap.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/top_designs.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/summary.tsv results/manuscript/tables/table_09_$(SOCKEYE_SNP_PANEL_CASE_ID)_target_overlap.tsv results/manuscript/figures/figure_08_$(SOCKEYE_SNP_PANEL_CASE_ID)_target_overlap.pdf
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-sockeye-snp-panel empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
 
 help:
 	@printf '%s\n' \
@@ -161,6 +165,7 @@ help-all:
 	  '  make empirical-model-fit-ranking THREADS=8' \
 	  '  make empirical-figures THREADS=8' \
 	  '  make empirical-depth-validation THREADS=8' \
+	  '  make empirical-sockeye-snp-panel THREADS=8' \
 	  '  make empirical THREADS=8' \
 	  '  make reviewer-nonempirical THREADS=8' \
 	  '  make reviewer-empirical THREADS=8' \
@@ -295,6 +300,10 @@ empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
 	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)" --require-effective-enabled
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_depth_validation_all $(SNAKEMAKE_CONFIG_ARGS)
 
+empirical-sockeye-snp-panel: $(RADIGEST_BUILD_PREREQ)
+	python3 scripts/core/check_snp_panel_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(SNP_PANEL_CASES)" --require-enabled $(SOCKEYE_SNP_PANEL_CASE_ID)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(SOCKEYE_SNP_PANEL_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
 empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) empirical_all $(SNAKEMAKE_CONFIG_ARGS)
@@ -365,6 +374,7 @@ check-manifests:
 	python3 scripts/core/check_matched_tool_timing_cases.py
 	python3 scripts/core/check_empirical_libraries.py --manifest "$(EMPIRICAL_LIBRARIES)" --allow-missing-enabled-inputs
 	python3 scripts/core/check_empirical_depth_validation_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(EMPIRICAL_DEPTH_VALIDATION_CASES)"
+	python3 scripts/core/check_snp_panel_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(SNP_PANEL_CASES)" --allow-missing-enabled-inputs
 	python3 scripts/core/check_artifacts.py
 
 check: check-manifests

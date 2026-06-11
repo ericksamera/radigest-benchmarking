@@ -190,6 +190,37 @@ TSV_SPECS = {
         "max_tlen",
         "notes",
     ],
+    "config/snp_panel_cases.tsv": [
+        "case_id",
+        "display_name",
+        "enabled",
+        "include_for_manuscript",
+        "library_id",
+        "reference_id",
+        "reference_path",
+        "panel_bed",
+        "candidate_enzymes",
+        "min_size",
+        "max_size",
+        "score_min",
+        "score_max",
+        "size_model",
+        "size_mean",
+        "size_sd",
+        "size_edge_sd",
+        "target_genome_pct",
+        "coverage_tolerance_pct",
+        "desired_depth",
+        "samples",
+        "read_layout",
+        "read_length",
+        "flowcell_read_pairs",
+        "lane_read_pairs",
+        "lanes",
+        "usable_read_fraction",
+        "top_n",
+        "notes",
+    ],
     "config/artifacts.tsv": [
         "claim_id",
         "category",
@@ -248,16 +279,19 @@ EXTRA_REQUIRED_FILES = [
     "scripts/manuscript/make_matched_tool_timing_table.py",
     "scripts/core/check_empirical_libraries.py",
     "scripts/core/check_empirical_depth_validation_cases.py",
+    "scripts/core/check_snp_panel_cases.py",
     "scripts/empirical/write_bam_manifest.py",
     "scripts/empirical/extract_tlens.py",
     "scripts/empirical/combine_tlens.py",
     "scripts/empirical/summarize_radigest_prediction.py",
     "scripts/empirical/calculate_locus_depth.py",
     "scripts/empirical/summarize_depth_validation.py",
+    "scripts/empirical/run_target_panel_overlap.py",
     "scripts/empirical/plot_depth_validation.R",
     "scripts/empirical/make_size_model_curves.py",
     "scripts/manuscript/make_empirical_depth_validation_table.py",
     "scripts/manuscript/make_empirical_size_selection_summary_figure.R",
+    "scripts/manuscript/make_snp_panel_overlap_figure.R",
     "scripts/empirical/plot_size_model_overlay.R",
     "scripts/core/check_artifacts.py",
     "scripts/audit/build_artifact_status.py",
@@ -298,6 +332,10 @@ BOOL_COLUMNS = {
     "config/empirical_depth_validation_cases.tsv": [
         "enabled",
         "exclude_duplicates",
+    ],
+    "config/snp_panel_cases.tsv": [
+        "enabled",
+        "include_for_manuscript",
     ],
 }
 
@@ -428,6 +466,48 @@ def check_tsv_semantics(path: str, rows: list[dict[str, str]]) -> None:
                     f"{path}: case {case} has invalid options: "
                     + ", ".join(invalid_options)
                 )
+    if path == "config/snp_panel_cases.tsv":
+        valid_size_models = {"hard", "normal", "triangular", "soft-window"}
+        for row in rows:
+            case = row["case_id"]
+            if row["size_model"] not in valid_size_models:
+                fail(
+                    f"{path}: case {case} has invalid size_model {row['size_model']!r}"
+                )
+            if row["read_layout"] not in {"pe", "se"}:
+                fail(f"{path}: case {case} read_layout must be pe or se")
+            for column in ["reference_path", "panel_bed", "candidate_enzymes"]:
+                value = row[column]
+                if value == "NA" or value.startswith("/") or ".." in Path(value).parts:
+                    fail(
+                        f"{path}: case {case} {column} must be a relative repository path"
+                    )
+            try:
+                min_size = int(row["min_size"])
+                max_size = int(row["max_size"])
+                score_min = int(row["score_min"])
+                score_max = int(row["score_max"])
+                samples = int(row["samples"])
+                read_length = int(row["read_length"])
+                top_n = int(row["top_n"])
+            except ValueError:
+                fail(
+                    f"{path}: case {case} min/max/samples/read_length/top_n must be integers"
+                )
+            if min_size < 0 or max_size <= min_size:
+                fail(f"{path}: case {case} has invalid size interval")
+            if (
+                score_min < 0
+                or score_max <= score_min
+                or score_min > min_size
+                or score_max < max_size
+            ):
+                fail(
+                    f"{path}: case {case} score_min/score_max must cover min_size/max_size"
+                )
+            if samples < 1 or read_length < 1 or top_n < 1:
+                fail(f"{path}: case {case} samples/read_length/top_n must be >= 1")
+
     if path == "config/references.tsv":
         for row in rows:
             reference = row["reference_id"]

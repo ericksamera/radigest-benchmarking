@@ -200,6 +200,24 @@ per-library model grids, curves, dataset-prefixed overlay figures, the cross-lib
 model-fit ranking table, and the manuscript Figure 3 empirical size-selection
 summary.
 
+Stage 6b Sockeye SNP-panel target-overlap outputs are:
+
+```text
+config/snp_panel_cases.tsv
+data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/design.summary.tsv
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/design.tsv
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/design.json
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/pair_overlap.tsv
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/top_designs.tsv
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/summary.tsv
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/run_metadata.json
+results/manuscript/tables/table_09_sockeye_snp_panel_target_overlap.tsv
+results/manuscript/figures/figure_08_sockeye_snp_panel_target_overlap.pdf
+```
+
+This analysis screens the configured candidate enzyme panel, exports hard-window interval sets for each pair, intersects those intervals with the supplied BED target panel, reports captured and read-accessible panel intervals, and merges those overlap metrics with the matching `radigest-design` recovery/depth table.
+
 Stage 7 audit outputs are:
 
 ```text

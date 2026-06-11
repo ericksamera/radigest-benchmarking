@@ -97,6 +97,31 @@ large_wheat_chinese-spring -> data/reference/large_wheat_chinese-spring.fa.gz an
 
 `make references` materializes this wheat FASTA along with the small and moderate public references. The large-reference timing artifact and the large matched-tool timing subset are included in `make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest`. SimRAD is intentionally excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
+## Sockeye SNP-panel target-overlap screen
+
+The optional Sockeye target-panel screen demonstrates coordinate-aware enzyme-pair selection against a user-supplied BED panel. The default case is declared in `config/snp_panel_cases.tsv` and expects the panel here:
+
+```text
+data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+```
+
+The panel must use BED coordinates on the same Sockeye reference used elsewhere in the empirical workflow, `data/reference/sockeye_oner_uvic_2_0.fa` / `GCF_034236695.1_Oner_Uvic_2.0`. Use standard BED zero-based, half-open intervals. For a SNP reported as one-based position `POS`, write `start = POS - 1` and `end = POS`; a fourth column with the SNP ID is recommended:
+
+```text
+NC_000000.1	123456	123457	snp_0001
+```
+
+Run the focused target with:
+
+```bash
+mkdir -p data/empirical/sockeye_ecori_msei/panel
+cp /path/to/sockeye_snp_panel.bed data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+make empirical-references THREADS=8
+make empirical-sockeye-snp-panel THREADS=8
+```
+
+Outputs are written to `results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/`, with manuscript artifacts at `results/manuscript/tables/table_09_sockeye_snp_panel_target_overlap.tsv` and `results/manuscript/figures/figure_08_sockeye_snp_panel_target_overlap.pdf`.
+
 ## Radigest source and local binaries
 
 The benchmark can clone and build radigest locally:

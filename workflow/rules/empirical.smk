@@ -16,6 +16,9 @@ EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
 EMPIRICAL_DEPTH_VALIDATION_CASES = config.get(
     "empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv"
 )
+EMPIRICAL_SNP_PANEL_CASES = config.get(
+    "snp_panel_cases", "config/snp_panel_cases.tsv"
+)
 EMPIRICAL_DEPTH_VALIDATION_TABLE = (
     "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
 )
@@ -35,6 +38,7 @@ wildcard_constraints:
     bam_id=r"[^/]+",
     run_accession=r"SRR[0-9]+",
     prediction_mode=r"raw|hard",
+    snp_panel_case_id=r"[^/]+",
 
 
 def _read_tsv_rows(path):
@@ -92,6 +96,21 @@ EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS = sorted(EMPIRICAL_DEPTH_VALIDATION_BY_LI
 EMPIRICAL_DEPTH_VALIDATION_TABLES = (
     [EMPIRICAL_DEPTH_VALIDATION_TABLE] if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS else []
 )
+
+EMPIRICAL_SNP_PANEL_ROWS = [
+    row
+    for row in _read_tsv_rows(EMPIRICAL_SNP_PANEL_CASES)
+    if row.get("enabled", "false").strip().lower() == "true"
+]
+EMPIRICAL_SNP_PANEL_ROWS = [
+    row
+    for row in EMPIRICAL_SNP_PANEL_ROWS
+    if row.get("library_id", "") in EMPIRICAL_ROWS_BY_ID
+    and EMPIRICAL_ROWS_BY_ID[row["library_id"]].get("enabled", "false").strip().lower()
+    == "true"
+]
+EMPIRICAL_SNP_PANEL_BY_CASE = {row["case_id"]: row for row in EMPIRICAL_SNP_PANEL_ROWS}
+EMPIRICAL_SNP_PANEL_CASE_IDS = sorted(EMPIRICAL_SNP_PANEL_BY_CASE)
 
 EMPIRICAL_SRA_RUN_ROWS = []
 for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST):
@@ -287,6 +306,30 @@ EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS = [
     f"results/empirical/{library_id}/depth_validation/depth_validation.pdf"
     for library_id in EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
 ]
+EMPIRICAL_SNP_PANEL_OUTPUTS = []
+EMPIRICAL_SNP_PANEL_MANUSCRIPT_TABLES = []
+EMPIRICAL_SNP_PANEL_MANUSCRIPT_FIGURES = []
+for row in EMPIRICAL_SNP_PANEL_ROWS:
+    prefix = f"results/empirical/{row['library_id']}/snp_panel/{row['case_id']}"
+    EMPIRICAL_SNP_PANEL_OUTPUTS.extend(
+        [
+            f"{prefix}/design.summary.tsv",
+            f"{prefix}/design.tsv",
+            f"{prefix}/design.json",
+            f"{prefix}/pair_overlap.tsv",
+            f"{prefix}/top_designs.tsv",
+            f"{prefix}/summary.tsv",
+            f"{prefix}/run_metadata.json",
+        ]
+    )
+    if row.get("include_for_manuscript", "false").strip().lower() == "true":
+        EMPIRICAL_SNP_PANEL_MANUSCRIPT_TABLES.append(
+            f"results/manuscript/tables/table_09_{row['case_id']}_target_overlap.tsv"
+        )
+        EMPIRICAL_SNP_PANEL_MANUSCRIPT_FIGURES.append(
+            f"results/manuscript/figures/figure_08_{row['case_id']}_target_overlap.pdf"
+        )
+
 EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS = (
     [EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE]
     if EMPIRICAL_DEPTH_VALIDATION_LIBRARY_IDS
@@ -337,6 +380,7 @@ EMPIRICAL_FIGURE_OUTPUTS = (
     + EMPIRICAL_SIZE_SELECTION_SUMMARY_FIGURE_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS
+    + EMPIRICAL_SNP_PANEL_MANUSCRIPT_FIGURES
 )
 EMPIRICAL_ALL_OUTPUTS = (
     [EMPIRICAL_LIBRARY_MANIFEST]
@@ -350,6 +394,8 @@ EMPIRICAL_ALL_OUTPUTS = (
     + EMPIRICAL_PREDICTION_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_OUTPUTS
     + EMPIRICAL_DEPTH_VALIDATION_TABLES
+    + EMPIRICAL_SNP_PANEL_OUTPUTS
+    + EMPIRICAL_SNP_PANEL_MANUSCRIPT_TABLES
     + EMPIRICAL_CURVE_OUTPUTS
     + EMPIRICAL_MODEL_GRID_OUTPUTS
     + EMPIRICAL_FIGURE_OUTPUTS
@@ -377,6 +423,44 @@ def _empirical_depth_read_budget(wildcards):
     raise ValueError(
         f"depth-validation case {wildcards.library_id!r} has no read budget"
     )
+
+
+def _empirical_snp_panel_case(wildcards):
+    case_id = wildcards.snp_panel_case_id
+    if case_id not in EMPIRICAL_SNP_PANEL_BY_CASE:
+        raise ValueError(f"no enabled SNP-panel case for case_id={case_id!r}")
+    row = EMPIRICAL_SNP_PANEL_BY_CASE[case_id]
+    if row["library_id"] != wildcards.library_id:
+        raise ValueError(
+            f"SNP-panel case {case_id!r} belongs to library_id={row['library_id']!r}, "
+            f"not {wildcards.library_id!r}"
+        )
+    return row
+
+
+def _empirical_snp_panel_param(wildcards, name):
+    return _empirical_snp_panel_case(wildcards)[name]
+
+
+def _empirical_snp_panel_read_budget(wildcards):
+    row = _empirical_snp_panel_case(wildcards)
+    if row.get("flowcell_read_pairs", "NA") not in {"", "NA"}:
+        return ["--flowcell-read-pairs", row["flowcell_read_pairs"]]
+    if row.get("lane_read_pairs", "NA") not in {"", "NA"}:
+        return ["--lane-read-pairs", row["lane_read_pairs"], "--lanes", row["lanes"]]
+    raise ValueError(f"SNP-panel case {row['case_id']!r} has no read budget")
+
+
+def _candidate_enzymes_csv_from_file(path):
+    names = []
+    with open(path) as handle:
+        for raw in handle:
+            text = raw.strip()
+            if text and not text.startswith("#"):
+                names.append(text)
+    if len(names) < 2:
+        raise ValueError(f"{path}: expected at least two candidate enzymes")
+    return ",".join(names)
 
 
 def _empirical_reference_path(wildcards):
@@ -551,6 +635,13 @@ rule empirical_depth_validation_all:
         + EMPIRICAL_DEPTH_VALIDATION_TABLES
         + EMPIRICAL_DEPTH_VALIDATION_FIGURE_OUTPUTS
         + EMPIRICAL_DEPTH_VALIDATION_MANUSCRIPT_FIGURE_OUTPUTS,
+
+
+rule empirical_snp_panel_overlap_all:
+    input:
+        EMPIRICAL_SNP_PANEL_OUTPUTS
+        + EMPIRICAL_SNP_PANEL_MANUSCRIPT_TABLES
+        + EMPIRICAL_SNP_PANEL_MANUSCRIPT_FIGURES,
 
 
 rule empirical_curves_all:
@@ -882,6 +973,217 @@ rule empirical_summarize_radigest_prediction:
             --hist-out {output.histogram:q} \
             --summary-out {output.summary:q} \
             >{log:q} 2>&1
+        """
+
+
+rule empirical_snp_panel_design:
+    input:
+        reference=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "reference_path"
+        ),
+        candidates=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "candidate_enzymes"
+        ),
+    output:
+        summary_tsv="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/design.summary.tsv",
+        tsv="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/design.tsv",
+        json="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/design.json",
+    log:
+        "benchmark/logs/empirical/{library_id}.{snp_panel_case_id}.snp_panel.design.log",
+    threads: 8
+    params:
+        radigest_design=lambda wildcards: config.get(
+            "radigest_design", "radigest-design"
+        ),
+        enzymes=lambda wildcards, input: _candidate_enzymes_csv_from_file(
+            input.candidates
+        ),
+        target_genome_pct=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "target_genome_pct"
+        ),
+        coverage_tolerance_pct=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "coverage_tolerance_pct"
+        ),
+        desired_depth=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "desired_depth"
+        ),
+        samples=lambda wildcards: _empirical_snp_panel_param(wildcards, "samples"),
+        read_layout=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "read_layout"
+        ),
+        read_length=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "read_length"
+        ),
+        usable_read_fraction=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "usable_read_fraction"
+        ),
+        min_size=lambda wildcards: _empirical_snp_panel_param(wildcards, "min_size"),
+        max_size=lambda wildcards: _empirical_snp_panel_param(wildcards, "max_size"),
+        score_min=lambda wildcards: _empirical_snp_panel_param(wildcards, "score_min"),
+        score_max=lambda wildcards: _empirical_snp_panel_param(wildcards, "score_max"),
+        size_model=lambda wildcards: _empirical_snp_panel_param(wildcards, "size_model"),
+        size_mean=lambda wildcards: _empirical_snp_panel_param(wildcards, "size_mean"),
+        size_sd=lambda wildcards: _empirical_snp_panel_param(wildcards, "size_sd"),
+        size_edge_sd=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "size_edge_sd"
+        ),
+        read_budget=_empirical_snp_panel_read_budget,
+        out_dir=lambda wildcards: (
+            f"results/empirical/{wildcards.library_id}/snp_panel/"
+            f"{wildcards.snp_panel_case_id}"
+        ),
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical {params.out_dir:q}
+        {params.radigest_design:q} \
+            --fasta {input.reference:q} \
+            --enzymes {params.enzymes:q} \
+            --target-genome-pct {params.target_genome_pct:q} \
+            --coverage-tolerance-pct {params.coverage_tolerance_pct:q} \
+            --desired-depth {params.desired_depth:q} \
+            --samples {params.samples:q} \
+            --read-layout {params.read_layout:q} \
+            --read-length {params.read_length:q} \
+            --threads {threads} \
+            --jobs {threads} \
+            --build-workers {threads} \
+            {params.read_budget:q} \
+            --usable-read-fraction {params.usable_read_fraction:q} \
+            --min {params.min_size:q} \
+            --max {params.max_size:q} \
+            --score-min {params.score_min:q} \
+            --score-max {params.score_max:q} \
+            --size-model {params.size_model:q} \
+            --size-mean {params.size_mean:q} \
+            --size-sd {params.size_sd:q} \
+            --size-edge-sd {params.size_edge_sd:q} \
+            --out-dir {params.out_dir:q} \
+            --force \
+            >{log:q} 2>&1
+        test -s {output.summary_tsv:q}
+        test -s {output.tsv:q}
+        test -s {output.json:q}
+        """
+
+
+rule empirical_snp_panel_overlap:
+    input:
+        reference=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "reference_path"
+        ),
+        panel_bed=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "panel_bed"
+        ),
+        candidates=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "candidate_enzymes"
+        ),
+        design="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/design.tsv",
+    output:
+        pair_overlap="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/pair_overlap.tsv",
+        top_designs="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/top_designs.tsv",
+        summary="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/summary.tsv",
+        metadata="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/run_metadata.json",
+    log:
+        "benchmark/logs/empirical/{library_id}.{snp_panel_case_id}.snp_panel.overlap.log",
+    conda:
+        "../envs/empirical.yml"
+    threads: 4
+    params:
+        radigest=lambda wildcards: config.get("radigest", "radigest"),
+        display_name=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "display_name"
+        ),
+        min_size=lambda wildcards: _empirical_snp_panel_param(wildcards, "min_size"),
+        max_size=lambda wildcards: _empirical_snp_panel_param(wildcards, "max_size"),
+        read_layout=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "read_layout"
+        ),
+        read_length=lambda wildcards: _empirical_snp_panel_param(
+            wildcards, "read_length"
+        ),
+        top_n=lambda wildcards: _empirical_snp_panel_param(wildcards, "top_n"),
+        work_dir=lambda wildcards: (
+            f"results/empirical/{wildcards.library_id}/snp_panel/"
+            f"{wildcards.snp_panel_case_id}/per_pair"
+        ),
+    shell:
+        r"""
+        mkdir -p benchmark/logs/empirical results/manuscript/tables
+        python3 scripts/empirical/run_target_panel_overlap.py \
+            --case-id {wildcards.snp_panel_case_id:q} \
+            --display-name {params.display_name:q} \
+            --fasta {input.reference:q} \
+            --panel-bed {input.panel_bed:q} \
+            --candidate-enzymes {input.candidates:q} \
+            --design-tsv {input.design:q} \
+            --radigest {params.radigest:q} \
+            --min-size {params.min_size:q} \
+            --max-size {params.max_size:q} \
+            --read-layout {params.read_layout:q} \
+            --read-length {params.read_length:q} \
+            --threads {threads} \
+            --work-dir {params.work_dir:q} \
+            --pair-overlap-out {output.pair_overlap:q} \
+            --top-out {output.top_designs:q} \
+            --summary-out {output.summary:q} \
+            --metadata-out {output.metadata:q} \
+            --top-n {params.top_n:q} \
+            --force \
+            >{log:q} 2>&1
+        """
+
+
+rule empirical_snp_panel_manuscript_table:
+    input:
+        top=lambda wildcards: (
+            f"results/empirical/"
+            f"{EMPIRICAL_SNP_PANEL_BY_CASE[wildcards.snp_panel_case_id]['library_id']}"
+            f"/snp_panel/{wildcards.snp_panel_case_id}/top_designs.tsv"
+        ),
+    output:
+        table="results/manuscript/tables/table_09_{snp_panel_case_id}_target_overlap.tsv",
+    log:
+        "benchmark/logs/manuscript/{snp_panel_case_id}.snp_panel_overlap_table.log",
+    shell:
+        r"""
+        mkdir -p benchmark/logs/manuscript results/manuscript/tables
+        cp {input.top:q} {output.table:q} >{log:q} 2>&1
+        test -s {output.table:q}
+        """
+
+
+rule empirical_snp_panel_overlap_figure:
+    input:
+        pairs=lambda wildcards: (
+            f"results/empirical/"
+            f"{EMPIRICAL_SNP_PANEL_BY_CASE[wildcards.snp_panel_case_id]['library_id']}"
+            f"/snp_panel/{wildcards.snp_panel_case_id}/pair_overlap.tsv"
+        ),
+        top=lambda wildcards: (
+            f"results/empirical/"
+            f"{EMPIRICAL_SNP_PANEL_BY_CASE[wildcards.snp_panel_case_id]['library_id']}"
+            f"/snp_panel/{wildcards.snp_panel_case_id}/top_designs.tsv"
+        ),
+    output:
+        figure="results/manuscript/figures/figure_08_{snp_panel_case_id}_target_overlap.pdf",
+    log:
+        "benchmark/logs/manuscript/{snp_panel_case_id}.snp_panel_overlap_figure.log",
+    conda:
+        "../envs/figures.yml"
+    params:
+        display_name=lambda wildcards: EMPIRICAL_SNP_PANEL_BY_CASE[
+            wildcards.snp_panel_case_id
+        ]["display_name"],
+    shell:
+        r"""
+        mkdir -p benchmark/logs/manuscript results/manuscript/figures
+        Rscript scripts/manuscript/make_snp_panel_overlap_figure.R \
+            --pairs {input.pairs:q} \
+            --top {input.top:q} \
+            --out {output.figure:q} \
+            --title {params.display_name:q} \
+            >{log:q} 2>&1
+        test -s {output.figure:q}
         """
 
 

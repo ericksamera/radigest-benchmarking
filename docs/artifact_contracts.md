@@ -75,6 +75,16 @@ in the manuscript or supplement through an empirical dataset table and size-mode
 summary/overlay artifacts. They are not depth-validation artifacts unless a matching
 entry is added to `config/empirical_depth_validation_cases.tsv`.
 
+Stage 6b adds the Sockeye SNP-panel target-overlap artifact `C35`:
+
+```text
+results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/pair_overlap.tsv
+results/manuscript/tables/table_09_sockeye_snp_panel_target_overlap.tsv
+results/manuscript/figures/figure_08_sockeye_snp_panel_target_overlap.pdf
+```
+
+The required private/local input is `data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed`, declared in `config/snp_panel_cases.tsv`.
+
 ## Stage 7a/7b audit contract
 
 Stage 7 makes `config/artifacts.tsv` executable as a release contract. Stage 7a generates artifact, claim, and environment audit tables. Stage 7b adds a release checklist and output index. The audit target generates:
