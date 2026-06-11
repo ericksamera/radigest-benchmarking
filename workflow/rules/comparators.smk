@@ -67,6 +67,10 @@ CONDITION_ROWS_FOR_COMPARATORS = _read_rows("config/conditions.tsv")
 CONDITION_BY_ID_FOR_COMPARATORS = {
     row["condition_id"]: row for row in CONDITION_ROWS_FOR_COMPARATORS
 }
+ENZYME_ROWS_FOR_COMPARATORS = _read_rows("config/enzymes.tsv")
+ENZYME_BY_ID_FOR_COMPARATORS = {
+    row["enzyme_id"]: row for row in ENZYME_ROWS_FOR_COMPARATORS
+}
 
 
 def _is_required(row):
@@ -259,11 +263,38 @@ def case_max_size(wc):
     return int(condition_for_case(wc.case_id)["max_size"])
 
 
+def _enzyme_motif_len(enzyme_id):
+    enzyme = ENZYME_BY_ID_FOR_COMPARATORS[enzyme_id]
+    return len(enzyme["recognition_sequence"].replace("^", ""))
+
+
+def _enzyme_cut_offset(enzyme_id):
+    return int(ENZYME_BY_ID_FOR_COMPARATORS[enzyme_id]["cut_offset"])
+
+
+def _ddradseqtools_left_residual(enzyme_id):
+    return max(0, _enzyme_cut_offset(enzyme_id) - 1)
+
+
+def _ddradseqtools_right_residual(enzyme_id):
+    return max(0, _enzyme_motif_len(enzyme_id) - _enzyme_cut_offset(enzyme_id) - 1)
+
+
 def ddradseqtools_tool_max_size(wc):
-    # rsitesearch.py filters on its own fragment representation. Run a slightly
-    # wider upper bound, then enforce the exact cut-to-cut window in the
-    # normalizer so valid radigest intervals are not lost before normalization.
-    return case_max_size(wc) + 4
+    # rsitesearch.py filters on a representation that can include restriction-site
+    # residual sequence on either side of the cut-to-cut interval. Run with a
+    # case-specific wider upper bound, then enforce the exact cut-to-cut window
+    # in normalize_ddradseqtools_fragments.py so valid radigest intervals are
+    # not lost before normalization.
+    enzyme1 = case_enzyme1(wc)
+    enzyme2 = case_enzyme2(wc)
+    max_residual = max(
+        _ddradseqtools_left_residual(enzyme1)
+        + _ddradseqtools_right_residual(enzyme2),
+        _ddradseqtools_left_residual(enzyme2)
+        + _ddradseqtools_right_residual(enzyme1),
+    )
+    return case_max_size(wc) + max_residual
 
 
 def ddradseqtools_repo(_wc):

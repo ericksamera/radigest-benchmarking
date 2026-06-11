@@ -8,7 +8,7 @@ DDRADSEQTOOLS rsitesearch.py emits fragment FASTA records with headers like:
 The emitted sequence includes restriction-site residual sequence relative to
 radigest's cut-to-cut interval convention. This script converts the FASTA header
 coordinates to zero-based half-open cut-coordinate intervals using enzyme motif
-lengths and cut offsets.
+lengths and cut offsets on both ends of each fragment.
 
 By default, seqids are canonicalized to the first FASTA defline token, matching
 radigest's FASTA record identifier convention.
@@ -34,6 +34,8 @@ OUT_FIELDS = [
     "raw_end",
     "raw_length",
     "sequence_length",
+    "left_enzyme",
+    "left_trim",
     "right_enzyme",
     "right_trim",
     "raw_locus",
@@ -171,6 +173,23 @@ def read_fasta_records(path: Path) -> list[tuple[dict[str, str], str]]:
     return records
 
 
+def left_trim_for_enzyme(
+    enzyme: str,
+    enzyme_defs: dict[str, dict[str, int | str]],
+) -> int:
+    if enzyme not in enzyme_defs:
+        raise ValueError(f"enzyme not found in config table: {enzyme}")
+
+    cut_offset = int(enzyme_defs[enzyme]["cut_offset"])
+
+    # DDRADSEQTOOLS header intervals start at the motif-boundary coordinate,
+    # expressed as a one-based inclusive coordinate in the FASTA header. Moving
+    # from that coordinate to the cut-coordinate interval requires cut_offset -
+    # 1 bases on the left side. This is zero for EcoRI/MseI/MspI but non-zero
+    # for enzymes such as PstI and SbfI.
+    return max(0, cut_offset - 1)
+
+
 def right_trim_for_enzyme(
     enzyme: str,
     enzyme_defs: dict[str, dict[str, int | str]],
@@ -206,15 +225,18 @@ def normalize_record(
     raw_right0 = max(raw_start, raw_end)
 
     if strand == "+":
+        left_enzyme = enzyme1
         right_enzyme = enzyme2
     elif strand == "-":
+        left_enzyme = enzyme2
         right_enzyme = enzyme1
     else:
         raise ValueError(f"unexpected strand value: {strand!r}")
 
+    left_trim = left_trim_for_enzyme(left_enzyme, enzyme_defs)
     right_trim = right_trim_for_enzyme(right_enzyme, enzyme_defs)
 
-    start0 = raw_left0
+    start0 = raw_left0 + left_trim
     end0 = raw_right0 - right_trim
     length = end0 - start0
 
@@ -238,6 +260,8 @@ def normalize_record(
         "raw_end": str(raw_end),
         "raw_length": str(raw_length),
         "sequence_length": str(len(sequence)),
+        "left_enzyme": left_enzyme,
+        "left_trim": str(left_trim),
         "right_enzyme": right_enzyme,
         "right_trim": str(right_trim),
         "raw_locus": raw_locus,
@@ -281,8 +305,9 @@ def write_summary(
             "total_cut_bases": str(total_cut_bases),
             "notes": (
                 "rsitesearch.py FASTA header coordinates normalized to "
-                "zero-based half-open cut intervals using enzyme cut offsets; "
-                "seqids canonicalized according to seqid_mode"
+                "zero-based half-open cut intervals using enzyme motif lengths "
+                "and cut offsets on both fragment ends; seqids canonicalized "
+                "according to seqid_mode"
             ),
         }
     ]
