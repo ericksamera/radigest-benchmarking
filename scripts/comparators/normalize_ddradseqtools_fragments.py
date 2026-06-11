@@ -57,6 +57,18 @@ SUMMARY_FIELDS = [
     "notes",
 ]
 
+# DDRADSEQTOOLS reports FASTA header intervals after applying its own
+# enzyme-specific residual convention. For most enzymes in the validation
+# matrix, the generic cut-offset model below reproduces radigest's cut-to-cut
+# intervals after trimming. SbfI is the exception in the DDRADSEQTOOLS enzyme
+# database used by rsitesearch.py: its emitted headers are one base closer to
+# the cut coordinate on both sides than predicted by the full recognition motif
+# CCTGCAGG with cut_offset=6. The adjustment is deliberately scoped to the
+# DDRADSEQTOOLS normalizer and does not alter radigest enzyme definitions.
+DDRADSEQTOOLS_TRIM_ADJUSTMENTS = {
+    "SbfI": -1,
+}
+
 
 def canonical_seqid(seqid: str, mode: str) -> str:
     seqid = seqid.strip()
@@ -173,6 +185,10 @@ def read_fasta_records(path: Path) -> list[tuple[dict[str, str], str]]:
     return records
 
 
+def ddradseqtools_trim_adjustment(enzyme: str) -> int:
+    return DDRADSEQTOOLS_TRIM_ADJUSTMENTS.get(enzyme, 0)
+
+
 def left_trim_for_enzyme(
     enzyme: str,
     enzyme_defs: dict[str, dict[str, int | str]],
@@ -187,7 +203,7 @@ def left_trim_for_enzyme(
     # from that coordinate to the cut-coordinate interval requires cut_offset -
     # 1 bases on the left side. This is zero for EcoRI/MseI/MspI but non-zero
     # for enzymes such as PstI and SbfI.
-    return max(0, cut_offset - 1)
+    return max(0, cut_offset - 1 + ddradseqtools_trim_adjustment(enzyme))
 
 
 def right_trim_for_enzyme(
@@ -203,7 +219,7 @@ def right_trim_for_enzyme(
     # DDRADSEQTOOLS header intervals include right-side recognition-site
     # residuals relative to radigest's cut-to-cut interval. The -1 adjustment
     # accounts for the one-based inclusive header coordinate convention.
-    return max(0, motif_len - cut_offset - 1)
+    return max(0, motif_len - cut_offset - 1 + ddradseqtools_trim_adjustment(enzyme))
 
 
 def normalize_record(
@@ -305,9 +321,9 @@ def write_summary(
             "total_cut_bases": str(total_cut_bases),
             "notes": (
                 "rsitesearch.py FASTA header coordinates normalized to "
-                "zero-based half-open cut intervals using enzyme motif lengths "
-                "and cut offsets on both fragment ends; seqids canonicalized "
-                "according to seqid_mode"
+                "zero-based half-open cut intervals using enzyme motif lengths, "
+                "cut offsets, and DDRADSEQTOOLS-specific residual adjustments "
+                "on fragment ends; seqids canonicalized according to seqid_mode"
             ),
         }
     ]
