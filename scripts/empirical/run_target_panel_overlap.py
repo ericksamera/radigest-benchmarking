@@ -182,6 +182,13 @@ def read_bed(path: Path, *, label: str) -> list[Interval]:
     return rows
 
 
+def read_bed_or_empty(path: Path, *, label: str) -> list[Interval]:
+    """Read BED intervals, treating absent or empty files as zero retained loci."""
+    if not path.exists() or path.stat().st_size == 0:
+        return []
+    return read_bed(path, label=label)
+
+
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
@@ -461,8 +468,18 @@ def run_radigest_pair(
         str(json_out),
     ]
     run_command(command, log_path=log_out)
-    if not bed_out.exists() or bed_out.stat().st_size == 0:
-        raise RuntimeError(f"radigest did not write a non-empty BED: {bed_out}")
+    # Some candidate enzyme pairs legitimately retain zero fragments in the
+    # configured hard window. That is a valid design-space result and should
+    # not abort an all-pair panel screen. Ensure a file exists so downstream
+    # bookkeeping can record zero hard-window loci and zero target overlap.
+    if not bed_out.exists():
+        bed_out.touch()
+    if bed_out.stat().st_size == 0:
+        print(
+            f"warning: no hard-window BED intervals for {enzyme_a}+{enzyme_b}; "
+            f"recording zero retained loci for {bed_out}",
+            file=sys.stderr,
+        )
 
 
 def summarize_pair(
@@ -475,7 +492,7 @@ def summarize_pair(
     bed_path: Path,
     json_path: Path,
 ) -> dict[str, str]:
-    fragments = read_bed(bed_path, label=f"{enzyme_a}_{enzyme_b}_fragment")
+    fragments = read_bed_or_empty(bed_path, label=f"{enzyme_a}_{enzyme_b}_fragment")
     index = build_fragment_index(fragments)
     fragment_by_key = {
         (item.seqid, item.start, item.end, item.name): item for item in fragments
@@ -483,15 +500,16 @@ def summarize_pair(
     hard_loci = len(fragments)
     hard_bp = sum(item.length for item in fragments)
 
-    captured_targets: set[str] = set()
-    read_accessible_targets: set[str] = set()
+    captured_targets: set[tuple[int, str, int, int, str]] = set()
+    read_accessible_targets: set[tuple[int, str, int, int, str]] = set()
     panel_fragment_keys: set[tuple[str, int, int, str]] = set()
     total_overlap_bp = 0
 
-    for target in panel:
+    for target_index, target in enumerate(panel):
+        target_key = (target_index, target.seqid, target.start, target.end, target.name)
         hits = overlapping_fragments(index, target)
         if hits:
-            captured_targets.add(target.name)
+            captured_targets.add(target_key)
         for fragment in hits:
             key = (fragment.seqid, fragment.start, fragment.end, fragment.name)
             panel_fragment_keys.add(key)
@@ -502,7 +520,7 @@ def summarize_pair(
                 read_layout=args.read_layout,
                 read_length=args.read_length,
             ):
-                read_accessible_targets.add(target.name)
+                read_accessible_targets.add(target_key)
 
     panel_fragment_bp = sum(fragment_by_key[key].length for key in panel_fragment_keys)
     panel_fragment_count = len(panel_fragment_keys)
@@ -754,7 +772,7 @@ def main(argv: list[str]) -> int:
             bed_path = bed_dir / f"{stem}.bed"
             json_path = json_dir / f"{stem}.json"
             log_path = log_dir / f"{stem}.log"
-            if not bed_path.exists() or bed_path.stat().st_size == 0:
+            if not bed_path.exists():
                 run_radigest_pair(
                     radigest=args.radigest,
                     fasta=args.fasta,
