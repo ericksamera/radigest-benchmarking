@@ -52,6 +52,11 @@ pairs <- read_tsv(pairs_path, show_col_types = FALSE, progress = FALSE) %>%
     panel_fraction_read_accessible = as_num(panel_fraction_read_accessible),
     off_panel_fragment_bp = as_num(off_panel_fragment_bp),
     predicted_mean_locus_depth = as_num(predicted_mean_locus_depth),
+    predicted_mean_locus_depth_for_size = ifelse(
+      is.finite(predicted_mean_locus_depth),
+      predicted_mean_locus_depth,
+      0
+    ),
     predicted_weighted_genome_pct = as_num(predicted_weighted_genome_pct),
     feasible = tolower(as.character(feasible)) %in% c("true", "1", "yes", "pass", "feasible")
   )
@@ -72,12 +77,12 @@ p1 <- ggplot(
   aes(
     x = off_panel_fragment_bp / 1e6,
     y = panel_loci_read_accessible,
-    size = predicted_mean_locus_depth,
+    size = predicted_mean_locus_depth_for_size,
     shape = feasible
   )
 ) +
   geom_point(alpha = 0.75, na.rm = TRUE) +
-  scale_size_continuous(name = "Predicted mean depth (×)", range = c(1.5, 5), na.value = 1.5) +
+  scale_size_continuous(name = "Predicted mean depth (×)", range = c(1.5, 5)) +
   labs(
     x = "Off-panel hard-window burden (Mbp)",
     y = "Read-accessible panel intervals",
