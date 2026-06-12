@@ -1148,6 +1148,9 @@ rule empirical_snp_panel_manuscript_table:
         """
 
 
+ruleorder: public_bovinehd_snp_panel_overlap_figure > empirical_snp_panel_overlap_figure
+
+
 rule empirical_snp_panel_overlap_figure:
     input:
         pairs=lambda wildcards: (
@@ -1178,6 +1181,35 @@ rule empirical_snp_panel_overlap_figure:
             --top {input.top:q} \
             --out {output.figure:q} \
             --title {params.display_name:q} \
+            >{log:q} 2>&1
+        test -s {output.figure:q}
+        """
+
+
+rule public_bovinehd_snp_panel_overlap_figure:
+    input:
+        pairs=(
+            "results/empirical/bovine_umd_3_1_1_bovinehd/snp_panel/"
+            "bovinehd_public/pair_overlap.tsv"
+        ),
+        top=(
+            "results/empirical/bovine_umd_3_1_1_bovinehd/snp_panel/"
+            "bovinehd_public/top_designs.tsv"
+        ),
+    output:
+        figure="results/manuscript/figures/figure_08_bovinehd_public_target_overlap.pdf",
+    log:
+        "benchmark/logs/manuscript/bovinehd_public.snp_panel_overlap_figure.log",
+    conda:
+        "../envs/figures.yml"
+    shell:
+        r"""
+        mkdir -p benchmark/logs/manuscript results/manuscript/figures
+        Rscript scripts/manuscript/make_snp_panel_overlap_figure.R \
+            --pairs {input.pairs:q} \
+            --top {input.top:q} \
+            --out {output.figure:q} \
+            --title 'Public BovineHD SNP-panel target-overlap screen' \
             >{log:q} 2>&1
         test -s {output.figure:q}
         """

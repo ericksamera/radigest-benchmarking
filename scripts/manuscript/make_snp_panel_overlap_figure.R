@@ -89,6 +89,17 @@ scalar_from_column <- function(df, candidates, default = NA_real_) {
   values[[1]]
 }
 
+format_depth_label <- function(x) {
+  x <- as.numeric(x)
+  if (!is.finite(x)) {
+    return("")
+  }
+  if (abs(x - round(x)) < 1e-8) {
+    return(as.character(round(x)))
+  }
+  format(round(x, 2), trim = TRUE, scientific = FALSE)
+}
+
 feasible_factor <- function(x) {
   factor(
     ifelse(
@@ -146,6 +157,10 @@ depth_target <- scalar_from_column(
   pairs,
   c("target_mean_locus_depth", "target_mean_depth", "desired_depth")
 )
+panel_y_max <- suppressWarnings(max(pairs$panel_loci_read_accessible, na.rm = TRUE))
+if (!is.finite(panel_y_max) || panel_y_max <= 0) {
+  panel_y_max <- 1
+}
 
 feasible_colors <- c(
   "Infeasible" = SEABORN[["gray"]],
@@ -222,6 +237,16 @@ if (is.finite(depth_target)) {
       linewidth = 0.45,
       color = SEABORN[["orange"]],
       show.legend = FALSE
+    ) +
+    annotate(
+      "text",
+      x = depth_target,
+      y = panel_y_max,
+      label = paste0(format_depth_label(depth_target), "× target"),
+      hjust = -0.1,
+      vjust = 1.25,
+      size = 2.7,
+      color = SEABORN[["orange"]]
     )
 }
 
@@ -262,7 +287,7 @@ p3 <- ggplot(
   labs(
     x = "Read-accessible panel intervals",
     y = "Enzyme pair",
-    title = "C. Top target-aware enzyme-pair rankings"
+    title = "C. Panel-locus recovery, with feasibility indicated"
   ) +
   base_theme() +
   theme(panel.grid.major.y = element_blank())

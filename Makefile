@@ -67,9 +67,11 @@ PUBLIC_BOVINEHD_USABLE_READ_FRACTION ?= 1.0
 PUBLIC_BOVINEHD_MIN_SIZE ?= 200
 PUBLIC_BOVINEHD_MAX_SIZE ?= 400
 PUBLIC_BOVINEHD_OUTPUT_DIR ?= results/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/snp_panel/$(PUBLIC_BOVINEHD_CASE_ID)
-PUBLIC_BOVINEHD_OUTPUTS ?= $(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/summary.tsv results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf
+PUBLIC_BOVINEHD_TABLE_OUTPUT ?= results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv
+PUBLIC_BOVINEHD_FIGURE_OUTPUT ?= results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf
+PUBLIC_BOVINEHD_OUTPUTS ?= $(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/summary.tsv $(PUBLIC_BOVINEHD_TABLE_OUTPUT) $(PUBLIC_BOVINEHD_FIGURE_OUTPUT)
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-sockeye-snp-panel public-bovinehd-reference public-bovinehd-panel public-bovinehd-snp-panel empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-sockeye-snp-panel public-bovinehd-reference public-bovinehd-panel public-bovinehd-snp-panel public-bovinehd-snp-panel-figure empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
 
 help:
 	@printf '%s\n' \
@@ -140,6 +142,8 @@ help:
 	  '  make empirical-rhododendron THREADS=8' \
 	  '  make public-bovinehd-snp-panel THREADS=8' \
 	  '      Public BovineHD target-overlap example; no private Sockeye panel required.' \
+	  '  make public-bovinehd-snp-panel-figure THREADS=8' \
+	  '      Re-render only the public BovineHD target-overlap figure inside the Snakemake figures conda environment.' \
 	  '' \
 	  'Focused honeysuckle design-space target:' \
 	  '  make experimental-honeysuckle-design-space-figure THREADS=8' \
@@ -396,13 +400,14 @@ public-bovinehd-snp-panel: $(RADIGEST_BUILD_PREREQ) public-bovinehd-panel
 		--top-n 20 \
 		--force \
 		>benchmark/logs/empirical/$(PUBLIC_BOVINEHD_CASE_ID).snp_panel.overlap.log 2>&1
-	cp "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" "results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv"
-	Rscript scripts/manuscript/make_snp_panel_overlap_figure.R \
-		--pairs "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv" \
-		--top "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" \
-		--out "results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf" \
-		--title 'Public BovineHD SNP-panel target-overlap screen' \
-		>benchmark/logs/manuscript/$(PUBLIC_BOVINEHD_CASE_ID).snp_panel_overlap_figure.log 2>&1
+	cp "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" "$(PUBLIC_BOVINEHD_TABLE_OUTPUT)"
+	$(MAKE) public-bovinehd-snp-panel-figure
+
+public-bovinehd-snp-panel-figure:
+	mkdir -p benchmark/logs/manuscript results/manuscript/figures
+	test -s "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv"
+	test -s "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv"
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) --force $(PUBLIC_BOVINEHD_FIGURE_OUTPUT) $(SNAKEMAKE_CONFIG_ARGS)
 
 empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs
