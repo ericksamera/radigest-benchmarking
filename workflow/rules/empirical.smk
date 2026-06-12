@@ -109,6 +109,11 @@ EMPIRICAL_SNP_PANEL_ROWS = [
 ]
 EMPIRICAL_SNP_PANEL_BY_CASE = {row["case_id"]: row for row in EMPIRICAL_SNP_PANEL_ROWS}
 EMPIRICAL_SNP_PANEL_CASE_IDS = sorted(EMPIRICAL_SNP_PANEL_BY_CASE)
+EMPIRICAL_SNP_PANEL_CASE_PATTERN = (
+    "|".join(re.escape(case_id) for case_id in EMPIRICAL_SNP_PANEL_CASE_IDS)
+    if EMPIRICAL_SNP_PANEL_CASE_IDS
+    else r"a^"
+)
 
 EMPIRICAL_SRA_RUN_ROWS = []
 for row in _read_optional_tsv_rows(EMPIRICAL_SRA_RUN_MANIFEST):
@@ -988,6 +993,8 @@ rule empirical_snp_panel_design:
         json="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/design.json",
     log:
         "benchmark/logs/empirical/{library_id}.{snp_panel_case_id}.snp_panel.design.log",
+    wildcard_constraints:
+        snp_panel_case_id=EMPIRICAL_SNP_PANEL_CASE_PATTERN,
     threads: 8
     params:
         radigest_design=lambda wildcards: config.get(
@@ -1081,6 +1088,8 @@ rule empirical_snp_panel_overlap:
         metadata="results/empirical/{library_id}/snp_panel/{snp_panel_case_id}/run_metadata.json",
     log:
         "benchmark/logs/empirical/{library_id}.{snp_panel_case_id}.snp_panel.overlap.log",
+    wildcard_constraints:
+        snp_panel_case_id=EMPIRICAL_SNP_PANEL_CASE_PATTERN,
     conda:
         "../envs/empirical.yml"
     threads: 4
@@ -1140,6 +1149,8 @@ rule empirical_snp_panel_manuscript_table:
         table="results/manuscript/tables/table_09_{snp_panel_case_id}_target_overlap.tsv",
     log:
         "benchmark/logs/manuscript/{snp_panel_case_id}.snp_panel_overlap_table.log",
+    wildcard_constraints:
+        snp_panel_case_id=EMPIRICAL_SNP_PANEL_CASE_PATTERN,
     shell:
         r"""
         mkdir -p benchmark/logs/manuscript results/manuscript/tables
@@ -1167,6 +1178,8 @@ rule empirical_snp_panel_overlap_figure:
         figure="results/manuscript/figures/figure_08_{snp_panel_case_id}_target_overlap.pdf",
     log:
         "benchmark/logs/manuscript/{snp_panel_case_id}.snp_panel_overlap_figure.log",
+    wildcard_constraints:
+        snp_panel_case_id=EMPIRICAL_SNP_PANEL_CASE_PATTERN,
     conda:
         "../envs/figures.yml"
     params:

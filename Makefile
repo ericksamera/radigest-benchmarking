@@ -407,7 +407,8 @@ public-bovinehd-snp-panel-figure:
 	mkdir -p benchmark/logs/manuscript results/manuscript/figures
 	test -s "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv"
 	test -s "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv"
-	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) --force $(PUBLIC_BOVINEHD_FIGURE_OUTPUT) $(SNAKEMAKE_CONFIG_ARGS)
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) --force public_bovinehd_snp_panel_overlap_figure $(SNAKEMAKE_CONFIG_ARGS)
+	test -s "$(PUBLIC_BOVINEHD_FIGURE_OUTPUT)"
 
 empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs
