@@ -136,22 +136,29 @@ pairs <- read_tsv(pairs_path, show_col_types = FALSE, progress = FALSE) %>%
     feasible = feasible_factor(feasible)
   )
 
-top <- read_tsv(top_path, show_col_types = FALSE, progress = FALSE) %>%
-  mutate(
-    panel_loci_read_accessible = as_num(panel_loci_read_accessible),
-    panel_loci_captured = as_num(panel_loci_captured),
-    predicted_mean_locus_depth = as_num(predicted_mean_locus_depth),
-    off_panel_fragment_bp = as_num(off_panel_fragment_bp)
-  )
-
-if ("feasible" %in% names(top)) {
-  top <- top %>% mutate(feasible = feasible_factor(feasible))
-} else {
-  top$feasible <- factor(rep("Infeasible", nrow(top)), levels = c("Infeasible", "Feasible"))
+# Read the top-design table to keep the input contract explicit, but build the
+# bar panel from the complete pair table so high-ranking feasible designs are not
+# hidden when the highest target-recovery designs are all infeasible.
+top_input <- read_tsv(top_path, show_col_types = FALSE, progress = FALSE)
+if (nrow(top_input) == 0) {
+  stop("No rows in top-design table: ", top_path, call. = FALSE)
+}
+if (!("enzyme_pair" %in% names(pairs))) {
+  stop("pair-overlap table must contain an enzyme_pair column", call. = FALSE)
 }
 
-top <- top %>%
-  slice_head(n = min(15L, nrow(top)))
+top_overall <- pairs %>%
+  arrange(desc(panel_loci_read_accessible), off_panel_fragment_bp, enzyme_pair) %>%
+  slice_head(n = 10L)
+
+top_feasible <- pairs %>%
+  filter(as.character(feasible) == "Feasible") %>%
+  arrange(desc(panel_loci_read_accessible), off_panel_fragment_bp, enzyme_pair) %>%
+  slice_head(n = 5L)
+
+top <- bind_rows(top_overall, top_feasible) %>%
+  distinct(enzyme_pair, .keep_all = TRUE) %>%
+  arrange(desc(panel_loci_read_accessible), off_panel_fragment_bp, enzyme_pair)
 
 depth_target <- scalar_from_column(
   pairs,
@@ -176,35 +183,21 @@ p1 <- ggplot(
   aes(
     x = off_panel_fragment_bp / 1e6,
     y = panel_loci_read_accessible,
-    size = predicted_mean_locus_depth_for_size,
     color = feasible,
     shape = feasible
   )
 ) +
-  geom_point(alpha = 0.88, stroke = 0.2, na.rm = TRUE) +
+  geom_point(size = 2.35, alpha = 0.88, stroke = 0.2, na.rm = TRUE) +
   scale_color_manual(values = feasible_colors, drop = FALSE) +
   scale_shape_manual(values = feasible_shapes, drop = FALSE) +
-  scale_size_continuous(
-    name = "Predicted mean depth (×)",
-    range = c(2.1, 5.8),
-    breaks = pretty_breaks(n = 4)
-  ) +
   guides(
     color = "none",
     shape = guide_legend(
       title = "Feasibility",
-      order = 2,
+      order = 1,
       override.aes = list(
         color = unname(feasible_colors),
         size = 3.1,
-        alpha = 1
-      )
-    ),
-    size = guide_legend(
-      order = 1,
-      override.aes = list(
-        shape = 16,
-        color = "#2F2F2F",
         alpha = 1
       )
     )
@@ -253,9 +246,15 @@ if (is.finite(depth_target)) {
 p2 <- p2 +
   scale_color_manual(values = feasible_colors, drop = FALSE) +
   scale_shape_manual(values = feasible_shapes, drop = FALSE) +
+  scale_x_continuous(
+    trans = scales::pseudo_log_trans(base = 10),
+    breaks = c(0, 1, 10, 100, 1000, 10000),
+    labels = label_number(),
+    minor_breaks = NULL
+  ) +
   guides(color = "none", shape = "none") +
   labs(
-    x = "Predicted mean locus depth (×)",
+    x = "Predicted mean locus depth (×; pseudo-log scale)",
     y = "Read-accessible panel intervals",
     color = "Feasibility",
     shape = "Feasibility",
@@ -287,7 +286,7 @@ p3 <- ggplot(
   labs(
     x = "Read-accessible panel intervals",
     y = "Enzyme pair",
-    title = "C. Panel-locus recovery and feasibility"
+    title = "C. High-recovery pairs and feasible alternatives"
   ) +
   base_theme() +
   theme(panel.grid.major.y = element_blank())
@@ -311,5 +310,5 @@ if (!is.null(title) && nzchar(trimws(title))) {
     )
 }
 dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
-ggsave(out_path, plot, width = 8.8, height = 7.2, units = "in")
+ggsave(out_path, plot, width = 8.8, height = 7.4, units = "in")
 message("wrote ", out_path)
