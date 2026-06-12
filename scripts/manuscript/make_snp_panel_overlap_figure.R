@@ -62,8 +62,10 @@ top <- read_tsv(top_path, show_col_types = FALSE, progress = FALSE) %>%
     panel_loci_captured = as_num(panel_loci_captured),
     predicted_mean_locus_depth = as_num(predicted_mean_locus_depth),
     off_panel_fragment_bp = as_num(off_panel_fragment_bp)
-  ) %>%
-  slice_head(n = min(15, n()))
+  )
+
+top <- top %>%
+  slice_head(n = min(15L, nrow(top)))
 
 p1 <- ggplot(
   pairs,
