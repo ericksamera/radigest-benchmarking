@@ -47,7 +47,19 @@ SOCKEYE_SNP_PANEL_CASE_ID ?= sockeye_snp_panel
 SOCKEYE_SNP_PANEL_LIBRARY_ID ?= sockeye_ecori_msei
 SOCKEYE_SNP_PANEL_OUTPUTS ?= results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/design.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/pair_overlap.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/top_designs.tsv results/empirical/$(SOCKEYE_SNP_PANEL_LIBRARY_ID)/snp_panel/$(SOCKEYE_SNP_PANEL_CASE_ID)/summary.tsv results/manuscript/tables/table_09_$(SOCKEYE_SNP_PANEL_CASE_ID)_target_overlap.tsv results/manuscript/figures/figure_08_$(SOCKEYE_SNP_PANEL_CASE_ID)_target_overlap.pdf
 
-.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-sockeye-snp-panel empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
+PUBLIC_BOVINEHD_REF_ID ?= bovine_umd_3_1_1
+PUBLIC_BOVINEHD_REFERENCE_OUTPUTS ?= data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa.gz data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa
+PUBLIC_BOVINEHD_LIBRARY_ID ?= bovine_umd_3_1_1_bovinehd
+PUBLIC_BOVINEHD_CASE_ID ?= bovinehd_public
+PUBLIC_BOVINEHD_PANEL_URL ?= https://webdata.illumina.com/downloads/productfiles/bovinehd/bovinehd-b1-annotation-file.zip
+PUBLIC_BOVINEHD_PANEL_ZIP ?= data/external/bovinehd/bovinehd-b1-annotation-file.zip
+PUBLIC_BOVINEHD_PANEL_BED ?= data/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/panel/bovinehd.bed
+PUBLIC_BOVINEHD_CANDIDATE_ENZYMES ?= config/candidate_enzymes.txt
+PUBLIC_BOVINEHD_MAX_TARGETS ?= 20000
+PUBLIC_BOVINEHD_OUTPUT_DIR ?= results/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/snp_panel/$(PUBLIC_BOVINEHD_CASE_ID)
+PUBLIC_BOVINEHD_OUTPUTS ?= $(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/summary.tsv results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf
+
+.PHONY: help help-all install-radigest build-radigest radigest-build show-radigest smoke comparator-smoke comparator-small-yeast comparator-medium-reference references install-comparators install-all comparators performance-input-format performance-screening-speed performance-thread-scaling performance-pair-screen-scaling performance-matched-tools performance figures empirical empirical-sockeye empirical-trichoderma empirical-anopheles-reference empirical-anopheles-fetch empirical-anopheles-align empirical-anopheles empirical-rhododendron-reference empirical-rhododendron-fetch empirical-rhododendron-align empirical-rhododendron empirical-references empirical-tlens empirical-predictions empirical-curves empirical-model-grid empirical-model-fit-ranking empirical-figures empirical-figure3-only empirical-size-overlays-only empirical-depth-validation empirical-sockeye-snp-panel public-bovinehd-reference public-bovinehd-panel public-bovinehd-snp-panel empirical-check empirical-check-inputs reviewer-nonempirical reviewer-empirical reviewer-all manuscript audit check check-manifests install-digital-rads install-ddradseqtools install-simrad install-ddgrader experimental-honeysuckle-reference experimental-honeysuckle-screening experimental-honeysuckle-design experimental-honeysuckle-design-2pct experimental-honeysuckle-design-1p5pct experimental-honeysuckle-design-space-figure experimental-honeysuckle
 
 help:
 	@printf '%s\n' \
@@ -116,6 +128,8 @@ help:
 	  '  make empirical-figures THREADS=8' \
 	  '  make empirical-anopheles THREADS=8' \
 	  '  make empirical-rhododendron THREADS=8' \
+	  '  make public-bovinehd-snp-panel THREADS=8' \
+	  '      Public BovineHD target-overlap example; no private Sockeye panel required.' \
 	  '' \
 	  'Focused honeysuckle design-space target:' \
 	  '  make experimental-honeysuckle-design-space-figure THREADS=8' \
@@ -166,6 +180,9 @@ help-all:
 	  '  make empirical-figures THREADS=8' \
 	  '  make empirical-depth-validation THREADS=8' \
 	  '  make empirical-sockeye-snp-panel THREADS=8' \
+	  '  make public-bovinehd-reference THREADS=8' \
+	  '  make public-bovinehd-panel THREADS=8' \
+	  '  make public-bovinehd-snp-panel THREADS=8' \
 	  '  make empirical THREADS=8' \
 	  '  make reviewer-nonempirical THREADS=8' \
 	  '  make reviewer-empirical THREADS=8' \
@@ -303,6 +320,79 @@ empirical-depth-validation: $(RADIGEST_BUILD_PREREQ)
 empirical-sockeye-snp-panel: $(RADIGEST_BUILD_PREREQ)
 	python3 scripts/core/check_snp_panel_cases.py --library-manifest "$(EMPIRICAL_LIBRARIES)" --manifest "$(SNP_PANEL_CASES)" --require-enabled $(SOCKEYE_SNP_PANEL_CASE_ID)
 	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(SOCKEYE_SNP_PANEL_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+public-bovinehd-reference:
+	$(SNAKEMAKE) -s $(SNAKEFILE) --cores $(THREADS) $(SNAKEMAKE_CONDA_ARGS) $(PUBLIC_BOVINEHD_REFERENCE_OUTPUTS) $(SNAKEMAKE_CONFIG_ARGS)
+
+public-bovinehd-panel: public-bovinehd-reference
+	mkdir -p data/external/bovinehd data/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/panel $(PUBLIC_BOVINEHD_OUTPUT_DIR)
+	if [ ! -s "$(PUBLIC_BOVINEHD_PANEL_ZIP)" ]; then \
+		curl -L --fail --retry 5 --retry-delay 15 "$(PUBLIC_BOVINEHD_PANEL_URL)" -o "$(PUBLIC_BOVINEHD_PANEL_ZIP)"; \
+	fi
+	python3 scripts/data/prepare_bovinehd_bed.py \
+		--zip "$(PUBLIC_BOVINEHD_PANEL_ZIP)" \
+		--reference "data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa" \
+		--bed "$(PUBLIC_BOVINEHD_PANEL_BED)" \
+		--summary "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/panel_conversion.summary.tsv" \
+		--max-targets "$(PUBLIC_BOVINEHD_MAX_TARGETS)"
+
+public-bovinehd-snp-panel: $(RADIGEST_BUILD_PREREQ) public-bovinehd-panel
+	mkdir -p benchmark/logs/empirical benchmark/logs/manuscript results/manuscript/tables results/manuscript/figures $(PUBLIC_BOVINEHD_OUTPUT_DIR)
+	set -eu; \
+	enzymes=$$(awk 'NF && $$1 !~ /^#/ {printf "%s%s", sep, $$1; sep=","}' "$(PUBLIC_BOVINEHD_CANDIDATE_ENZYMES)"); \
+	"$(RADIGEST_DESIGN)" \
+		--fasta "data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa" \
+		--enzymes "$$enzymes" \
+		--target-genome-pct 1.5 \
+		--coverage-tolerance-pct 0.25 \
+		--desired-depth 20 \
+		--samples 37 \
+		--read-layout pe \
+		--read-length 150 \
+		--threads $(THREADS) \
+		--jobs $(THREADS) \
+		--build-workers $(THREADS) \
+		--flowcell-read-pairs 50M \
+		--usable-read-fraction 1.0 \
+		--min 200 \
+		--max 400 \
+		--score-min 1 \
+		--score-max 1200 \
+		--size-model soft-window \
+		--size-mean 0 \
+		--size-sd 0 \
+		--size-edge-sd 50 \
+		--out-dir "$(PUBLIC_BOVINEHD_OUTPUT_DIR)" \
+		--force \
+		>benchmark/logs/empirical/$(PUBLIC_BOVINEHD_CASE_ID).snp_panel.design.log 2>&1
+	python3 scripts/empirical/run_target_panel_overlap.py \
+		--case-id "$(PUBLIC_BOVINEHD_CASE_ID)" \
+		--display-name 'Public BovineHD SNP-panel target-overlap screen' \
+		--fasta "data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa" \
+		--panel-bed "$(PUBLIC_BOVINEHD_PANEL_BED)" \
+		--candidate-enzymes "$(PUBLIC_BOVINEHD_CANDIDATE_ENZYMES)" \
+		--design-tsv "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv" \
+		--radigest "$(RADIGEST)" \
+		--min-size 200 \
+		--max-size 400 \
+		--read-layout pe \
+		--read-length 150 \
+		--threads $(THREADS) \
+		--work-dir "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/per_pair" \
+		--pair-overlap-out "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv" \
+		--top-out "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" \
+		--summary-out "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/summary.tsv" \
+		--metadata-out "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/run_metadata.json" \
+		--top-n 20 \
+		--force \
+		>benchmark/logs/empirical/$(PUBLIC_BOVINEHD_CASE_ID).snp_panel.overlap.log 2>&1
+	cp "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" "results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv"
+	Rscript scripts/manuscript/make_snp_panel_overlap_figure.R \
+		--pairs "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv" \
+		--top "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv" \
+		--out "results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf" \
+		--title 'Public BovineHD SNP-panel target-overlap screen' \
+		>benchmark/logs/manuscript/$(PUBLIC_BOVINEHD_CASE_ID).snp_panel_overlap_figure.log 2>&1
 
 empirical: $(RADIGEST_BUILD_PREREQ)
 	$(MAKE) empirical-check-inputs
