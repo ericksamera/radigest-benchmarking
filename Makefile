@@ -56,6 +56,16 @@ PUBLIC_BOVINEHD_PANEL_ZIP ?= data/external/bovinehd/bovinehd-b1-annotation-file.
 PUBLIC_BOVINEHD_PANEL_BED ?= data/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/panel/bovinehd.bed
 PUBLIC_BOVINEHD_CANDIDATE_ENZYMES ?= config/candidate_enzymes.txt
 PUBLIC_BOVINEHD_MAX_TARGETS ?= 20000
+PUBLIC_BOVINEHD_TARGET_GENOME_PCT ?= 1.5
+PUBLIC_BOVINEHD_COVERAGE_TOLERANCE_PCT ?= 0.25
+PUBLIC_BOVINEHD_DESIRED_DEPTH ?= 10
+PUBLIC_BOVINEHD_SAMPLES ?= 37
+PUBLIC_BOVINEHD_READ_LAYOUT ?= pe
+PUBLIC_BOVINEHD_READ_LENGTH ?= 150
+PUBLIC_BOVINEHD_FLOWCELL_READ_PAIRS ?= 50M
+PUBLIC_BOVINEHD_USABLE_READ_FRACTION ?= 1.0
+PUBLIC_BOVINEHD_MIN_SIZE ?= 200
+PUBLIC_BOVINEHD_MAX_SIZE ?= 400
 PUBLIC_BOVINEHD_OUTPUT_DIR ?= results/empirical/$(PUBLIC_BOVINEHD_LIBRARY_ID)/snp_panel/$(PUBLIC_BOVINEHD_CASE_ID)
 PUBLIC_BOVINEHD_OUTPUTS ?= $(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/top_designs.tsv $(PUBLIC_BOVINEHD_OUTPUT_DIR)/summary.tsv results/manuscript/tables/table_09_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.tsv results/manuscript/figures/figure_08_$(PUBLIC_BOVINEHD_CASE_ID)_target_overlap.pdf
 
@@ -343,19 +353,19 @@ public-bovinehd-snp-panel: $(RADIGEST_BUILD_PREREQ) public-bovinehd-panel
 	"$(RADIGEST_DESIGN)" \
 		--fasta "data/reference/$(PUBLIC_BOVINEHD_REF_ID).fa" \
 		--enzymes "$$enzymes" \
-		--target-genome-pct 1.5 \
-		--coverage-tolerance-pct 0.25 \
-		--desired-depth 20 \
-		--samples 37 \
-		--read-layout pe \
-		--read-length 150 \
+		--target-genome-pct $(PUBLIC_BOVINEHD_TARGET_GENOME_PCT) \
+		--coverage-tolerance-pct $(PUBLIC_BOVINEHD_COVERAGE_TOLERANCE_PCT) \
+		--desired-depth $(PUBLIC_BOVINEHD_DESIRED_DEPTH) \
+		--samples $(PUBLIC_BOVINEHD_SAMPLES) \
+		--read-layout $(PUBLIC_BOVINEHD_READ_LAYOUT) \
+		--read-length $(PUBLIC_BOVINEHD_READ_LENGTH) \
 		--threads $(THREADS) \
 		--jobs $(THREADS) \
 		--build-workers $(THREADS) \
-		--flowcell-read-pairs 50M \
-		--usable-read-fraction 1.0 \
-		--min 200 \
-		--max 400 \
+		--flowcell-read-pairs $(PUBLIC_BOVINEHD_FLOWCELL_READ_PAIRS) \
+		--usable-read-fraction $(PUBLIC_BOVINEHD_USABLE_READ_FRACTION) \
+		--min $(PUBLIC_BOVINEHD_MIN_SIZE) \
+		--max $(PUBLIC_BOVINEHD_MAX_SIZE) \
 		--score-min 1 \
 		--score-max 1200 \
 		--size-model soft-window \
@@ -373,10 +383,10 @@ public-bovinehd-snp-panel: $(RADIGEST_BUILD_PREREQ) public-bovinehd-panel
 		--candidate-enzymes "$(PUBLIC_BOVINEHD_CANDIDATE_ENZYMES)" \
 		--design-tsv "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/design.tsv" \
 		--radigest "$(RADIGEST)" \
-		--min-size 200 \
-		--max-size 400 \
-		--read-layout pe \
-		--read-length 150 \
+		--min-size $(PUBLIC_BOVINEHD_MIN_SIZE) \
+		--max-size $(PUBLIC_BOVINEHD_MAX_SIZE) \
+		--read-layout $(PUBLIC_BOVINEHD_READ_LAYOUT) \
+		--read-length $(PUBLIC_BOVINEHD_READ_LENGTH) \
 		--threads $(THREADS) \
 		--work-dir "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/per_pair" \
 		--pair-overlap-out "$(PUBLIC_BOVINEHD_OUTPUT_DIR)/pair_overlap.tsv" \
