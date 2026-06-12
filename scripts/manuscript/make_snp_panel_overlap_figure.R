@@ -34,6 +34,8 @@ base_theme <- function(base_size = 9) {
       legend.title = element_text(color = "#2F2F2F"),
       legend.text = element_text(color = "#3A3A3A"),
       legend.key.height = grid::unit(0.35, "lines"),
+      legend.spacing.x = grid::unit(0.55, "lines"),
+      legend.box = "horizontal",
       plot.title = element_text(face = "bold", size = base_size + 1.2, color = "#1F1F1F"),
       plot.margin = margin(6, 10, 6, 6)
     )
@@ -172,6 +174,26 @@ p1 <- ggplot(
     range = c(2.1, 5.8),
     breaks = pretty_breaks(n = 4)
   ) +
+  guides(
+    color = "none",
+    shape = guide_legend(
+      title = "Feasibility",
+      order = 2,
+      override.aes = list(
+        color = unname(feasible_colors),
+        size = 3.1,
+        alpha = 1
+      )
+    ),
+    size = guide_legend(
+      order = 1,
+      override.aes = list(
+        shape = 16,
+        color = "#2F2F2F",
+        alpha = 1
+      )
+    )
+  ) +
   labs(
     x = "Off-panel hard-window burden (Mbp)",
     y = "Read-accessible panel intervals",
@@ -206,6 +228,7 @@ if (is.finite(depth_target)) {
 p2 <- p2 +
   scale_color_manual(values = feasible_colors, drop = FALSE) +
   scale_shape_manual(values = feasible_shapes, drop = FALSE) +
+  guides(color = "none", shape = "none") +
   labs(
     x = "Predicted mean locus depth (×)",
     y = "Read-accessible panel intervals",
@@ -246,7 +269,12 @@ p3 <- ggplot(
 
 plot <- ((p1 | p2) / p3) +
   plot_layout(guides = "collect", heights = c(1, 1.05)) &
-  theme(legend.position = "top")
+  theme(
+    legend.position = "top",
+    legend.justification = "left",
+    legend.box.just = "left",
+    legend.margin = margin(0, 0, 2, 0)
+  )
 
 plot <- plot +
   plot_annotation(
@@ -257,5 +285,5 @@ plot <- plot +
   )
 
 dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
-ggsave(out_path, plot, width = 8.4, height = 7.2, units = "in")
+ggsave(out_path, plot, width = 8.8, height = 7.2, units = "in")
 message("wrote ", out_path)

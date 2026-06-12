@@ -16,9 +16,7 @@ EMPIRICAL_SRA_RUN_MANIFEST = "config/empirical_sra_runs.tsv"
 EMPIRICAL_DEPTH_VALIDATION_CASES = config.get(
     "empirical_depth_validation_cases", "config/empirical_depth_validation_cases.tsv"
 )
-EMPIRICAL_SNP_PANEL_CASES = config.get(
-    "snp_panel_cases", "config/snp_panel_cases.tsv"
-)
+EMPIRICAL_SNP_PANEL_CASES = config.get("snp_panel_cases", "config/snp_panel_cases.tsv")
 EMPIRICAL_DEPTH_VALIDATION_TABLE = (
     "results/manuscript/tables/table_08_empirical_depth_validation.tsv"
 )
@@ -1071,9 +1069,7 @@ rule empirical_snp_panel_overlap:
         reference=lambda wildcards: _empirical_snp_panel_param(
             wildcards, "reference_path"
         ),
-        panel_bed=lambda wildcards: _empirical_snp_panel_param(
-            wildcards, "panel_bed"
-        ),
+        panel_bed=lambda wildcards: _empirical_snp_panel_param(wildcards, "panel_bed"),
         candidates=lambda wildcards: _empirical_snp_panel_param(
             wildcards, "candidate_enzymes"
         ),

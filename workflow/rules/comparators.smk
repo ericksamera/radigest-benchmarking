@@ -289,10 +289,8 @@ def ddradseqtools_tool_max_size(wc):
     enzyme1 = case_enzyme1(wc)
     enzyme2 = case_enzyme2(wc)
     max_residual = max(
-        _ddradseqtools_left_residual(enzyme1)
-        + _ddradseqtools_right_residual(enzyme2),
-        _ddradseqtools_left_residual(enzyme2)
-        + _ddradseqtools_right_residual(enzyme1),
+        _ddradseqtools_left_residual(enzyme1) + _ddradseqtools_right_residual(enzyme2),
+        _ddradseqtools_left_residual(enzyme2) + _ddradseqtools_right_residual(enzyme1),
     )
     return case_max_size(wc) + max_residual
 
