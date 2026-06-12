@@ -83,16 +83,16 @@ rule build_local_radigest:
         test -x {output.bench_screen_cached:q}
         test -x {output.design:q}
         {{
-                                                  printf 'field\tvalue\n'
-                                                  printf 'repo_dir\t%s\n' {params.repo_dir:q}
-                                                  printf 'source_commit\t%s\n' "$(cat {input.commit:q})"
-                                                  printf 'radigest\t%s\n' {output.radigest:q}
-                                                  printf 'radigest_version\t%s\n' "$({output.radigest:q} --version 2>/dev/null || true)"
-                                                  printf 'screen_pairs_cached\t%s\n' {output.screen_pairs_cached:q}
-                                                  printf 'screen_pairs_cached_version\t%s\n' "$({output.screen_pairs_cached:q} --version 2>/dev/null || true)"
-                                                  printf 'radigest_bench_screen_cached\t%s\n' {output.bench_screen_cached:q}
-                                                  printf 'radigest_bench_screen_cached_version\t%s\n' "$({output.bench_screen_cached:q} --version 2>/dev/null || true)"
-                                                  printf 'radigest_design\t%s\n' {output.design:q}
-                                                  printf 'radigest_design_version\t%s\n' "$({output.design:q} --version 2>/dev/null || true)"
-                                                }} >{output.build_info:q}
+                                                          printf 'field\tvalue\n'
+                                                          printf 'repo_dir\t%s\n' {params.repo_dir:q}
+                                                          printf 'source_commit\t%s\n' "$(cat {input.commit:q})"
+                                                          printf 'radigest\t%s\n' {output.radigest:q}
+                                                          printf 'radigest_version\t%s\n' "$({output.radigest:q} --version 2>/dev/null || true)"
+                                                          printf 'screen_pairs_cached\t%s\n' {output.screen_pairs_cached:q}
+                                                          printf 'screen_pairs_cached_version\t%s\n' "$({output.screen_pairs_cached:q} --version 2>/dev/null || true)"
+                                                          printf 'radigest_bench_screen_cached\t%s\n' {output.bench_screen_cached:q}
+                                                          printf 'radigest_bench_screen_cached_version\t%s\n' "$({output.bench_screen_cached:q} --version 2>/dev/null || true)"
+                                                          printf 'radigest_design\t%s\n' {output.design:q}
+                                                          printf 'radigest_design_version\t%s\n' "$({output.design:q} --version 2>/dev/null || true)"
+                                                        }} >{output.build_info:q}
         """

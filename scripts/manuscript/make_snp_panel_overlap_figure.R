@@ -136,6 +136,11 @@ pairs <- read_tsv(pairs_path, show_col_types = FALSE, progress = FALSE) %>%
     feasible = feasible_factor(feasible)
   )
 
+# Draw infeasible points first and feasible points last so feasible alternatives
+# remain visible in dense regions of the design space.
+pairs_plot <- pairs %>%
+  arrange(feasible)
+
 # Read the top-design table to keep the input contract explicit, but build the
 # bar panel from the complete pair table so high-ranking feasible designs are not
 # hidden when the highest target-recovery designs are all infeasible.
@@ -177,21 +182,28 @@ feasible_shapes <- c(
   "Infeasible" = 16,
   "Feasible" = 17
 )
+feasible_alpha <- c(
+  "Infeasible" = 0.42,
+  "Feasible" = 0.95
+)
 
 p1 <- ggplot(
-  pairs,
+  pairs_plot,
   aes(
     x = off_panel_fragment_bp / 1e6,
     y = panel_loci_read_accessible,
     color = feasible,
-    shape = feasible
+    shape = feasible,
+    alpha = feasible
   )
 ) +
-  geom_point(size = 2.35, alpha = 0.88, stroke = 0.2, na.rm = TRUE) +
+  geom_point(size = 2.35, stroke = 0.2, na.rm = TRUE) +
   scale_color_manual(values = feasible_colors, drop = FALSE) +
   scale_shape_manual(values = feasible_shapes, drop = FALSE) +
+  scale_alpha_manual(values = feasible_alpha, guide = "none", drop = FALSE) +
   guides(
     color = "none",
+    alpha = "none",
     shape = guide_legend(
       title = "Feasibility",
       order = 1,
@@ -212,15 +224,16 @@ p1 <- ggplot(
   base_theme()
 
 p2 <- ggplot(
-  pairs,
+  pairs_plot,
   aes(
     x = predicted_mean_locus_depth,
     y = panel_loci_read_accessible,
     color = feasible,
-    shape = feasible
+    shape = feasible,
+    alpha = feasible
   )
 ) +
-  geom_point(size = 2.7, alpha = 0.88, stroke = 0.2, na.rm = TRUE)
+  geom_point(size = 2.7, stroke = 0.2, na.rm = TRUE)
 
 if (is.finite(depth_target)) {
   p2 <- p2 +
@@ -246,13 +259,14 @@ if (is.finite(depth_target)) {
 p2 <- p2 +
   scale_color_manual(values = feasible_colors, drop = FALSE) +
   scale_shape_manual(values = feasible_shapes, drop = FALSE) +
+  scale_alpha_manual(values = feasible_alpha, guide = "none", drop = FALSE) +
   scale_x_continuous(
     trans = scales::pseudo_log_trans(base = 10),
     breaks = c(0, 1, 10, 100, 1000, 10000),
     labels = label_number(),
     minor_breaks = NULL
   ) +
-  guides(color = "none", shape = "none") +
+  guides(color = "none", shape = "none", alpha = "none") +
   labs(
     x = "Predicted mean locus depth (×; pseudo-log scale)",
     y = "Read-accessible panel intervals",
