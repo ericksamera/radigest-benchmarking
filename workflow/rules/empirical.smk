@@ -1222,7 +1222,6 @@ rule public_bovinehd_snp_panel_overlap_figure:
             --pairs {input.pairs:q} \
             --top {input.top:q} \
             --out {output.figure:q} \
-            --title 'Public BovineHD SNP-panel target-overlap screen' \
             >{log:q} 2>&1
         test -s {output.figure:q}
         """

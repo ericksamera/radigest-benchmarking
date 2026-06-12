@@ -117,7 +117,7 @@ top_path <- require_arg(args, "top")
 out_path <- require_arg(args, "out")
 title <- args[["title"]]
 if (is.null(title) || identical(title, "")) {
-  title <- "Target-panel recovery across candidate enzyme pairs"
+  title <- ""
 }
 
 pairs <- read_tsv(pairs_path, show_col_types = FALSE, progress = FALSE) %>%
@@ -214,7 +214,7 @@ p1 <- ggplot(
     y = "Read-accessible panel intervals",
     color = "Feasibility",
     shape = "Feasibility",
-    title = "A. Panel recovery versus off-panel burden"
+    title = "A. Recovery versus off-panel burden"
   ) +
   base_theme()
 
@@ -259,7 +259,7 @@ p2 <- p2 +
     y = "Read-accessible panel intervals",
     color = "Feasibility",
     shape = "Feasibility",
-    title = "B. Panel recovery versus expected depth"
+    title = "B. Recovery versus expected depth"
   ) +
   base_theme()
 
@@ -287,7 +287,7 @@ p3 <- ggplot(
   labs(
     x = "Read-accessible panel intervals",
     y = "Enzyme pair",
-    title = "C. Panel-locus recovery, with feasibility indicated"
+    title = "C. Panel-locus recovery and feasibility"
   ) +
   base_theme() +
   theme(panel.grid.major.y = element_blank())
@@ -301,14 +301,15 @@ plot <- ((p1 | p2) / p3) +
     legend.margin = margin(0, 0, 2, 0)
   )
 
-plot <- plot +
-  plot_annotation(
-    title = title,
-    theme = theme(
-      plot.title = element_text(face = "bold", size = 12.5, color = "#1F1F1F")
+if (!is.null(title) && nzchar(trimws(title))) {
+  plot <- plot +
+    plot_annotation(
+      title = title,
+      theme = theme(
+        plot.title = element_text(face = "bold", size = 12.5, color = "#1F1F1F")
+      )
     )
-  )
-
+}
 dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
 ggsave(out_path, plot, width = 8.8, height = 7.2, units = "in")
 message("wrote ", out_path)
