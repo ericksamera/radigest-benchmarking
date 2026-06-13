@@ -1,3 +1,3 @@
 case_id	category	dataset_id	reference_path	condition_id	enzyme_1	enzyme_2	min_size	max_size	threads	runs	comparison_group	input_format	required_for_nonempirical	notes
-input_format_small_yeast_s288c_plain	input_format	small_yeast_s288c_plain	data/reference/small_yeast_s288c.fa	B1	EcoRI	MseI	100	300	1	5	small_yeast_s288c_B1	plain	true	Plain FASTA input-format timing on small public yeast.
-input_format_small_yeast_s288c_gzip	input_format	small_yeast_s288c_gzip	data/reference/small_yeast_s288c.fa.gz	B1	EcoRI	MseI	100	300	1	5	small_yeast_s288c_B1	gzip	true	Gzip FASTA input-format timing on small public yeast.
+input_format_small_yeast_s288c_plain	input_format	small_yeast_s288c_plain	data/reference/small_yeast_s288c.fa	B1	EcoRI	MseI	100	300	1	10	small_yeast_s288c_B1	plain	true	Plain FASTA input-format timing on small public yeast.
+input_format_small_yeast_s288c_gzip	input_format	small_yeast_s288c_gzip	data/reference/small_yeast_s288c.fa.gz	B1	EcoRI	MseI	100	300	1	10	small_yeast_s288c_B1	gzip	true	Gzip FASTA input-format timing on small public yeast.

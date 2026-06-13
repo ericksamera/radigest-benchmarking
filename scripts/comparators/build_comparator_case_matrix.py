@@ -82,6 +82,8 @@ def tier_for_dataset(dataset_id: str) -> str:
         return "shared_synthetic_smoke"
     if dataset_id == "small_yeast_s288c_plain":
         return "small_yeast_radigest_anchor"
+    if dataset_id == "moderate_cannabis_pink-pepper_plain":
+        return "medium_reference_coordinate_check"
     return "other"
 
 

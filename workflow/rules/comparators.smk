@@ -12,12 +12,16 @@ COMPARATOR_CUT_EQUIVALENCE_SUMMARY = "results/comparators/cut_equivalence_summar
 COMPARATOR_INTERVAL_TABLE = (
     "results/manuscript/tables/table_03_interval_comparisons.tsv"
 )
+COMPARATOR_EXACT_COUNTS_TABLE = (
+    "results/manuscript/tables/table_02_comparator_exact_counts.tsv"
+)
 COMPARATOR_SEMANTICS_TABLE = (
     "results/manuscript/tables/table_03_comparator_semantics.tsv"
 )
 COMPARATOR_CASE_MATRIX = "results/comparators/comparator_case_matrix.tsv"
 COMPARATOR_SMOKE_DATASET = "comparator_smoke_single"
 COMPARATOR_SMALL_YEAST_DATASET = "small_yeast_s288c_plain"
+COMPARATOR_MEDIUM_REFERENCE_DATASET = "moderate_cannabis_pink-pepper_plain"
 DIGITAL_RADS_TOOL = "external/Digital_RADs/Digital_RADs.py"
 DDRADSEQTOOLS_TOOL = "external/ddRADseqTools/Package/rsitesearch.py"
 DDRADSEQTOOLS_RESTRICTIONSITES = "external/ddRADseqTools/Package/restrictionsites.txt"
@@ -62,6 +66,10 @@ COMPARATOR_BY_TOOL = {row["tool_id"]: row for row in COMPARATOR_ROWS}
 CONDITION_ROWS_FOR_COMPARATORS = _read_rows("config/conditions.tsv")
 CONDITION_BY_ID_FOR_COMPARATORS = {
     row["condition_id"]: row for row in CONDITION_ROWS_FOR_COMPARATORS
+}
+ENZYME_ROWS_FOR_COMPARATORS = _read_rows("config/enzymes.tsv")
+ENZYME_BY_ID_FOR_COMPARATORS = {
+    row["enzyme_id"]: row for row in ENZYME_ROWS_FOR_COMPARATORS
 }
 
 
@@ -162,12 +170,16 @@ COMPARATOR_SMOKE_OUTPUTS = _case_outputs_for_dataset(COMPARATOR_SMOKE_DATASET)
 COMPARATOR_SMALL_YEAST_OUTPUTS = _case_outputs_for_dataset(
     COMPARATOR_SMALL_YEAST_DATASET
 )
+COMPARATOR_MEDIUM_REFERENCE_OUTPUTS = _case_outputs_for_dataset(
+    COMPARATOR_MEDIUM_REFERENCE_DATASET
+)
 COMPARATOR_ALL_OUTPUTS = (
     COMPARATOR_INTERVAL_OUTPUTS
     + COMPARATOR_NONCOORDINATE_OUTPUTS
     + [
         COMPARATOR_CUT_EQUIVALENCE_SUMMARY,
         COMPARATOR_INTERVAL_TABLE,
+        COMPARATOR_EXACT_COUNTS_TABLE,
         COMPARATOR_SEMANTICS_TABLE,
         COMPARATOR_CASE_MATRIX,
     ]
@@ -251,11 +263,36 @@ def case_max_size(wc):
     return int(condition_for_case(wc.case_id)["max_size"])
 
 
+def _enzyme_motif_len(enzyme_id):
+    enzyme = ENZYME_BY_ID_FOR_COMPARATORS[enzyme_id]
+    return len(enzyme["recognition_sequence"].replace("^", ""))
+
+
+def _enzyme_cut_offset(enzyme_id):
+    return int(ENZYME_BY_ID_FOR_COMPARATORS[enzyme_id]["cut_offset"])
+
+
+def _ddradseqtools_left_residual(enzyme_id):
+    return max(0, _enzyme_cut_offset(enzyme_id) - 1)
+
+
+def _ddradseqtools_right_residual(enzyme_id):
+    return max(0, _enzyme_motif_len(enzyme_id) - _enzyme_cut_offset(enzyme_id) - 1)
+
+
 def ddradseqtools_tool_max_size(wc):
-    # rsitesearch.py filters on its own fragment representation. Run a slightly
-    # wider upper bound, then enforce the exact cut-to-cut window in the
-    # normalizer so valid radigest intervals are not lost before normalization.
-    return case_max_size(wc) + 4
+    # rsitesearch.py filters on a representation that can include restriction-site
+    # residual sequence on either side of the cut-to-cut interval. Run with a
+    # case-specific wider upper bound, then enforce the exact cut-to-cut window
+    # in normalize_ddradseqtools_fragments.py so valid radigest intervals are
+    # not lost before normalization.
+    enzyme1 = case_enzyme1(wc)
+    enzyme2 = case_enzyme2(wc)
+    max_residual = max(
+        _ddradseqtools_left_residual(enzyme1) + _ddradseqtools_right_residual(enzyme2),
+        _ddradseqtools_left_residual(enzyme2) + _ddradseqtools_right_residual(enzyme1),
+    )
+    return case_max_size(wc) + max_residual
 
 
 def ddradseqtools_repo(_wc):
@@ -394,6 +431,11 @@ rule comparator_smoke_all:
 rule comparator_small_yeast_all:
     input:
         COMPARATOR_SMALL_YEAST_OUTPUTS,
+
+
+rule comparator_medium_reference_all:
+    input:
+        COMPARATOR_MEDIUM_REFERENCE_OUTPUTS,
 
 
 rule radigest_for_digital_rads:
@@ -920,6 +962,33 @@ rule compare_ddgrader_binned:
             --second-name ddgRADer_backend \
             --out-detail {output.detail:q} \
             --out-summary {output.summary:q} \
+            >{log:q} 2>&1
+        """
+
+
+rule build_comparator_exact_counts_table:
+    input:
+        interval_summaries=COMPARATOR_INTERVAL_OUTPUTS,
+        noncoordinate_summaries=SIMRAD_COUNT_SUMMARIES + DDGRADER_BINNED_SUMMARIES,
+        cases=COMPARATOR_CASE_MANIFEST,
+        noncoordinate_cases=NONCOORDINATE_COMPARATOR_CASE_MANIFEST,
+        registry=COMPARATOR_REGISTRY,
+        conditions="config/conditions.tsv",
+    output:
+        table=COMPARATOR_EXACT_COUNTS_TABLE,
+    log:
+        "benchmark/logs/comparators/comparator_exact_counts_table.log",
+    shell:
+        r"""
+        mkdir -p results/manuscript/tables benchmark/logs/comparators
+        python3 scripts/manuscript/make_comparator_exact_counts_table.py \
+            --comparator-cases {input.cases:q} \
+            --noncoordinate-cases {input.noncoordinate_cases:q} \
+            --comparators {input.registry:q} \
+            --conditions {input.conditions:q} \
+            --out {output.table:q} \
+            --require-present \
+            --require-claim-pass \
             >{log:q} 2>&1
         """
 

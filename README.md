@@ -41,7 +41,7 @@ Expected smoke outputs:
 
 ```text
 results/validation/synthetic_validation_results.tsv
-results/manuscript/tables/table_02_synthetic_validation.tsv
+results/manuscript/tables/table_s01_synthetic_validation.tsv
 ```
 
 Expected reference outputs:
@@ -69,6 +69,7 @@ results/comparators/ddgrader/ddgrader_binned_smoke_summary.tsv
 results/comparators/ddgrader/ddgrader_binned_screening_summary.tsv
 results/comparators/comparator_case_matrix.tsv
 results/comparators/cut_equivalence_summary.tsv
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
@@ -161,18 +162,46 @@ distribution. The default Sockeye row uses a 200-400 bp nominal window with
 Depth-validation settings live in `config/empirical_depth_validation_cases.tsv`.
 When the matching empirical library is enabled, `make empirical-depth-validation`
 runs the configured `radigest-design` prediction, regenerates the hard-selected locus
-set for the validation size window as BED, calculates per-sample mean read-pair depth
-across those predicted loci from the BAMs, and writes
-`results/empirical/{library_id}/depth_validation/summary.tsv` plus the
+set for the validation size window as BED, calculates per-sample mean read-pair
+depth and on-target read-pair fractions across those predicted loci from the
+BAMs, aggregates per-locus depth distributions
+and coverage-threshold recovery, and writes
+`results/empirical/{library_id}/depth_validation/per_locus_depth.tsv`,
+`results/empirical/{library_id}/depth_validation/summary.tsv`, plus the
 manuscript table `results/manuscript/tables/table_08_empirical_depth_validation.tsv`.
 The default Sockeye depth-validation case mirrors the EcoRI-MseI
 200-400 bp run: target 1.5% weighted genome recovery, 20x target
 mean locus depth, 37 samples, 50M read pairs per flowcell, PE300 reads, and a
 soft-window size model with edge SD 50 bp.
 
-Sockeye is a local BAM drop-off validation set. The public Anopheles validation row is an SRA-backed FASTQ/alignment workflow and is enabled for reviewer runs through `source_type=sra_fastq`; SRA rules are restricted to SRR accessions so local BAM sample IDs are never treated as NCBI accessions.
+Sockeye is a local BAM drop-off validation set until its reads/alignments are publicly deposited. Public SRA-backed empirical examples are used as external size-selection checks. The Anopheles row provides a public EcoRI-MseI example, and the Rhododendron row provides a public DpnII-MspI example with a reported 300-500 bp insert-selection window. SRA rules are restricted to SRR accessions so local BAM sample IDs are never treated as NCBI accessions.
 
-The manifest also reserves source types for later CRAM and FASTQ ingestion without committing private sequence data to the repository.
+See `docs/public_empirical_examples.md` for the dataset roles, Rhododendron read-length note, and focused rerun commands. The manifest also reserves source types for later CRAM and FASTQ ingestion without committing private sequence data to the repository.
+
+## Sockeye SNP-panel target-overlap screen
+
+The optional Sockeye target-panel screen demonstrates coordinate-aware enzyme-pair selection against a user-supplied BED panel. The default case is declared in `config/snp_panel_cases.tsv` and expects the panel here:
+
+```text
+data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+```
+
+The panel must use BED coordinates on the same Sockeye reference used elsewhere in the empirical workflow, `data/reference/sockeye_oner_uvic_2_0.fa` / `GCF_034236695.1_Oner_Uvic_2.0`. Use standard BED zero-based, half-open intervals. For a SNP reported as one-based position `POS`, write `start = POS - 1` and `end = POS`; a fourth column with the SNP ID is recommended:
+
+```text
+NC_000000.1	123456	123457	snp_0001
+```
+
+Run the focused target with:
+
+```bash
+mkdir -p data/empirical/sockeye_ecori_msei/panel
+cp /path/to/sockeye_snp_panel.bed data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+make empirical-references THREADS=8
+make empirical-sockeye-snp-panel THREADS=8
+```
+
+Outputs are written to `results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/`, with manuscript artifacts at `results/manuscript/tables/table_09_sockeye_snp_panel_target_overlap.tsv` and `results/manuscript/figures/figure_08_sockeye_snp_panel_target_overlap.pdf`.
 
 ## Comparator matrix boundaries
 

@@ -2,3 +2,6 @@ condition_id	display_name	enzyme_1	enzyme_2	min_size	max_size	size_model	notes
 B1	B1 EcoRI-MseI 100-300	EcoRI	MseI	100	300	hard	Small matched digest condition.
 B2	B2 EcoRI-MseI 300-600	EcoRI	MseI	300	600	hard	Moderate fragment condition.
 D1	D1 Digital RADs smoke 1-100	EcoRI	MseI	1	100	hard	Comparator smoke condition for Digital_RADs.py interval normalization.
+B3	B3 PstI-MspI 100-300	PstI	MspI	100	300	hard	Yeast enzyme-diversity rare-frequent validation condition.
+B4	B4 SbfI-MspI 100-300	SbfI	MspI	100	300	hard	Yeast enzyme-diversity rarer-frequent validation condition.
+B5	B5 MspI-MseI 100-300	MspI	MseI	100	300	hard	Yeast enzyme-diversity frequent-frequent validation condition.

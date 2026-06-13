@@ -13,7 +13,7 @@ matched_digest:
   enzymes: [EcoRI, MseI]
   min_size: 100
   max_size: 300
-  runs: 5
+  runs: 10
   threads: 1
 
 screening_speed:
@@ -27,7 +27,7 @@ screening_speed:
   score_min: 1
   score_max: 2000
   size_model: hard
-  runs: 5
+  runs: 10
   jobs: 2
   radigest_threads: 1
   command_template: radigest-screen-pairs-cached
@@ -40,7 +40,7 @@ thread_scaling:
   conditions: [B1, B2]
   modes: [json, fragments_tsv]
   threads: [1, 2, 4]
-  runs: 7
+  runs: 10
   claim_note: Intra-tool radigest thread scaling only; output modes are interpreted separately.
 
 large_genome:
@@ -54,7 +54,7 @@ large_genome:
   max_size: 600
   output_mode: json
   threads: 4
-  runs: 3
+  runs: 10
   claim_note: True large-reference wheat timing only; no cross-tool equivalence or empirical recovery claim. The wheat reference is required for make references and the large-reference timing artifact is included in the matched-tool performance entry point.
 
 pair_screen_scaling:
@@ -64,7 +64,7 @@ pair_screen_scaling:
   reference: data/reference/moderate_cannabis_pink-pepper.fa
   candidate_enzymes: config/candidate_enzymes_30.txt
   jobs: [1, 2, 4, 8]
-  runs: 3
+  runs: 10
   radigest_threads: 1
   command_template: radigest-screen-pairs-cached
   claim_note: Cached pair-screen job scaling only; candidate-pair coverage is enforced before speedups are interpreted.
@@ -82,7 +82,7 @@ matched_tool_timing:
   tools: [radigest, digital_rads, ddradseqtools, simrad, ddgrader]
   large_reference_tools: [radigest, digital_rads, ddradseqtools, ddgrader]
   large_reference_excluded_tools: [simrad]
-  runs: 3
+  runs: 10
   resource_note: Serialized with matched_tool_benchmark=1 to avoid co-scheduling contamination, including the folded-in large-reference timing case.
   claim_note: Semantics-aware raw timing interpretation only across small yeast, moderate cannabis, and required large wheat; output resolutions and allowed claims differ by tool. SimRAD is excluded from the wheat subset because it cannot process the full wheat FASTA under R string-size limits.
 
@@ -97,7 +97,7 @@ input_format:
   enzymes: [EcoRI, MseI]
   min_size: 100
   max_size: 300
-  runs: 5
+  runs: 10
   threads: 1
 
 comparators:
@@ -114,9 +114,16 @@ comparators:
     target: comparator_small_yeast_all
     dataset: small_yeast_s288c_plain
     reference: data/reference/small_yeast_s288c.fa
-    condition: B1
+    conditions: [B1, B3, B4, B5]
     tools: [digital_rads, ddradseqtools, simrad, ddgrader]
-    claim_note: Public yeast checks use radigest as the anchor. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+    claim_note: Public yeast checks use radigest as the anchor across baseline, rare-frequent, rarer-frequent, and frequent-frequent enzyme-pair conditions. Digital_RADs.py and DDRADSEQTOOLS support interval equivalence; SimRAD and ddgRADer remain lower-resolution checks.
+  medium_reference_matrix:
+    target: comparator_medium_reference_all
+    dataset: moderate_cannabis_pink-pepper_plain
+    reference: data/reference/moderate_cannabis_pink-pepper.fa
+    condition: B2
+    tools: [digital_rads, ddradseqtools]
+    claim_note: Medium-reference Cannabis checks are restricted to coordinate-capable comparators and support exact normalized interval-equivalence claims beyond yeast.
   digital_rads:
     smoke_case: digital_rads_smoke_single__D1
     small_yeast_case: digital_rads_small_yeast_s288c_B1

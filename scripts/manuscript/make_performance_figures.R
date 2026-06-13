@@ -60,6 +60,18 @@ DATASET_LABELS <- c(
   `large_wheat_chinese-spring_gzip` = "T. aestivum Chinese Spring"
 )
 
+# Facet-strip labels for figures where plotmath parsing is used. Keep the
+# species binomial italicized and the strain/cultivar plus genome size in
+# roman type. Genome sizes match the configured NCBI assembly statistics.
+DATASET_PLOTMATH_LABELS <- c(
+  small_yeast_s288c_plain = 'italic("S. cerevisiae")~"S288C (12.1 Mb)"',
+  small_yeast_s288c_gzip = 'italic("S. cerevisiae")~"S288C (12.1 Mb)"',
+  `moderate_cannabis_pink-pepper_plain` = 'italic("C. sativa")~"Pink Pepper (770.3 Mb)"',
+  `moderate_cannabis_pink-pepper_gzip` = 'italic("C. sativa")~"Pink Pepper (770.3 Mb)"',
+  `large_wheat_chinese-spring_plain` = 'italic("T. aestivum")~"Chinese Spring (14.6 Gb)"',
+  `large_wheat_chinese-spring_gzip` = 'italic("T. aestivum")~"Chinese Spring (14.6 Gb)"'
+)
+
 DATASET_ORDER <- c(
   "small_yeast_s288c_plain",
   "small_yeast_s288c_gzip",
@@ -257,6 +269,22 @@ benchmark_label <- function(df) {
   paste(label_dataset(df), label_condition(df), sep = "\n")
 }
 
+label_dataset_plotmath <- function(df) {
+  dataset_id <- column_or(df, "dataset_id", rep("", nrow(df)))
+  fallback <- label_dataset(df)
+  lookup_labels(dataset_id, DATASET_PLOTMATH_LABELS, fallback)
+}
+
+benchmark_plotmath_label <- function(df) {
+  paste0(
+    "atop(",
+    label_dataset_plotmath(df),
+    ', "',
+    label_condition(df),
+    '")'
+  )
+}
+
 rank_with_fallback <- function(values, preferred_order) {
   values <- as.character(values)
   ranks <- match(values, preferred_order)
@@ -294,6 +322,35 @@ benchmark_factor <- function(df, reverse = FALSE) {
     levels <- rev(levels)
   }
   factor(benchmark_label(df), levels = levels)
+}
+
+benchmark_plotmath_levels <- function(df) {
+  labels <- benchmark_plotmath_label(df)
+  dataset_rank <- rank_with_fallback(
+    column_or(df, "dataset_id", rep("", nrow(df))),
+    DATASET_ORDER
+  )
+  condition_rank <- rank_with_fallback(
+    column_or(df, "condition_id", rep("", nrow(df))),
+    CONDITION_ORDER
+  )
+  order_df <- data.frame(
+    label = labels,
+    dataset_rank = dataset_rank,
+    condition_rank = condition_rank,
+    row_rank = seq_along(labels),
+    stringsAsFactors = FALSE
+  ) |>
+    arrange(dataset_rank, condition_rank, row_rank)
+  unique(order_df$label)
+}
+
+benchmark_plotmath_factor <- function(df, reverse = FALSE) {
+  levels <- benchmark_plotmath_levels(df)
+  if (isTRUE(reverse)) {
+    levels <- rev(levels)
+  }
+  factor(benchmark_plotmath_label(df), levels = levels)
 }
 
 format_seconds <- function(x) {
@@ -665,7 +722,7 @@ plot_matched_timing <- function(path) {
     1.22,
     1.18
   )
-  df$benchmark <- benchmark_factor(df)
+  df$benchmark <- benchmark_plotmath_factor(df)
   tool_levels <- df |>
     transmute(tool_label = label_tool(df), tool_rank = rank_with_fallback(tool_id, TOOL_ORDER)) |>
     distinct(tool_label, tool_rank) |>
@@ -683,7 +740,7 @@ plot_matched_timing <- function(path) {
       color = SEABORN[["dark_gray"]],
       show.legend = FALSE
     ) +
-    facet_wrap(vars(benchmark), ncol = 1) +
+    facet_wrap(vars(benchmark), ncol = 1, labeller = label_parsed) +
     scale_color_manual(
       values = c("radigest" = SEABORN[["blue"]], "Comparator" = SEABORN[["gray"]]),
       breaks = c("radigest", "Comparator")
@@ -694,7 +751,7 @@ plot_matched_timing <- function(path) {
       expand = expansion(mult = c(0.02, 0.36))
     ) +
     coord_cartesian(clip = "off") +
-    labs(x = "Median wall time (s, log scale)", y = NULL, caption = SD_CAPTION) +
+    labs(x = "Median wall time (s, log scale)", y = NULL) +
     base_theme() +
     theme(panel.grid.major.y = element_blank())
   matched_height <- max(5.2, 2.35 * n_distinct(df$benchmark) + 0.65)

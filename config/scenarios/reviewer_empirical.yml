@@ -27,5 +27,6 @@ empirical:
     depth_design_json: results/empirical/{library_id}/depth_validation/design.json
     depth_loci_bed: results/empirical/{library_id}/depth_validation/loci.bed
     depth_per_sample: results/empirical/{library_id}/depth_validation/per_sample_depth.tsv
+    depth_per_locus: results/empirical/{library_id}/depth_validation/per_locus_depth.tsv
     depth_summary: results/empirical/{library_id}/depth_validation/summary.tsv
     table: results/manuscript/tables/table_08_empirical_depth_validation.tsv

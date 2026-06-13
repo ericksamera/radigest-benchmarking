@@ -14,7 +14,7 @@ The smoke run writes:
 
 ```text
 results/validation/synthetic_validation_results.tsv
-results/manuscript/tables/table_02_synthetic_validation.tsv
+results/manuscript/tables/table_s01_synthetic_validation.tsv
 ```
 
 After `make install-radigest`, the explicit `RADIGEST=` assignment can be omitted. Manual `RADIGEST=/path/to/radigest` overrides still work.
@@ -48,6 +48,7 @@ make comparators THREADS=8 RADIGEST=/path/to/radigest
 The comparator target writes exact normalized interval comparison summaries for Digital_RADs.py and DDRADSEQTOOLS `rsitesearch.py`, a SimRAD count-level sanity comparison, a ddgRADer binned-screening comparison, and two manuscript-facing tables:
 
 ```text
+results/manuscript/tables/table_02_comparator_exact_counts.tsv
 results/manuscript/tables/table_03_interval_comparisons.tsv
 results/manuscript/tables/table_03_comparator_semantics.tsv
 ```
@@ -95,6 +96,31 @@ Stage 5e/5f large-reference timing is part of the required reference and matched
 make references THREADS=8
 make performance-matched-tools THREADS=8 RADIGEST=/path/to/radigest
 ```
+
+## Sockeye SNP-panel target-overlap screen
+
+The optional Sockeye target-panel screen demonstrates coordinate-aware enzyme-pair selection against a user-supplied BED panel. The default case is declared in `config/snp_panel_cases.tsv` and expects the panel here:
+
+```text
+data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+```
+
+The panel must use BED coordinates on the same Sockeye reference used elsewhere in the empirical workflow, `data/reference/sockeye_oner_uvic_2_0.fa` / `GCF_034236695.1_Oner_Uvic_2.0`. Use standard BED zero-based, half-open intervals. For a SNP reported as one-based position `POS`, write `start = POS - 1` and `end = POS`; a fourth column with the SNP ID is recommended:
+
+```text
+NC_000000.1	123456	123457	snp_0001
+```
+
+Run the focused target with:
+
+```bash
+mkdir -p data/empirical/sockeye_ecori_msei/panel
+cp /path/to/sockeye_snp_panel.bed data/empirical/sockeye_ecori_msei/panel/sockeye_snp_panel.bed
+make empirical-references THREADS=8
+make empirical-sockeye-snp-panel THREADS=8
+```
+
+Outputs are written to `results/empirical/sockeye_ecori_msei/snp_panel/sockeye_snp_panel/`, with manuscript artifacts at `results/manuscript/tables/table_09_sockeye_snp_panel_target_overlap.tsv` and `results/manuscript/figures/figure_08_sockeye_snp_panel_target_overlap.pdf`.
 
 ## Full nonempirical reviewer run
 
